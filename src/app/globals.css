@@ -713,3 +713,23 @@ html:not([lang=en]) *{letter-spacing:0 !important}
 .receipt-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .slide.dark .link-arrow{color:var(--night-ink);border-color:color-mix(in srgb,var(--night-ink) 30%,transparent)}
 .edit-review summary{list-style:none;display:inline-block;margin-top:6px;cursor:pointer}.edit-review summary::-webkit-details-marker{display:none}
+.ovw{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.ptile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:6px}
+.ptile .label{margin:0;font-size:.6rem;letter-spacing:.16em}
+.ptile b{font-size:1.35rem;font-weight:500;font-variant-numeric:tabular-nums}
+.ptile .meter{height:5px;border-radius:9px;background:var(--line);overflow:hidden}
+.ptile .meter span{display:block;height:100%;background:var(--accent);border-radius:9px}
+.ptile.good .meter span{background:#3f8f5a}.ptile.bad .meter span{background:#c0503f}
+.ptile small{color:var(--muted);font-size:.7rem}
+.rsecs{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;align-items:start}
+.rsec{padding:0;gap:0}
+.rsec[open]{grid-column:1/-1}
+.rsec summary{list-style:none;cursor:pointer;padding:18px 20px;display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center}
+.rsec summary::-webkit-details-marker{display:none}
+.rsec summary .label{margin:0;grid-column:1}
+.rsec summary b{grid-column:1;font-size:1.15rem;font-weight:500;font-variant-numeric:tabular-nums}
+.rsec summary i{grid-column:2;grid-row:1/3;font-style:normal;color:var(--muted);transition:transform .3s}
+.rsec[open] summary i{transform:rotate(45deg)}
+.rsec-tools{display:flex;gap:8px;flex-wrap:wrap;padding:0 20px 12px}
+.rsec-body{padding:0 20px 20px;display:grid;gap:14px;min-width:0}
+@media print{body.print-one .rsec:not(.printing),body.print-one .ovw-wrap,body.print-one .rep-filters,body.print-one .rep-head{display:none!important}.rsecs{display:block}.rsec{display:block;break-inside:avoid;margin-bottom:12px}.rsec summary i{display:none}}
