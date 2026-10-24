@@ -677,3 +677,4 @@ footer .logo{letter-spacing:.24em;text-transform:uppercase;font-size:1.3rem}
 .admin .thumbs img,.admin .thumbs video{width:84px;height:84px;object-fit:cover;border:1px solid var(--line)}
 .link-btn{border:0;background:none;padding:0;font-size:inherit;letter-spacing:inherit;text-transform:inherit;color:var(--muted);cursor:pointer}
 .ad-pop .pop-card[aria-hidden=true]{visibility:hidden}
+.paynow{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;padding:16px 18px;border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);background:color-mix(in srgb,var(--accent) 6%,transparent)}.paynow p{margin:0}

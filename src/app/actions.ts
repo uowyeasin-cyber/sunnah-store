@@ -30,14 +30,14 @@ export async function submitReview(fd: FormData) {
 export async function checkoutQuote(input: { lines: { slug: string; qty: number }[]; country: string; useCredit: boolean }) {
   const { quote } = await import('@/lib/orders');
   const { currentCustomer } = await import('@/lib/auth');
-  const { payMethodsFor } = await import('@/lib/shipping');
+  const { readyMethods } = await import('@/lib/pay');
   const me = await currentCustomer();
   const q0 = await quote(input);
   const credit = me && me.currency === q0.cur ? Number(me.credit) : 0;
   const q = await quote(input, credit, input.useCredit);
   return {
     cur: q.cur, subtotal: q.subtotal, saved: q.saved, shipping: q.shipping, credit: q.credit, total: q.total, reward: q.reward, available: credit,
-    courier: q.ship.courier, days: q.ship.days, pay: payMethodsFor(input.country),
+    courier: q.ship.courier, days: q.ship.days, pay: await readyMethods(input.country),
     me: me ? { email: me.email, name: me.name, phone: me.phone, country: me.country, address: me.address } : null,
   };
 }

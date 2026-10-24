@@ -4,7 +4,8 @@ import { Prisma } from '@prisma/client';
 import { db } from './db';
 import { convert, formatAmount, unitCents, type Currency } from './money';
 import { getSettings } from './catalog';
-import { payMethodsFor, shippingFor } from './shipping';
+import { shippingFor } from './shipping';
+import { readyMethods } from './pay';
 import { STEPS } from './tracking';
 import { sendMail } from './mail';
 
@@ -46,7 +47,7 @@ export async function placeOrder(input: CheckoutInput) {
   const email = input.email.trim().toLowerCase();
   if (!input.lines.length) return { error: 'Your bag is empty.' };
   if (!input.name.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || input.phone.replace(/\D/g, '').length < 6 || !input.address.trim() || !input.country) return { error: 'Please fill in your name, email, phone and address.' };
-  if (!payMethodsFor(input.country).some(m => m.id === input.pay)) return { error: 'Choose a payment method.' };
+  if (!(await readyMethods(input.country)).some(m => m.id === input.pay)) return { error: 'Choose a payment method.' };
   // The account is created at checkout from the email; nothing to register first.
   const customer = await db.customer.upsert({ where: { email }, update: { name: input.name, country: input.country, address: { address: input.address, city: input.city, zip: input.zip } }, create: { email, name: input.name, country: input.country, address: { address: input.address, city: input.city, zip: input.zip } } });
   const q0 = await quote(input);
@@ -74,7 +75,7 @@ export async function placeOrder(input: CheckoutInput) {
     return o;
   });
   await sendReceipt(order.id).catch(e => console.error('receipt mail failed', e));
-  return { id: order.id };
+  return { id: order.id, pay: order.payStatus === 'pending' };
 }
 
 export async function sendReceipt(orderId: string) {

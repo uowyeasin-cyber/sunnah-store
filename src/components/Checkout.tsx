@@ -51,7 +51,8 @@ export default function Checkout() {
         const r = await checkout({ lines, ...f, pay, useCredit });
         if ('error' in r && r.error) { setErr(r.error); return; }
         lines.forEach(l => s.setQty(l.slug, 0));
-        router.push(`/order/${(r as { id: string }).id}`);
+        const o = r as { id: string; pay: boolean };
+        if (o.pay) location.assign(`/api/pay/start?o=${o.id}`); else router.push(`/order/${o.id}`);
       });
     }}>
       <div className="panel">

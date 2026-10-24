@@ -32,3 +32,14 @@ Sign in from the account icon with the seed admin email. Without `RESEND_API_KEY
 ## Status
 
 Phase 1 (storefront, admin) is done. Next: checkout, orders, receipts, store credit; then payments, couriers, languages, launch.
+
+## Payments
+
+Cash on delivery works everywhere with no setup. Online methods appear at checkout only once their keys are in the environment (see `.env.example`):
+
+- **Stripe**: card for the USA, worldwide and Malaysia, plus FPX online banking. Add the webhook `https://<domain>/api/pay/stripe-webhook` for `checkout.session.completed` and `checkout.session.async_payment_succeeded`.
+- **PayPal**: worldwide (USD).
+- **SSLCommerz**: Bangladesh bKash, Nagad, cards and internet banking. Callbacks and IPN go to `/api/pay/ssl`.
+- **Touch 'n Go**: needs a Malaysian gateway account (for example Razer Merchant Services or iPay88); hidden until one is connected.
+
+A payment is marked paid only after the gateway confirms it server side and the amount and currency match the order.

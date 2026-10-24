@@ -32,6 +32,7 @@ async function Receipt({ params }: { params: Promise<{ id: string }> }) {
           <div><span>Courier</span>{o.courier}{o.trackingNo && ` · ${o.trackingNo}`}</div>
           <div><span>Deliver to</span>{addr.address}{addr.city && `, ${addr.city}`} {addr.zip}, {o.country}</div>
         </div>
+        {o.payMethod !== 'cod' && (o.payStatus === 'pending' || o.payStatus === 'failed') && <div className="paynow"><p>{o.payStatus === 'failed' ? 'The payment did not go through.' : 'This order is waiting for payment.'}</p><a className="btn brass" href={`/api/pay/start?o=${o.id}`}>Pay {f(o.total)} now</a></div>}
         <div className="tear" />
         {o.lines.map(l => <div className="sum-row" key={l.id}><span>{l.qty} × {l.name}</span><span>{f(Number(l.full) * l.qty)}</span></div>)}
         {Number(o.saved) > 0 && <div className="sum-row"><span>Offers</span><span>−{f(o.saved)}</span></div>}
