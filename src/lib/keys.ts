@@ -5,7 +5,7 @@ import { db } from './db';
 // A key left blank there falls back to the Vercel environment variable of the same name.
 export const SECRETS = 'secrets';
 type Field = [env: string, label: string, kind: 'secret' | 'text' | string[]];
-export type Service = { id: string; name: string; group: 'Payments' | 'Couriers'; does: string; signup: string; fields: Field[]; need: string[] };
+export type Service = { id: string; name: string; group: 'Payments' | 'Couriers' | 'Social media'; does: string; signup: string; fields: Field[]; need: string[] };
 
 export const SERVICES: Service[] = [
   { id: 'stripe', name: 'Stripe', group: 'Payments', does: 'Cards (Visa, Mastercard, Amex), Apple Pay, Google Pay, and FPX online banking in Malaysia. Works for the USA, Malaysia and worldwide.',
@@ -35,6 +35,12 @@ export const SERVICES: Service[] = [
   { id: 'ship24', name: 'Ship24 tracking', group: 'Couriers', does: 'Live tracking for every other courier: DHL, FedEx, Aramex, UPS, USPS, J&T, Pos Malaysia and 1,500 more. Put the tracking number on the order and the customer sees each step.',
     signup: 'https://dashboard.ship24.com/', need: ['SHIP24_API_KEY'],
     fields: [['SHIP24_API_KEY', 'API key', 'secret']] },
+  { id: 'meta', name: 'Facebook and Instagram', group: 'Social media', does: 'Posts to your Facebook Page and Instagram from Admin → Social media, and brings back views, reach, shares, likes and comments. With an ads token it also brings back each ad’s views, reach, clicks and spend.',
+    signup: 'https://developers.facebook.com/apps/', need: ['META_PAGE_ID', 'META_PAGE_TOKEN'],
+    fields: [['META_PAGE_ID', 'Facebook Page ID', 'text'], ['META_PAGE_TOKEN', 'Page access token (long-lived)', 'secret'], ['META_IG_USER_ID', 'Instagram business account ID, optional', 'text'], ['META_ADS_TOKEN', 'Ads token with ads_read (system user), optional', 'secret']] },
+  { id: 'youtube', name: 'YouTube', group: 'Social media', does: 'Brings back views, likes and comments for each YouTube video you add in Admin → Social media. Uploading stays in YouTube Studio.',
+    signup: 'https://console.cloud.google.com/apis/library/youtube.googleapis.com', need: ['YOUTUBE_API_KEY'],
+    fields: [['YOUTUBE_API_KEY', 'YouTube Data API key', 'secret']] },
 ];
 export const MODE_LABEL: Record<string, string> = { live: 'Live', sandbox: 'Test (sandbox)', '': 'Live', '1': 'Test (sandbox)' };
 

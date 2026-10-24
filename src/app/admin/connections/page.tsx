@@ -30,7 +30,7 @@ export default async function Connections() {
         </div>;
       })}</div>
       <p className="muted" style={{ fontSize: '.85rem' }}>⚪ means not on yet: connect its account below, or for “by hand” methods add your number in <a href="/admin/payments">Payments</a>.</p>
-      {(['Payments', 'Couriers'] as const).map(g => <div key={g} style={{ display: 'grid', gap: 14 }}>
+      {(['Payments', 'Couriers', 'Social media'] as const).map(g => <div key={g} style={{ display: 'grid', gap: 14 }}>
         <h3>{g}</h3>
         {SERVICES.filter(s => s.group === g).map(s => <div key={s.id} className="panel">
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>

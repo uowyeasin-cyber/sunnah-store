@@ -42,4 +42,4 @@ function route(req: NextRequest) {
   return NextResponse.rewrite(url);
 }
 
-export const config = { matcher: ['/((?!api|admin|_next|.*\\..*).*)'] };
+export const config = { matcher: ['/((?!api|admin|go/|_next|.*\\..*).*)'] };

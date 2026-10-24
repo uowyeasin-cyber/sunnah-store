@@ -172,6 +172,8 @@ model Order {
   payMethod   String
   // Where the buyer first came from: utm_source, the referring site, or Direct (set by the proxy).
   source      String      @default("")
+  // Social media post or ad the buyer came through (Campaign.code), from a /go link.
+  campaign    String      @default("")
   // pending, paid, cod, failed, refunded
   payStatus   String      @default("pending")
   payRef      String      @default("")
@@ -228,4 +230,38 @@ model ProductView {
   views     Int      @default(0)
 
   @@id([productId, day])
+}
+
+// A social media post or ad. Its /go/<code> link counts clicks, and orders that follow carry the code.
+model Campaign {
+  id         String    @id @default(cuid())
+  code       String    @unique
+  name       String
+  // facebook, instagram, youtube, whatsapp, tiktok, messenger, x, google, email, other
+  platform   String
+  // post or ad
+  kind       String    @default("post")
+  target     String    @default("/")
+  message    String    @default("")
+  image      String    @default("")
+  currency   String    @default("BDT")
+  budget     Decimal   @default(0) @db.Decimal(12, 2)
+  spend      Decimal   @default(0) @db.Decimal(12, 2)
+  // From the platform: typed in, or synced with its API.
+  views      Int       @default(0)
+  reach      Int       @default(0)
+  shares     Int       @default(0)
+  likes      Int       @default(0)
+  comments   Int       @default(0)
+  // Counted by our own /go link.
+  clicks     Int       @default(0)
+  // Facebook post or ad id, Instagram media id, YouTube video id.
+  externalId String    @default("")
+  syncNote   String    @default("")
+  syncedAt   DateTime?
+  // active, paused, ended
+  status     String    @default("active")
+  startAt    DateTime  @default(now())
+  endAt      DateTime?
+  createdAt  DateTime  @default(now())
 }
