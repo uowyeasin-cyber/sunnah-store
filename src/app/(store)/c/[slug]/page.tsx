@@ -3,6 +3,9 @@ import { getAds, getCategories, getProducts, getSettings } from '@/lib/catalog';
 import ProductCard from '@/components/ProductCard';
 import { AdSlot } from '@/components/Ads';
 
+// New products and categories added in admin render on first visit, then stay cached.
+export const instant = false;
+
 export async function generateStaticParams() {
   return (await getCategories()).map(c => ({ slug: c.slug }));
 }

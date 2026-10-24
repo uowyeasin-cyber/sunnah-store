@@ -57,9 +57,15 @@ export async function isAdminEmail(email?: string | null) {
   return admins.some(a => a && norm(a) === norm(email));
 }
 
-// Use at the top of every admin page and admin server action.
-export async function requireAdmin() {
+// Admin pages render alongside the layout's sign-in gate, so they bail out quietly.
+export async function adminOrNull() {
   const c = await currentCustomer();
-  if (!c || !(await isAdminEmail(c.email))) throw new Error('Not allowed');
+  return c && (await isAdminEmail(c.email)) ? c : null;
+}
+
+// Use at the top of every admin server action.
+export async function requireAdmin() {
+  const c = await adminOrNull();
+  if (!c) throw new Error('Not allowed');
   return c;
 }

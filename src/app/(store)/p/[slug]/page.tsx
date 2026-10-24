@@ -8,6 +8,9 @@ import Reviews from '@/components/Reviews';
 import ReviewForm from '@/components/ReviewForm';
 import { AdSlot } from '@/components/Ads';
 
+// New products and categories added in admin render on first visit, then stay cached.
+export const instant = false;
+
 export async function generateStaticParams() {
   return (await getProducts()).map(p => ({ slug: p.slug }));
 }

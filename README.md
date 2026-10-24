@@ -1,36 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pen Miswak store
 
-## Getting Started
+Next.js 16 (App Router, Cache Components) · Prisma 6 · PostgreSQL.
 
-First, run the development server:
+## Run locally
 
 ```bash
+npm install
+echo 'DATABASE_URL="postgresql://USER:PASS@localhost:5432/penmiswak"' > .env
+npx prisma migrate dev
+SEED_ADMIN_EMAIL=you@example.com npm run seed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Sign in from the account icon with the seed admin email. Without `RESEND_API_KEY` the sign-in code is printed in the server log.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | What it is |
+| --- | --- |
+| `DATABASE_URL` | Postgres connection string (Neon or Supabase in production) |
+| `RESEND_API_KEY`, `MAIL_FROM` | Sends sign-in codes and receipts |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob, for product, slide, ad and review photos and videos |
 
-## Learn More
+## Where things live
 
-To learn more about Next.js, take a look at the following resources:
+- `src/app/(store)` storefront pages, `src/app/admin` admin panel (opens only for the admin emails in Admin team)
+- `src/lib/catalog.ts` cached storefront reads; admin actions call `updateTag('catalog')`
+- `src/lib/settings.ts` everything editable in admin, with defaults
+- `prisma/schema.prisma` data model, including orders and store credit for checkout
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Status
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Phase 1 (storefront, admin) is done. Next: checkout, orders, receipts, store credit; then payments, couriers, languages, launch.
