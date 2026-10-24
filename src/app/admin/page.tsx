@@ -1,2 +1,2 @@
 import { redirect } from 'next/navigation';
-export default function AdminHome() { redirect('/admin/products'); }
+export default function AdminHome() { redirect('/admin/orders'); }

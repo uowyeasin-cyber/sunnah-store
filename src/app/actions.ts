@@ -26,3 +26,33 @@ export async function submitReview(fd: FormData) {
   if (!s.holdReviews) updateTag('catalog');
   return { message: s.holdReviews ? 'Thank you. Your review shows after a quick check.' : 'Thank you. Your review is live.' };
 }
+
+export async function checkoutQuote(input: { lines: { slug: string; qty: number }[]; country: string; useCredit: boolean }) {
+  const { quote } = await import('@/lib/orders');
+  const { currentCustomer } = await import('@/lib/auth');
+  const { payMethodsFor } = await import('@/lib/shipping');
+  const me = await currentCustomer();
+  const q0 = await quote(input);
+  const credit = me && me.currency === q0.cur ? Number(me.credit) : 0;
+  const q = await quote(input, credit, input.useCredit);
+  return {
+    cur: q.cur, subtotal: q.subtotal, saved: q.saved, shipping: q.shipping, credit: q.credit, total: q.total, reward: q.reward, available: credit,
+    courier: q.ship.courier, days: q.ship.days, pay: payMethodsFor(input.country),
+    me: me ? { email: me.email, name: me.name, phone: me.phone, country: me.country, address: me.address } : null,
+  };
+}
+
+export async function checkout(input: import('@/lib/orders').CheckoutInput) {
+  const { placeOrder } = await import('@/lib/orders');
+  return placeOrder(input);
+}
+
+export async function findOrder(fd: FormData) {
+  const no = String(fd.get('no') ?? '').trim().toUpperCase();
+  const email = String(fd.get('email') ?? '').trim().toLowerCase();
+  const { db } = await import('@/lib/db');
+  const o = no && email ? await db.order.findUnique({ where: { no }, select: { id: true, email: true } }) : null;
+  if (!o || o.email.toLowerCase() !== email) return { error: 'No order matches that number and email.' };
+  const { redirect } = await import('next/navigation');
+  redirect(`/order/${o.id}`);
+}
