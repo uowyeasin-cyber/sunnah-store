@@ -39,7 +39,9 @@ export function payMethodsFor(country: string, regions?: Regions) {
   return byCountry(country, cod).filter(m => m.id !== 'cod' || (regions?.[regionOf(country)]?.cod ?? true));
 }
 function byCountry(country: string, cod: { id: string; label: string; note: string }) {
-  if (country === 'Bangladesh') return [cod, { id: 'bkash', label: 'bKash', note: 'Mobile wallet' }, { id: 'nagad', label: 'Nagad', note: 'Mobile wallet' }, { id: 'sslcommerz', label: 'Card or bank', note: 'Visa, Mastercard, Amex, internet banking (SSLCommerz)' }];
-  if (country === 'Malaysia') return [cod, { id: 'tng', label: "Touch 'n Go eWallet", note: 'eWallet' }, { id: 'fpx', label: 'Online banking (FPX)', note: 'All Malaysian banks' }, { id: 'card', label: 'Card', note: 'Visa, Mastercard, Amex' }, { id: 'paypal', label: 'PayPal', note: 'PayPal balance or card' }];
-  return [cod, { id: 'card', label: 'Card', note: 'Visa, Mastercard, Amex, Apple Pay, Google Pay' }, { id: 'paypal', label: 'PayPal', note: 'PayPal balance or card' }];
+  const card = { id: 'card', label: 'Card', note: 'Visa, Mastercard, Amex, Apple Pay, Google Pay' }, paypal = { id: 'paypal', label: 'PayPal', note: 'PayPal balance or card' };
+  if (country === 'Bangladesh') return [cod, { id: 'bkash', label: 'bKash', note: 'Mobile wallet' }, { id: 'nagad', label: 'Nagad', note: 'Mobile wallet' }, { id: 'rocket', label: 'Rocket', note: 'Mobile wallet' }, { id: 'sslcommerz', label: 'Card or bank', note: 'Visa, Mastercard, Amex, internet banking (SSLCommerz)' }];
+  if (country === 'Malaysia') return [cod, { id: 'tng', label: "Touch 'n Go eWallet", note: 'eWallet' }, { id: 'fpx', label: 'Online banking (FPX)', note: 'All Malaysian banks' }, { id: 'grabpay', label: 'GrabPay', note: 'eWallet' }, card, paypal];
+  if (country === 'United States') return [cod, card, paypal, { id: 'cashapp', label: 'Cash App Pay', note: 'Pay with Cash App' }];
+  return [cod, card, paypal];
 }

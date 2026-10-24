@@ -9,7 +9,7 @@ import { key as env, loadKeys } from '@/lib/keys';
 const sslBase = () => (env('SSLCZ_SANDBOX') ? 'https://sandbox.sslcommerz.com' : 'https://securepay.sslcommerz.com');
 const ppBase = () => (env('PAYPAL_ENV') === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com');
 
-export const GATEWAY: Record<string, 'stripe' | 'paypal' | 'ssl' | 'tng'> = { card: 'stripe', fpx: 'stripe', paypal: 'paypal', bkash: 'ssl', nagad: 'ssl', sslcommerz: 'ssl', tng: 'tng' };
+export const GATEWAY: Record<string, 'stripe' | 'paypal' | 'ssl' | 'tng'> = { card: 'stripe', fpx: 'stripe', grabpay: 'stripe', cashapp: 'stripe', paypal: 'paypal', bkash: 'ssl', nagad: 'ssl', rocket: 'ssl', sslcommerz: 'ssl', tng: 'tng' };
 export function gatewayReady(method: string) {
   if (method === 'cod') return true;
   if (env('PAY_DEMO')) return true;
@@ -34,7 +34,7 @@ export async function startPayment(id: string, site: string): Promise<string> {
     const f = new URLSearchParams({ mode: 'payment', 'line_items[0][quantity]': '1', 'line_items[0][price_data][currency]': o.currency.toLowerCase(), 'line_items[0][price_data][unit_amount]': String(cents(o)),
       'line_items[0][price_data][product_data][name]': `Order ${o.no}`, customer_email: o.email, client_reference_id: o.id, 'metadata[order]': o.id,
       success_url: `${site}/api/pay/stripe?o=${o.id}&s={CHECKOUT_SESSION_ID}`, cancel_url: `${back}?pay=cancelled` });
-    f.append('payment_method_types[]', o.payMethod === 'fpx' ? 'fpx' : 'card');
+    f.append('payment_method_types[]', ['fpx', 'grabpay', 'cashapp'].includes(o.payMethod) ? o.payMethod : 'card');
     const r = await fetch('https://api.stripe.com/v1/checkout/sessions', { method: 'POST', headers: { Authorization: `Bearer ${env('STRIPE_SECRET_KEY')}` }, body: f }).then(r => r.json());
     if (!r.url) throw new Error(r.error?.message || 'Stripe error');
     await db.order.update({ where: { id: o.id }, data: { payRef: r.id } });
@@ -56,7 +56,8 @@ export async function startPayment(id: string, site: string): Promise<string> {
       cus_name: o.name, cus_email: o.email, cus_phone: o.phone, cus_add1: addr.address || '-', cus_city: addr.city || '-', cus_postcode: addr.zip || '-', cus_country: o.country,
       shipping_method: 'Courier', num_of_item: String(o.lines.reduce((n, l) => n + l.qty, 0)), ship_name: o.name, ship_add1: addr.address || '-', ship_city: addr.city || '-', ship_postcode: addr.zip || '-', ship_country: o.country,
       product_name: o.lines.map(l => l.name).join(', ').slice(0, 250), product_category: 'Personal care', product_profile: 'physical-goods', value_a: o.id });
-    if (o.payMethod === 'bkash') f.set('multi_card_name', 'bkash');
+    const wallet: Record<string, string> = { bkash: 'bkash', nagad: 'nagad', rocket: 'dbblmobilebanking' };
+    if (wallet[o.payMethod]) f.set('multi_card_name', wallet[o.payMethod]);
     const r = await fetch(`${sslBase()}/gwprocess/v4/api.php`, { method: 'POST', body: f }).then(r => r.json());
     if (!r.GatewayPageURL) throw new Error(r.failedreason || 'SSLCommerz error');
     return r.GatewayPageURL;
@@ -127,4 +128,12 @@ export const readyMethods = async (country: string) => {
   const manual = s.manualPay.filter(m => m.on && m.details.trim() && (m.where === 'all' || m.where === country || (m.where === 'other' && regionOf(country) === 'INTL')))
     .map(m => ({ id: 'm-' + m.id, label: m.label, note: m.details, manual: true }));
   return [...payMethodsFor(country, s.regions).filter(m => gatewayReady(m.id)).map(m => ({ ...m, manual: false })), ...manual];
+};
+
+// Methods this country will get once their gateway is connected in Admin → Connections; checkout shows them as coming soon.
+export const soonMethods = async (country: string) => {
+  const { payMethodsFor } = await import('@/lib/shipping');
+  const { getSettings } = await import('@/lib/catalog');
+  await loadKeys();
+  return payMethodsFor(country, (await getSettings()).regions).filter(m => !gatewayReady(m.id)).map(m => ({ id: m.id, label: m.label }));
 };

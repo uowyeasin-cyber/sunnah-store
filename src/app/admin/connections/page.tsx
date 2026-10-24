@@ -47,7 +47,19 @@ export default async function Connections() {
           {s.fields.some(([e, , k]) => !Array.isArray(k) && keyHint(e).startsWith('saved')) && <label style={{ fontSize: '.85rem' }}><input type="checkbox" name="clear" value={s.id} /> Disconnect (delete saved keys)</label>}
         </div>)}
       </div>)}
-      <div className="panel"><h3>Other couriers</h3><p className="muted" style={{ fontSize: '.88rem' }}>Pathao, RedX, DHL, FedEx, Aramex, UPS, USPS, J&amp;T and Pos Malaysia: book the parcel in the courier&apos;s own app, then put the courier and tracking number on the order. With Ship24 connected the customer gets live tracking. Direct booking for a courier can be added once you have its merchant account.</p></div>
+      <h3>Ship-from addresses</h3>
+      <p className="muted" style={{ fontSize: '.88rem' }}>Couriers need these to pick up parcels. Parcel size and weight below are used for every booking.</p>
+      <div className="two">{(['BD', 'MY', 'US'] as const).map(w => <div key={w} className="panel" style={{ padding: 18 }}>
+        <b>{{ BD: 'Bangladesh', MY: 'Malaysia', US: 'USA' }[w]} warehouse</b>
+        {(['name', 'phone', 'email', 'street', 'city', 'state', 'zip'] as const).map(k => <div key={k} className="field"><label htmlFor={`wh-${w}-${k}`}>{{ name: 'Sender name', phone: 'Phone', email: 'Email', street: 'Street address', city: 'City', state: 'State', zip: 'Postcode' }[k]}</label>
+          <input id={`wh-${w}-${k}`} name={`wh-${w}-${k}`} defaultValue={st.warehouses[w]?.[k] || ''} /></div>)}
+      </div>)}
+        <div className="panel" style={{ padding: 18 }}><b>Parcel</b>
+          <div className="field"><label htmlFor="kgPerItem">Weight per item (kg)</label><input id="kgPerItem" name="kgPerItem" type="number" step="0.01" min="0.01" defaultValue={st.parcel.kgPerItem} /></div>
+          {(['Length', 'Width', 'Height'] as const).map((l, i) => <div key={l} className="field"><label htmlFor={`cm${i}`}>{l} (cm)</label><input id={`cm${i}`} name={`cm${i}`} type="number" min="1" defaultValue={st.parcel.cm[i]} /></div>)}
+        </div>
+      </div>
+      <div className="panel"><h3>Other couriers</h3><p className="muted" style={{ fontSize: '.88rem' }}>Any courier not connected above (Paperfly, eCourier, Sundarban…), and cash-on-delivery parcels outside Bangladesh: book in the courier&apos;s own app, then put the courier and tracking number on the order. With Ship24 connected the customer still gets live tracking.</p></div>
       <button className="btn">Save connections</button>
     </form>
   </>;

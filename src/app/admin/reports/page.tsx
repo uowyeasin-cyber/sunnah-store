@@ -40,7 +40,7 @@ export default async function Reports({ searchParams }: PageProps<'/admin/report
     </div>
 
     <form className="panel no-print rep-filters" action="/admin/reports">
-      <div className="tabs">{PERIODS.map(x => <Link key={x} href={href({ p: x })} className={x === p ? 'on' : ''}>{NAMES[x]}</Link>)}</div>
+      <div className="rtabs">{PERIODS.map(x => <Link key={x} href={href({ p: x })} className={x === p ? 'on' : ''}>{NAMES[x]}</Link>)}</div>
       <input type="hidden" name="p" value={p} />
       <Link className="btn ghost" href={href({ d: shift(-1) })} aria-label="Previous">‹</Link>
       <input type="date" name="d" defaultValue={iso(anchor)} aria-label="Date" />
@@ -63,7 +63,7 @@ export default async function Reports({ searchParams }: PageProps<'/admin/report
     <div className="panel">
       <h3>Sales by {p === 'day' ? 'hour' : p === 'year' ? 'month' : 'day'}</h3>
       <div className="bars" role="img" aria-label={`Sales by ${p === 'day' ? 'hour' : 'day'}`}>
-        {r.bars.map(b => <div key={b.label} className="bar" title={`${b.label}: ${m(b.revenue)} sales, ${m(b.net)} profit, ${b.orders} orders`}>
+        {r.bars.map(b => <div key={b.label} className="rbar" title={`${b.label}: ${m(b.revenue)} sales, ${m(b.net)} profit, ${b.orders} orders`}>
           <span style={{ height: `${(b.revenue / max) * 100}%` }} /><small>{b.label.replace(/ \d{4}$/, '')}</small>
         </div>)}
       </div>

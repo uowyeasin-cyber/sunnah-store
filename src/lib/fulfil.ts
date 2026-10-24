@@ -2,7 +2,8 @@ import 'server-only';
 import { db } from './db';
 import { sendMail } from './mail';
 import { payReward } from './credit';
-import { bookSteadfast, isSteadfast, loadKeys, steadfastReady, track } from './couriers';
+import { bookerFor, loadKeys, track } from './couriers';
+import { getSettings } from './catalog';
 import { DELIVERED, STEPS } from './tracking';
 
 type Ev = { at: string; step: number; note: string };
@@ -22,14 +23,24 @@ export async function advance(id: string, step: number, data: Record<string, unk
 }
 
 // Books the courier once an order is ready to ship: cash on delivery at once, online payments after they clear.
+// A failed booking is logged on the order as an admin-only note (step -1) so the admin sees why, then thrown for the caller.
 export async function sendToCourier(id: string) {
-  const o = await db.order.findUniqueOrThrow({ where: { id } });
+  const o = await db.order.findUniqueOrThrow({ where: { id }, include: { lines: true } });
   if (o.trackingNo || (o.payStatus !== 'paid' && o.payStatus !== 'cod')) return;
   await loadKeys();
-  if (o.country === 'Bangladesh' && isSteadfast(o.courier) && steadfastReady()) {
+  const booker = bookerFor({ warehouse: o.warehouse, courier: o.courier, cod: o.payStatus === 'cod' });
+  if (!booker) return;
+  const s = await getSettings();
+  const from = s.warehouses[o.warehouse as 'BD' | 'MY' | 'US'];
+  try {
+    if (o.warehouse !== 'BD' && !(from?.street && from.zip && from.phone)) throw new Error(`Add the ${o.warehouse} warehouse address in Admin → Connections first`);
     await advance(id, Math.max(o.status, 1), {}, true);
-    const r = await bookSteadfast({ no: o.no, name: o.name, phone: o.phone, address: o.address, codDue: o.payStatus === 'cod' ? Number(o.total) : 0 });
-    await advance(id, Math.max(o.status, 2), { trackingNo: r.trackingNo, payRef: o.payRef || r.ref }, true);
+    const r = await booker.book({ ...o, total: Number(o.total), codDue: o.payStatus === 'cod' ? Number(o.total) : 0 }, { from, parcel: s.parcel });
+    await advance(id, Math.max(o.status, 2), { trackingNo: r.trackingNo, payRef: o.payRef || r.ref, labelUrl: r.label || '', ...(r.courier ? { courier: r.courier } : {}) }, true);
+  } catch (e) {
+    const fresh = await db.order.findUniqueOrThrow({ where: { id } });
+    await db.order.update({ where: { id }, data: { events: [...(fresh.events as Ev[]), { at: new Date().toISOString(), step: -1, note: `${booker.name} booking failed: ${(e as Error).message}`.slice(0, 400) }] } });
+    throw e;
   }
 }
 export const sendToCourierSafe = (id: string) => sendToCourier(id).catch(e => console.error('courier booking failed', id, e));

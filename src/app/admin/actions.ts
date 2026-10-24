@@ -60,6 +60,10 @@ export async function saveConnections(fd: FormData) {
   const regions = (await getSettings()).regions;
   for (const r of Object.keys(regions) as (keyof typeof regions)[]) regions[r] = { courier: str(fd, `courier-${r}`) || regions[r].courier, cod: !!fd.get(`cod-${r}`) };
   await setSetting('regions', regions);
+  const wh = (await getSettings()).warehouses;
+  for (const w of ['BD', 'MY', 'US'] as const) wh[w] = Object.fromEntries((['name', 'phone', 'email', 'street', 'city', 'state', 'zip'] as const).map(k => [k, str(fd, `wh-${w}-${k}`).slice(0, 120)])) as typeof wh.BD;
+  await setSetting('warehouses', wh);
+  await setSetting('parcel', { kgPerItem: Math.max(0.01, num(fd, 'kgPerItem') || 0.2), cm: [0, 1, 2].map(i => Math.max(1, num(fd, `cm${i}`) || 10)) as [number, number, number] });
   done();
 }
 

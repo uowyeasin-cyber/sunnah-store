@@ -8,7 +8,7 @@ import Art from './Art';
 import { useStore } from './StoreProvider';
 
 type Q = Awaited<ReturnType<typeof checkoutQuote>>;
-const FIELDS = ['name', 'email', 'phone', 'country', 'address', 'city', 'zip'] as const;
+const FIELDS = ['name', 'email', 'phone', 'country', 'address', 'city', 'zip', 'state'] as const;
 type Form = Record<(typeof FIELDS)[number], string>;
 // Country from the visitor's IP (pm-cc cookie set by the proxy), else from the time zone.
 const guessCountry = () => {
@@ -25,7 +25,7 @@ const guessCountry = () => {
 export default function Checkout() {
   const s = useStore();
   const router = useRouter();
-  const [f, setF] = useState<Form>({ name: '', email: '', phone: '', country: '', address: '', city: '', zip: '' });
+  const [f, setF] = useState<Form>({ name: '', email: '', phone: '', country: '', address: '', city: '', zip: '', state: '' });
   const [pay, setPay] = useState('cod');
   const [trx, setTrx] = useState('');
   const [useCredit, setUseCredit] = useState(true);
@@ -47,7 +47,7 @@ export default function Checkout() {
     checkoutQuote({ lines, country: f.country, useCredit }).then(r => {
       if (!live) return; setQ(r);
       if (!r.pay.some(m => m.id === pay)) setPay(r.pay[0].id);
-      if (r.me) { const a = (r.me.address || {}) as Record<string, string>; setF(x => ({ ...x, email: x.email || r.me!.email || '', name: x.name || r.me!.name, phone: x.phone || r.me!.phone || '', address: x.address || a.address || '', city: x.city || a.city || '', zip: x.zip || a.zip || '' })); }
+      if (r.me) { const a = (r.me.address || {}) as Record<string, string>; setF(x => ({ ...x, email: x.email || r.me!.email || '', name: x.name || r.me!.name, phone: x.phone || r.me!.phone || '', address: x.address || a.address || '', city: x.city || a.city || '', zip: x.zip || a.zip || '', state: x.state || a.state || '' })); }
     });
     return () => { live = false; };
   }, [key, f.country, useCredit]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -77,7 +77,9 @@ export default function Checkout() {
         <div className="field"><label htmlFor="a">{s.t('Address')}</label><input id="a" autoComplete="street-address" required value={f.address} onChange={set('address')} /></div>
         <div className="two"><div className="field"><label htmlFor="ci">{s.t('City')}</label><input id="ci" autoComplete="address-level2" value={f.city} onChange={set('city')} /></div>
           <div className="field"><label htmlFor="z">{s.t('Postcode')}</label><input id="z" autoComplete="postal-code" value={f.zip} onChange={set('zip')} /></div></div>
-        {q && <><h3>{s.t('Payment')}</h3><div className="pays">{q.pay.map(m => <label key={m.id} className="pay"><input type="radio" name="pay" value={m.id} checked={pay === m.id} onChange={() => setPay(m.id)} /><span>{s.t(m.label)}{!m.manual && <small>{s.t(m.note)}</small>}</span></label>)}</div>
+        {!['Bangladesh', 'Malaysia'].includes(f.country) && <div className="field"><label htmlFor="st">{s.t('State or province')}</label><input id="st" autoComplete="address-level1" value={f.state} onChange={set('state')} required={f.country === 'United States'} /></div>}
+        {q && <><h3>{s.t('Payment')}</h3><div className="pays">{q.pay.map(m => <label key={m.id} className="pay"><input type="radio" name="pay" value={m.id} checked={pay === m.id} onChange={() => setPay(m.id)} /><span>{s.t(m.label)}{!m.manual && <small>{s.t(m.note)}</small>}</span></label>)}
+          {q.soon.map(m => <label key={m.id} className="pay soon" aria-disabled="true"><input type="radio" disabled /><span>{s.t(m.label)}<small>{s.t('Coming soon')}</small></span></label>)}</div>
           {(() => { const m = q.pay.find(x => x.id === pay); if (!m?.manual) return pay !== 'cod' && <p className="muted" style={{ fontSize: '.85rem' }}>{s.t('Online payment opens after you place the order.')}</p>;
             return <div className="manual-pay"><p style={{ whiteSpace: 'pre-line' }}><b>{s.t('Send {x} to:', { x: money(q.total) })}</b><br />{m.note}</p>
               <div className="field"><label htmlFor="trx">{s.t('Transaction ID')}</label><input id="trx" required value={trx} onChange={e => setTrx(e.target.value)} placeholder="e.g. 9JK3L2M8PQ" /></div>

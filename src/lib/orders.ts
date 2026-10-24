@@ -12,7 +12,7 @@ import { sendMail } from './mail';
 
 export type CheckoutInput = {
   lines: { slug: string; qty: number }[];
-  name: string; email: string; phone: string; country: string; address: string; city: string; zip: string;
+  name: string; email: string; phone: string; country: string; address: string; city: string; zip: string; state?: string;
   pay: string; useCredit: boolean; trx?: string;
 };
 
@@ -56,7 +56,7 @@ export async function placeOrder(input: CheckoutInput, source = '') {
   const trx = (input.trx || '').trim().slice(0, 60);
   if (manual && trx.length < 4) return { error: 'Enter the transaction ID from your payment.' };
   // The account is created at checkout from the email; nothing to register first.
-  const customer = await db.customer.upsert({ where: { email }, update: { name: input.name, country: input.country, address: { address: input.address, city: input.city, zip: input.zip } }, create: { email, name: input.name, country: input.country, address: { address: input.address, city: input.city, zip: input.zip } } });
+  const customer = await db.customer.upsert({ where: { email }, update: { name: input.name, country: input.country, address: { address: input.address, city: input.city, zip: input.zip, state: input.state || '' } }, create: { email, name: input.name, country: input.country, address: { address: input.address, city: input.city, zip: input.zip, state: input.state || '' } } });
   const q0 = await quote(input);
   // Credit is held in one currency; a customer's first order sets it.
   if (Number(customer.credit) === 0 && customer.currency !== q0.cur) customer.currency = (await db.customer.update({ where: { id: customer.id }, data: { currency: q0.cur } })).currency;
@@ -69,7 +69,7 @@ export async function placeOrder(input: CheckoutInput, source = '') {
   const order = await db.$transaction(async tx => {
     const o = await tx.order.create({ data: {
       no, customerId: customer.id, name: input.name.trim(), email, phone: input.phone.trim(), country: input.country,
-      address: { address: input.address.trim(), city: input.city.trim(), zip: input.zip.trim() }, currency: q.cur,
+      address: { address: input.address.trim(), city: input.city.trim(), zip: input.zip.trim(), state: (input.state || '').trim().slice(0, 40) }, currency: q.cur,
       subtotal: D(q.subtotal), saved: D(q.saved), shipping: D(q.shipping), creditUsed: D(q.credit), total: D(q.total), rewardEarned: D(q.reward),
       payMethod: input.pay, source, payStatus: input.pay === 'cod' || q.total === 0 ? 'cod' : 'pending', payRef: manual ? trx : '', warehouse: q.ship.warehouse, courier: q.ship.courier,
       etaFrom: day(q.ship.days[0]), etaTo: day(q.ship.days[1]), events: [{ at: now.toISOString(), step: 0, note: STEPS[0] }],

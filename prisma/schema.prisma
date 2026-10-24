@@ -178,6 +178,8 @@ model Order {
   warehouse   String      @default("")
   courier     String      @default("")
   trackingNo  String      @default("")
+  // Shipping label from the courier booking, when it gives one.
+  labelUrl    String      @default("")
   // 0 placed … 6 delivered, see lib/tracking
   status      Int         @default(0)
   manual      Boolean     @default(false)
