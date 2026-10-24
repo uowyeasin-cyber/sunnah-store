@@ -75,3 +75,49 @@ export async function deleteOrder(fd: FormData) {
   const { redirect } = await import('next/navigation');
   redirect('/admin/orders');
 }
+
+// Ticked orders on the Orders page: mark paid, move to a step, or send to the courier.
+export async function bulkOrders(fd: FormData) {
+  await requireAdmin();
+  const ids = fd.getAll('ids').map(String).filter(Boolean).slice(0, 300), act = str(fd, 'act');
+  let done = 0;
+  for (const id of ids) {
+    if (act === 'paid') { await db.order.update({ where: { id }, data: { payStatus: 'paid' } }); done++; }
+    else if (act.startsWith('step-')) { await advance(id, Math.min(DELIVERED, Math.max(0, Number(act.slice(5)) || 0)), { manual: true }); done++; }
+    else if (act === 'book') { if (await sendToCourier(id).then(() => true, () => false)) done++; }
+  }
+  const { redirect } = await import('next/navigation');
+  redirect(`/admin/orders?${new URLSearchParams({ tab: str(fd, 'tab') || 'all', q: str(fd, 'q'), note: `${done} of ${ids.length} orders updated.` })}`);
+}
+
+// Bulk Create Order: rows typed into the form, plus lines pasted from a sheet (tab or | between columns):
+// Name | Phone | Country | Address | City | Products | Payment | Email | Note. Products: "slug x2, other-slug".
+export async function bulkCreate(fd: FormData) {
+  await requireAdmin();
+  const { createAdminOrder } = await import('@/lib/orders');
+  const { COUNTRIES } = await import('@/lib/shipping');
+  const products = await db.product.findMany({ where: { active: true } });
+  const country = (c: string) => { const v = c.trim().toLowerCase(); const alias: Record<string, string> = { bd: 'Bangladesh', my: 'Malaysia', us: 'United States', usa: 'United States', uk: 'United Kingdom', uae: 'United Arab Emirates', ksa: 'Saudi Arabia' }; return alias[v] || COUNTRIES.find(x => x.toLowerCase() === v) || 'Bangladesh'; };
+  const product = (s: string) => { const v = s.trim().toLowerCase(); return products.find(p => p.slug === v) || products.find(p => `${p.name} ${p.sub}`.toLowerCase().includes(v)); };
+  const parseLines = (s: string) => s.split(/[,;+]/).flatMap(part => { const m = part.trim().match(/^(.*?)(?:\s*[x×*]\s*(\d+))?$/i); const p = m && m[1] ? product(m[1]) : null; return p ? [{ slug: p.slug, qty: Number(m![2]) || 1 }] : []; });
+  const rows: { at: string; input: import('@/lib/orders').AdminOrderInput }[] = [];
+  for (let i = 0; i < 40; i++) {
+    if (!str(fd, `name-${i}`) && !str(fd, `phone-${i}`)) continue;
+    const slug = str(fd, `product-${i}`), slug2 = str(fd, `product2-${i}`);
+    rows.push({ at: `Row ${i + 1}`, input: { name: str(fd, `name-${i}`), phone: str(fd, `phone-${i}`), email: str(fd, `email-${i}`), country: country(str(fd, `country-${i}`)), address: str(fd, `address-${i}`), city: str(fd, `city-${i}`),
+      lines: [...(slug ? [{ slug, qty: Number(fd.get(`qty-${i}`)) || 1 }] : []), ...(slug2 ? [{ slug: slug2, qty: Number(fd.get(`qty2-${i}`)) || 1 }] : [])], paid: str(fd, `pay-${i}`) === 'paid', note: str(fd, `note-${i}`) } });
+  }
+  str(fd, 'paste').split(/\r?\n/).map(l => l.trim()).filter(Boolean).forEach((l, i) => {
+    const c = (l.includes('\t') ? l.split('\t') : l.split('|')).map(x => x.trim());
+    if (/^name$/i.test(c[0])) return; // header row
+    rows.push({ at: `Pasted line ${i + 1}`, input: { name: c[0] || '', phone: c[1] || '', country: country(c[2] || ''), address: c[3] || '', city: c[4] || '', lines: parseLines(c[5] || ''), paid: /paid|prepaid|bkash|nagad|bank/i.test(c[6] || ''), email: c[7] || '', note: c[8] || '' } });
+  });
+  const made: string[] = [], failed: string[] = [];
+  for (const r of rows.slice(0, 200)) {
+    const res = await createAdminOrder(r.input).catch(e => ({ error: (e as Error).message }));
+    if ('error' in res) failed.push(`${r.at} (${r.input.name || 'no name'}): ${res.error}`); else made.push(res.no);
+  }
+  const { redirect } = await import('next/navigation');
+  if (failed.length) redirect(`/admin/orders/new?${new URLSearchParams({ made: String(made.length), failed: failed.join('\n').slice(0, 1500) })}`);
+  redirect(`/admin/orders?${new URLSearchParams({ note: `${made.length} orders created.` })}`);
+}

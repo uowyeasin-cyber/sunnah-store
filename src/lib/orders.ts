@@ -100,3 +100,30 @@ export async function sendReceipt(orderId: string) {
     o.preorder ? `Pre-order: ${o.preorder}. We email you when it ships.` : `Arrives ${o.etaFrom?.toDateString()} – ${o.etaTo?.toDateString()} by ${o.courier}.`, '', `Receipt and tracking: ${url}`,
   ].join('\n'));
 }
+
+// Orders taken by phone, WhatsApp or Facebook and typed in by an admin. No payment check; marked manual.
+export type AdminOrderInput = { name: string; phone: string; email: string; country: string; address: string; city: string; lines: { slug: string; qty: number }[]; paid: boolean; note: string };
+export async function createAdminOrder(input: AdminOrderInput) {
+  const email = input.email.trim().toLowerCase();
+  if (!input.name.trim()) return { error: 'name is missing' };
+  if (input.phone.replace(/\D/g, '').length < 6) return { error: 'phone is missing' };
+  if (!input.address.trim()) return { error: 'address is missing' };
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: 'email is not valid' };
+  const q = await quote(input);
+  if (!q.lines.length) return { error: 'no product matched' };
+  const customer = email ? await db.customer.upsert({ where: { email }, update: {}, create: { email, name: input.name.trim(), country: input.country, currency: q.cur, address: { address: input.address, city: input.city, zip: '', state: '' } } }) : null;
+  const now = new Date(), day = (n: number) => new Date(Date.now() + n * 864e5);
+  const no = `PM-${String(now.getFullYear()).slice(2)}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${randomInt(10000, 99999)}`;
+  const st = await getSettings(), preorder = st.preorder?.on ? (st.preorder.ships || 'Pre-order').slice(0, 120) : '';
+  const notes = [{ at: now.toISOString(), step: 0, note: STEPS[0] }, { at: now.toISOString(), step: -1, note: `Created by admin${input.note ? ': ' + input.note.slice(0, 200) : ''}` }];
+  const o = await db.order.create({ data: {
+    no, customerId: customer?.id, name: input.name.trim(), email, phone: input.phone.trim(), country: input.country,
+    address: { address: input.address.trim(), city: input.city.trim(), zip: '', state: '' }, currency: q.cur,
+    subtotal: D(q.subtotal), saved: D(q.saved), shipping: D(q.shipping), creditUsed: D(0), total: D(q.total), rewardEarned: D(0),
+    payMethod: input.paid ? 'paid-admin' : 'cod', source: 'Admin', preorder, payStatus: input.paid ? 'paid' : 'cod', manual: true,
+    warehouse: q.ship.warehouse, courier: q.ship.courier, etaFrom: day(q.ship.days[0]), etaTo: day(q.ship.days[1]), events: notes,
+    lines: { create: q.lines.map(l => ({ productId: l.p.id, name: `${l.p.name}${l.p.kind === 'pen' ? ' · ' + l.p.sub : ''}`, qty: l.qty, unit: D(l.unit), full: D(l.full), cost: D(l.cost) })) },
+  } });
+  if (email) await sendReceipt(o.id).catch(e => console.error('receipt mail failed', e));
+  return { id: o.id, no };
+}

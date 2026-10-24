@@ -878,3 +878,22 @@ html:not([lang=en]) *{letter-spacing:0 !important}
 .film-cta{color:#121110;background:#ecd6a4;border-radius:99px;height:38px;display:inline-flex;align-items:center;padding:0 20px;font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;text-decoration:none}
 @media (max-aspect-ratio:1/1){.film{height:auto;aspect-ratio:4/5;min-height:0}}
 @media (max-width:600px){.film-skip,.film-lbl{display:none}.film-bar{padding:10px 12px}}
+
+/* Admin orders: status tabs, search and bulk actions */
+.ord-tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:thin}
+.ord-tabs a{flex:none;display:inline-flex;align-items:center;gap:8px;padding:12px 14px;color:var(--muted);text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;font-size:.92rem}
+.ord-tabs a span{font-size:.72rem;min-width:22px;text-align:center;padding:2px 7px;border-radius:99px;background:var(--cloth);color:var(--ink)}
+.ord-tabs a.on{color:var(--ink);border-bottom-color:var(--ink);font-weight:500}
+.ord-tabs a.on span{background:var(--ink);color:var(--bg)}
+.ord-find{display:flex;gap:10px;flex-wrap:wrap}
+.ord-find input{flex:1 1 280px;min-width:0}.ord-find select{flex:0 0 auto}
+.ord-note{padding:10px 14px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);font-size:.9rem}
+.ord-note.bad{border-color:#c0392b}.ord-note pre{white-space:pre-wrap;font-size:.8rem;margin-top:6px}
+.ord-bulk{display:none;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border-radius:var(--r);background:var(--cloth);position:sticky;top:8px;z-index:3}
+.ord-bulk.on{display:flex}.ord-bulk b{margin-right:6px;font-size:.9rem}.ord-bulk select{width:auto}
+.ord-tbl .sm,.ord-tbl td.sm{font-size:.78rem}.ord-tbl td{vertical-align:top}
+.pay-paid{color:#1b8a5a}.pay-pending,.pay-failed{color:#c0392b}.pay-refunded{color:var(--muted)}
+.ord-empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:48px 16px}
+.ord-empty h3{font-size:1.4rem}.ord-empty p{max-width:30em}
+.ord-new input,.ord-new select{min-width:110px;padding:6px 8px;font-size:.85rem}
+.ord-tbl .status{white-space:nowrap}
