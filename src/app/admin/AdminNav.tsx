@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const TABS = [['/admin/orders', 'Orders'], ['/admin/products', 'Products & offers'], ['/admin/categories', 'Categories'], ['/admin/homepage', 'Homepage slides'], ['/admin/menu', 'Menu bar'], ['/admin/ads', 'Advertisements'], ['/admin/reviews', 'Reviews'], ['/admin/settings', 'Design & settings'], ['/admin/team', 'Admin team']];
+const TABS = [['/admin/orders', 'Orders'], ['/admin/products', 'Products & offers'], ['/admin/categories', 'Categories'], ['/admin/homepage', 'Homepage slides'], ['/admin/menu', 'Menu bar'], ['/admin/ads', 'Advertisements'], ['/admin/reviews', 'Reviews'], ['/admin/languages', 'Languages'], ['/admin/settings', 'Design & settings'], ['/admin/team', 'Admin team']];
 
 export default function AdminNav() {
   const path = usePathname();

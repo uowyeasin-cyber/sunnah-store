@@ -160,3 +160,21 @@ export async function setReview(fd: FormData) {
   else await db.review.update({ where: { id }, data: { status: to === 'live' ? 'live' : 'hidden' } });
   done();
 }
+
+// Stores only what differs from the built-in translation, so later built-in fixes still reach untouched text.
+export async function saveTranslations(fd: FormData) {
+  await requireAdmin();
+  const { dictFor } = await import('@/lib/i18n');
+  const out: Settings['translations'] = {};
+  for (const l of ['bn', 'ar', 'hi'] as const) {
+    const base = dictFor(l);
+    const mine: Record<string, string> = {};
+    for (let i = 0; fd.has(`key${i}`); i++) {
+      const k = str(fd, `key${i}`), v = str(fd, `${l}${i}`);
+      if (v && v !== base[k]) mine[k] = v;
+    }
+    out[l] = mine;
+  }
+  await setSetting('translations', out);
+  done();
+}

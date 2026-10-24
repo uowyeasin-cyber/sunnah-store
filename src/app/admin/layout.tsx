@@ -4,6 +4,8 @@ import { currentCustomer, isAdminEmail } from '@/lib/auth';
 import { getSettings } from '@/lib/catalog';
 import AdminSignIn from './AdminSignIn';
 import AdminNav from './AdminNav';
+import Html from '@/components/Html';
+import '../globals.css';
 
 export const metadata = { title: 'Admin', robots: { index: false } };
 
@@ -27,9 +29,9 @@ async function Gate({ children }: { children: React.ReactNode }) {
 
 export default function AdminLayout({ children }: LayoutProps<'/admin'>) {
   return (
-    <>
+    <Html lang="en">
       <header className="nav"><div className="wrap top"><div className="left"><Link href="/" className="link-arrow">← Store</Link></div><Link className="logo" href="/admin"><span>Admin</span></Link><div className="tools" /></div></header>
       <main><Suspense fallback={<div className="wrap" style={{ padding: 60 }}>Loading…</div>}><Gate>{children}</Gate></Suspense></main>
-    </>
+    </Html>
   );
 }

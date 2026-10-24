@@ -16,17 +16,18 @@ export function OfferBadge({ p }: { p: CardProduct }) {
 }
 
 function DaysLeft({ endsAt }: { endsAt: string | null }) {
+  const { t } = useStore();
   const [days, setDays] = useState(0);
   useEffect(() => { if (endsAt) setDays(Math.max(0, Math.ceil((Date.parse(endsAt) - Date.now()) / 864e5))); }, [endsAt]);
-  return days ? <span className="num">ends in {days}d</span> : null;
+  return days ? <span className="num">{t('ends in {n}d', { n: days })}</span> : null;
 }
 
 export function Heart({ slug }: { slug: string }) {
-  const { wish, toggleWish, toast } = useStore();
+  const { wish, toggleWish, toast, t } = useStore();
   const on = wish.includes(slug);
   return (
-    <button className={`heart ${on ? 'on' : ''}`} aria-label={on ? 'Remove from wishlist' : 'Save to wishlist'} aria-pressed={on}
-      onClick={() => { toggleWish(slug); if (!on) toast('Saved to your wishlist'); }}>
+    <button className={`heart ${on ? 'on' : ''}`} aria-label={t(on ? 'Remove from wishlist' : 'Save to wishlist')} aria-pressed={on}
+      onClick={() => { toggleWish(slug); if (!on) toast(t('Saved to your wishlist')); }}>
       <svg viewBox="0 0 24 24" width="16" height="16" fill={on ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></svg>
     </button>
   );
@@ -46,7 +47,7 @@ export function flyToBag(from: Element | null) {
 }
 
 export default function ProductCard({ p, brand }: { p: CardProduct; brand?: string }) {
-  const { add, toast } = useStore();
+  const { add, toast, t } = useStore();
   return (
     <article className="card">
       <div className="frame">
@@ -54,7 +55,7 @@ export default function ProductCard({ p, brand }: { p: CardProduct; brand?: stri
         <Link className={`art ${p.offer?.style === 'glow' ? 'glow' : ''}`} href={`/p/${p.slug}`} aria-label={`${p.name}, ${p.sub}`}>
           <OfferBadge p={p} /><Art p={p} brand={brand} />
         </Link>
-        <button className="quick" onClick={e => { flyToBag(e.currentTarget); add(p.slug); toast(`${p.name} added to your bag`); }}>Add to bag</button>
+        <button className="quick" onClick={e => { flyToBag(e.currentTarget); add(p.slug); toast(t('{x} added to your bag', { x: p.name })); }}>{t('Add to bag')}</button>
       </div>
       <Link className="row" href={`/p/${p.slug}`}>
         <div><h3>{p.name}</h3><div className="sub">{p.sub}</div></div>

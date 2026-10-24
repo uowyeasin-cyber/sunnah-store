@@ -1,10 +1,12 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { useStore } from './StoreProvider';
 
 export type HeroSlide = { id: string; eyebrow: string; title: string; italic: string; text: string; cta: string; href: string; dark: boolean; full: boolean; art: React.ReactNode };
 
 export default function Hero({ slides, secs }: { slides: HeroSlide[]; secs: number }) {
+  const { t } = useStore();
   const [i, setI] = useState(0);
   const [ready, setReady] = useState(false);
   const box = useRef<HTMLElement>(null);
@@ -31,7 +33,7 @@ export default function Hero({ slides, secs }: { slides: HeroSlide[]; secs: numb
             <div className="kicker">{s.eyebrow}</div>
             <h1 className="split"><span className="ln"><span>{s.title}</span></span>{s.italic && <span className="ln"><span><em>{s.italic}</em></span></span>}</h1>
             {s.text && <p className="lead">{s.text}</p>}
-            <div className="cta">{s.cta && <Link className={`btn ${s.dark ? 'brass' : ''}`} href={s.href}>{s.cta}</Link>}{k === 0 && <a className="link-arrow" href="#cats">Explore the collections <span aria-hidden="true">→</span></a>}</div>
+            <div className="cta">{s.cta && <Link className={`btn ${s.dark ? 'brass' : ''}`} href={s.href}>{s.cta}</Link>}{k === 0 && <a className="link-arrow" href="#cats">{t('Explore the collections')} <span aria-hidden="true">→</span></a>}</div>
           </div>
         </div>
       ))}

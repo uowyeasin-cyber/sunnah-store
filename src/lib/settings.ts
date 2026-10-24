@@ -16,6 +16,7 @@ export type Settings = {
   admins: string[]; // up to five emails that open the admin panel
   holdReviews: boolean;
   allowVideoReviews: boolean;
+  translations: Partial<Record<'en' | 'bn' | 'ar' | 'hi', Record<string, string>>>; // admin's own, see lib/i18n
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -42,6 +43,7 @@ export const DEFAULT_SETTINGS: Settings = {
   admins: ['', '', '', '', ''],
   holdReviews: true,
   allowVideoReviews: true,
+  translations: {},
 };
 
 export const PRESETS: Record<string, { label: string; swatch: string; vars: Record<string, string> | null; dark?: boolean }> = {

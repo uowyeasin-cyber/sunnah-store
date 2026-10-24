@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getAds, getLiveReviews, getProduct, getProducts, getSettings } from '@/lib/catalog';
+import { getAds, getDict, getLiveReviews, getProduct, getProducts, getSettings } from '@/lib/catalog';
+import { isLang, makeT, type Lang } from '@/lib/i18n';
+
 import Art from '@/components/Art';
 import BuyBox from '@/components/BuyBox';
 import ProductCard, { Heart, OfferBadge } from '@/components/ProductCard';
@@ -15,14 +17,17 @@ export async function generateStaticParams() {
   return (await getProducts()).map(p => ({ slug: p.slug }));
 }
 
-export async function generateMetadata({ params }: PageProps<'/p/[slug]'>) {
-  const p = await getProduct((await params).slug);
+export async function generateMetadata({ params }: PageProps<'/[lang]/p/[slug]'>) {
+  const { slug, lang } = await params;
+  const p = await getProduct(slug, isLang(lang) ? lang : 'en');
   return p ? { title: `${p.name}, ${p.sub}`, description: p.details || p.sub } : {};
 }
 
-export default async function ProductPage({ params }: PageProps<'/p/[slug]'>) {
-  const { slug } = await params;
-  const [p, all, ads, s] = await Promise.all([getProduct(slug), getProducts(), getAds(), getSettings()]);
+export default async function ProductPage({ params }: PageProps<'/[lang]/p/[slug]'>) {
+  const { slug, lang: l } = await params;
+  const lang: Lang = isLang(l) ? l : 'en';
+  const [p, all, ads, s, dict] = await Promise.all([getProduct(slug, lang), getProducts(lang), getAds(lang), getSettings(lang), getDict(lang)]);
+  const t = makeT(dict);
   if (!p) notFound();
   const reviews = await getLiveReviews(p.id);
   const finishes = p.kind === 'pen' ? all.filter(x => x.kind === 'pen' && x.category.slug === p.category.slug) : [];
@@ -39,8 +44,8 @@ export default async function ProductPage({ params }: PageProps<'/p/[slug]'>) {
         </div>
       </div>
       <AdSlot ads={ads.filter(a => a.link !== p.slug)} place="product" products={all} brand={s.store.name} wrap={false} />
-      {sugg.length > 0 && <section><div className="sec-head"><div><div className="kicker">Complete the kit</div><h2>Goes well with</h2></div></div><div className="grid">{sugg.map(x => <ProductCard key={x.id} p={x} brand={s.store.name} />)}</div></section>}
-      <Reviews reviews={reviews}><ReviewForm productId={p.id} /></Reviews>
+      {sugg.length > 0 && <section><div className="sec-head"><div><div className="kicker">{t('Complete the kit')}</div><h2>{t('Goes well with')}</h2></div></div><div className="grid">{sugg.map(x => <ProductCard key={x.id} p={x} brand={s.store.name} />)}</div></section>}
+      <Reviews reviews={reviews} t={t}><ReviewForm productId={p.id} /></Reviews>
     </div>
   );
 }
