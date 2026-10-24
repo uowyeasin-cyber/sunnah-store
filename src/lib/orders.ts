@@ -47,7 +47,10 @@ export async function quote(input: Pick<CheckoutInput, 'lines' | 'country'>, cus
 export async function placeOrder(input: CheckoutInput) {
   const email = input.email.trim().toLowerCase();
   if (!input.lines.length) return { error: 'Your bag is empty.' };
-  if (!input.name.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || input.phone.replace(/\D/g, '').length < 6 || !input.address.trim() || !input.country) return { error: 'Please fill in your name, email, phone and address.' };
+  if (!input.name.trim()) return { error: 'Enter your full name.' };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: 'Enter a valid email address.' };
+  if (input.phone.replace(/\D/g, '').length < 6) return { error: 'Enter a phone number with digits, like +60 12 345 6789.' };
+  if (!input.address.trim() || !input.country) return { error: 'Enter your delivery address.' };
   if (!(await readyMethods(input.country)).some(m => m.id === input.pay)) return { error: 'Choose a payment method.' };
   const manual = input.pay.startsWith('m-');
   const trx = (input.trx || '').trim().slice(0, 60);

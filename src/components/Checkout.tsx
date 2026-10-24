@@ -71,7 +71,7 @@ export default function Checkout() {
         <div className="kicker">{s.t('Checkout')}</div><h2>{s.t('Delivery details')}</h2>
         <p className="muted" style={{ fontSize: '.9rem' }}>{s.t('No account needed. Your email becomes your account, so you can track the order and use store credit later.')}</p>
         <div className="two"><div className="field"><label htmlFor="n">{s.t('Full name')}</label><input id="n" autoComplete="name" required value={f.name} onChange={set('name')} /></div>
-          <div className="field"><label htmlFor="t">{s.t('Phone')}</label><input id="t" type="tel" autoComplete="tel" required value={f.phone} onChange={set('phone')} /></div></div>
+          <div className="field"><label htmlFor="t">{s.t('Phone')}</label><input id="t" type="tel" autoComplete="tel" required inputMode="tel" pattern="[+0-9 ()\-]{6,}" title="Digits only, like +60 12 345 6789" placeholder="+60 12 345 6789" value={f.phone} onChange={set('phone')} /></div></div>
         <div className="field"><label htmlFor="e">{s.t('Email')}</label><input id="e" type="email" autoComplete="email" required value={f.email} onChange={set('email')} /></div>
         <div className="field"><label htmlFor="c">{s.t('Country')}</label><select id="c" autoComplete="country-name" required value={f.country} onChange={set('country')}><option value="">{s.t('Choose…')}</option>{COUNTRIES.map(c => <option key={c}>{c}</option>)}</select></div>
         <div className="field"><label htmlFor="a">{s.t('Address')}</label><input id="a" autoComplete="street-address" required value={f.address} onChange={set('address')} /></div>
