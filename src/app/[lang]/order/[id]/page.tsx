@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { getSettings } from '@/lib/catalog';
 import { formatAmount, type Currency } from '@/lib/money';
 import { barcodeSvg, qrSvg } from '@/lib/codes';
+import ReceiptActions from '@/components/ReceiptActions';
 import Timeline from '@/components/Timeline';
 import { getDict } from '@/lib/catalog';
 import { isLang, makeT, type Lang } from '@/lib/i18n';
@@ -28,6 +29,7 @@ async function Receipt({ params }: { params: Promise<{ id: string; lang: string 
     <div className="receipt">
       <div className="top"><div><div className="kicker">{s.store.name} · {t('Receipt')}</div><h2>{t('Thank you, {x}.', { x: o.name.split(' ')[0] })}</h2></div><div className="num" style={{ textAlign: 'right' }}>{o.no}<br /><small>{o.createdAt.toLocaleString('en-US')}</small></div></div>
       <div className="body">
+        <ReceiptActions url={`/order/${o.id}`} title={`${s.store.name} · ${o.no}`} t={{ download: t('Download PDF'), share: t('Share'), copied: t('Link copied'), whatsapp: 'WhatsApp' }} />
         <div className="codes"><div className="qr" dangerouslySetInnerHTML={{ __html: qr }} /><div className="bar" dangerouslySetInnerHTML={{ __html: bar }} /></div>
         <div className="kv">
           <div><span>{t('Order number')}</span>{o.no}</div><div><span>{t('Order ID')}</span>{o.id}</div>
