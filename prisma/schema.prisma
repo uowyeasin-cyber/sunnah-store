@@ -5,7 +5,9 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url       = env("DATABASE_URL")
+  // Migrations need a direct connection; Neon on Vercel sets this one too.
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 // Store-wide settings edited in admin: store name, theme, menu, slides, rewards, admins.
