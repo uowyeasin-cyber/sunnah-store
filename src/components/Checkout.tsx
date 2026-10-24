@@ -32,7 +32,7 @@ export default function Checkout() {
   const [q, setQ] = useState<Q | null>(null);
   const [err, setErr] = useState('');
   const [busy, start] = useTransition();
-  const lines = s.bag;
+  const lines = s.bag.filter(l => !l.off).map(({ slug, qty }) => ({ slug, qty }));
   const key = JSON.stringify(lines);
 
   // Autofill: saved details on this device, then the signed-in account, then a guess from the time zone.

@@ -12,7 +12,8 @@ export default function Drawer() {
   const s = useStore();
   const close = () => s.open(null);
   const lines = s.bag.map(l => ({ ...l, p: s.products[l.slug] }));
-  const total = lines.reduce((a, l) => a + unitCents(l.p.priceCents, l.p.offer?.pct || 0) * l.qty, 0);
+  const chosen = lines.filter(l => !l.off);
+  const total = chosen.reduce((a, l) => a + unitCents(l.p.priceCents, l.p.offer?.pct || 0) * l.qty, 0);
   return (
     <>
       <div className={`scrim ${s.drawer ? 'open' : ''}`} onClick={close} />
@@ -20,15 +21,17 @@ export default function Drawer() {
         <div className="head"><h2>{s.t(s.drawer === 'wish' ? 'Wishlist' : s.drawer === 'account' ? 'Account' : 'Your bag')}</h2><button className="icon-btn" onClick={close} aria-label={s.t('Close')}>✕</button></div>
         {s.drawer === 'bag' && (lines.length ? <>
           <div className="items">{lines.map(l => (
-            <div className="line-item" key={l.slug}>
+            <div className={`line-item ${l.off ? 'off' : ''}`} key={l.slug}>
+              <input type="checkbox" className="pick" checked={!l.off} onChange={e => s.pick(l.slug, e.target.checked)} aria-label={s.t('Buy {x} now', { x: l.p.name })} />
               <div className="thumb"><Art p={l.p} /></div>
               <div style={{ flex: 1, minWidth: 0 }}><div>{l.p.name}</div><div className="muted" style={{ fontSize: '.82rem' }}>{l.p.sub}</div>
                 <div className="qty" style={{ marginTop: 6 }}><button onClick={() => s.setQty(l.slug, l.qty - 1)} aria-label={s.t('One less')}>−</button><span>{l.qty}</span><button onClick={() => s.setQty(l.slug, l.qty + 1)} aria-label={s.t('One more')}>+</button></div></div>
               <div className="num"><Price cents={l.p.priceCents * l.qty} pct={l.p.offer?.pct} /></div>
             </div>))}
           </div>
-          <div className="sum-row total"><span>{s.t('Total')}</span><span>{s.price(total)}</span></div>
-          <Link className="btn" href="/checkout" onClick={close}>{s.t('Checkout')}</Link>
+          {lines.length > 1 && <p className="muted" style={{ fontSize: '.8rem', margin: 0 }}>{s.t('Tick the items to order now. The rest stay in your bag.')}</p>}
+          <div className="sum-row total"><span>{s.t('Total')} ({chosen.reduce((a, l) => a + l.qty, 0)})</span><span>{s.price(total)}</span></div>
+          {chosen.length ? <Link className="btn" href="/checkout" onClick={close}>{s.t('Checkout')}</Link> : <button className="btn" disabled>{s.t('Tick an item to check out')}</button>}
         </> : <div className="empty"><h2>{s.t('Your bag is empty')}</h2><p>{s.t('Add something you love.')}</p></div>)}
         {s.drawer === 'wish' && (s.wish.length ? <div className="items">{s.wish.map(slug => { const p = s.products[slug]; return (
           <div className="line-item" key={slug}><div className="thumb"><Art p={p} /></div>

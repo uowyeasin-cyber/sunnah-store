@@ -708,3 +708,5 @@ html:not([lang=en]) *{letter-spacing:0 !important}
 @media print{.no-print,.side,header.nav{display:none!important}.admin{display:block!important}}
 .warn{color:#b8862b}
 .pay.soon{opacity:.45;cursor:not-allowed}
+.line-item .pick{width:18px;height:18px;flex:none;accent-color:var(--accent);cursor:pointer}
+.line-item.off .thumb,.line-item.off .num{opacity:.4}
