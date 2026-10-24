@@ -1,14 +1,15 @@
-import { sendMail } from '@/lib/mail';
+import nodemailer from 'nodemailer';
 
-// Sends one test email to the store's own Gmail. Only works while MAIL_TEST_KEY is set.
+// Checks the Gmail login and sends one test email to the store's own Gmail. Only works while MAIL_TEST_KEY is set.
 export async function GET(req: Request) {
   const key = process.env.MAIL_TEST_KEY;
   if (!key || new URL(req.url).searchParams.get('k') !== key) return new Response('Not found', { status: 404 });
-  const to = process.env.GMAIL_USER || '';
+  const user = process.env.GMAIL_USER || '', pass = (process.env.GMAIL_APP_PASSWORD || '').replace(/\s/g, '');
   try {
-    await sendMail(to, 'Store mail test', 'If you can read this, login codes will arrive too.');
-    return Response.json({ ok: true });
+    const smtp = nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user, pass } });
+    await smtp.sendMail({ from: `${process.env.MAIL_NAME || 'Store'} <${user}>`, to: user, subject: 'Store mail test', text: 'If you can read this, login codes will arrive too.' });
+    return Response.json({ ok: true, passLength: pass.length });
   } catch (e) {
-    return Response.json({ ok: false, error: String(e) }, { status: 500 });
+    return Response.json({ ok: false, passLength: pass.length, error: String(e) }, { status: 500 });
   }
 }
