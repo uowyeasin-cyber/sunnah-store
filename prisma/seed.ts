@@ -3,6 +3,8 @@ const db = new PrismaClient();
 
 // Sample catalogue so a fresh database looks like the approved prototype. Safe to re-run.
 async function main() {
+  // Runs on every deploy; only fills an empty database.
+  if (await db.category.count()) return;
   const cats = [['miswak-pens', 'Miswak pens'], ['miswak-sticks', 'Miswak sticks'], ['attar-oils', 'Attar & oils'], ['gift-sets', 'Gift sets'], ['accessories', 'Accessories']];
   const ids: Record<string, string> = {};
   for (const [i, [slug, name]] of cats.entries()) ids[slug] = (await db.category.upsert({ where: { slug }, update: {}, create: { slug, name, sort: i } })).id;
