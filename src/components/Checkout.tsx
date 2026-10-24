@@ -10,7 +10,17 @@ import { useStore } from './StoreProvider';
 type Q = Awaited<ReturnType<typeof checkoutQuote>>;
 const FIELDS = ['name', 'email', 'phone', 'country', 'address', 'city', 'zip'] as const;
 type Form = Record<(typeof FIELDS)[number], string>;
-const guessCountry = () => { const tz = Intl.DateTimeFormat().resolvedOptions().timeZone; return tz === 'Asia/Dhaka' ? 'Bangladesh' : tz === 'Asia/Kuala_Lumpur' ? 'Malaysia' : tz.startsWith('America/') ? 'United States' : ''; };
+// Country from the visitor's IP (pm-cc cookie set by the proxy), else from the time zone.
+const guessCountry = () => {
+  const cc = document.cookie.match(/(?:^|; )pm-cc=([A-Z]{2})/)?.[1];
+  if (cc) {
+    let name = ''; try { name = new Intl.DisplayNames(['en'], { type: 'region' }).of(cc) || ''; } catch {}
+    if (cc === 'TR') name = 'Turkey';
+    return COUNTRIES.includes(name) ? name : 'Other';
+  }
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return tz === 'Asia/Dhaka' ? 'Bangladesh' : tz === 'Asia/Kuala_Lumpur' ? 'Malaysia' : tz.startsWith('America/') ? 'United States' : '';
+};
 
 export default function Checkout() {
   const s = useStore();
@@ -27,7 +37,8 @@ export default function Checkout() {
   // Autofill: saved details on this device, then the signed-in account, then a guess from the time zone.
   useEffect(() => {
     let saved: Partial<Form> = {}; try { saved = JSON.parse(localStorage.getItem('pm-details') || '{}'); } catch {}
-    setF(x => ({ ...x, country: guessCountry(), ...saved }));
+    const filled = Object.fromEntries(Object.entries(saved).filter(([, v]) => v)); // a saved blank must not wipe the guess
+    setF(x => ({ ...x, country: guessCountry(), ...filled }));
   }, []);
   useEffect(() => {
     if (!lines.length || !f.country) { setQ(null); return; }
