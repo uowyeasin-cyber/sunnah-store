@@ -43,3 +43,10 @@ Cash on delivery works everywhere with no setup. Online methods appear at checko
 - **Touch 'n Go**: needs a Malaysian gateway account (for example Razer Merchant Services or iPay88); hidden until one is connected.
 
 A payment is marked paid only after the gateway confirms it server side and the amount and currency match the order.
+
+## Couriers and tracking
+
+- **Bangladesh (Steadfast):** with `STEADFAST_*` keys set, a cash-on-delivery order is booked the moment it is placed and an online order as soon as payment clears. The cash to collect is sent with it. If booking fails, the admin order page has a "Send to Steadfast" button.
+- **Everywhere else:** book with the courier (DHL, FedEx, Aramex, USPS, J&T…) and type the tracking number on the admin order page.
+- `/api/cron/track` checks every open order's courier status (Steadfast directly, others through Ship24), moves it forward, emails the customer from "Picked up" onward, and adds the reward credit on delivery. Vercel Hobby runs crons once a day only, so on Hobby use a free cron service (e.g. cron-job.org) every 1–2 hours with the `Authorization: Bearer <CRON_SECRET>` header.
+- Admins can override status, rider name and phone, and dates at any time.

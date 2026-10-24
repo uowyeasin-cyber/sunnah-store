@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { adminOrNull } from '@/lib/auth';
 import { formatAmount, type Currency } from '@/lib/money';
 import { STEPS } from '@/lib/tracking';
-import { refundOrder, saveOrder } from '../../orderActions';
+import { bookCourier, refundOrder, saveOrder } from '../../orderActions';
 
 const iso = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : '');
 
@@ -35,6 +35,10 @@ export default async function OrderAdmin({ params }: PageProps<'/admin/orders/[i
       <div className="two">{fld('etaFrom', 'Arrives from', iso(o.etaFrom), 'date')}{fld('etaTo', 'Arrives by', iso(o.etaTo), 'date')}</div>
       <button className="btn">Save order</button>
     </form>
+    {!o.trackingNo && (o.payStatus === 'paid' || o.payStatus === 'cod') && <form action={bookCourier} className="panel" style={{ display: 'flex', gap: 14, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+      <input type="hidden" name="id" value={o.id} /><span className="muted" style={{ fontSize: '.9rem' }}>{o.country === 'Bangladesh' ? 'Not booked with Steadfast yet.' : `Book with ${o.courier} on their site, then add the tracking number above. Tracking then updates on its own.`}</span>
+      {o.country === 'Bangladesh' && <button className="btn sm">Send to Steadfast</button>}
+    </form>}
     {o.customerId && <form action={refundOrder} className="panel" style={{ display: 'grid', gap: 14 }}>
       <input type="hidden" name="id" value={o.id} />
       <div className="kicker">Refund as store credit</div>

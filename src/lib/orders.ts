@@ -6,6 +6,7 @@ import { convert, formatAmount, unitCents, type Currency } from './money';
 import { getSettings } from './catalog';
 import { shippingFor } from './shipping';
 import { readyMethods } from './pay';
+import { sendToCourierSafe } from './fulfil';
 import { STEPS } from './tracking';
 import { sendMail } from './mail';
 
@@ -75,6 +76,7 @@ export async function placeOrder(input: CheckoutInput) {
     return o;
   });
   await sendReceipt(order.id).catch(e => console.error('receipt mail failed', e));
+  if (order.payStatus === 'cod') await sendToCourierSafe(order.id);
   return { id: order.id, pay: order.payStatus === 'pending' };
 }
 

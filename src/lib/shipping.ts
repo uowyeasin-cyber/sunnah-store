@@ -1,7 +1,7 @@
 import type { Currency } from './money';
 
 // Which warehouse ships to a country, the default courier, cost (USD cents) and delivery days.
-// Courier APIs are connected in phase 4; until then the courier name is a label on the order.
+// Steadfast is booked automatically (lib/fulfil); other couriers are booked by hand and tracked through Ship24.
 export const COUNTRIES = [
   'Bangladesh', 'Malaysia', 'United States', 'United Kingdom', 'Canada', 'Australia', 'Saudi Arabia', 'United Arab Emirates', 'Qatar', 'Kuwait', 'Oman', 'Bahrain',
   'India', 'Pakistan', 'Indonesia', 'Singapore', 'Brunei', 'Turkey', 'Germany', 'France', 'Netherlands', 'Italy', 'Spain', 'Sweden', 'Ireland', 'South Africa', 'Nigeria', 'Egypt', 'Other',
@@ -10,7 +10,7 @@ export const COUNTRIES = [
 export type Ship = { warehouse: 'BD' | 'MY' | 'US'; courier: string; costCents: number; days: [number, number]; currency: Currency };
 
 export function shippingFor(country: string, subtotalUsdCents: number): Ship {
-  if (country === 'Bangladesh') return { warehouse: 'BD', courier: 'Pathao Courier', costCents: subtotalUsdCents >= 2500 ? 0 : 100, days: [1, 3], currency: 'BDT' };
+  if (country === 'Bangladesh') return { warehouse: 'BD', courier: 'Steadfast Courier', costCents: subtotalUsdCents >= 2500 ? 0 : 100, days: [1, 3], currency: 'BDT' };
   if (country === 'Malaysia') return { warehouse: 'MY', courier: 'J&T Express', costCents: subtotalUsdCents >= 4000 ? 0 : 200, days: [2, 4], currency: 'MYR' };
   if (country === 'United States') return { warehouse: 'US', courier: 'USPS', costCents: subtotalUsdCents >= 7500 ? 0 : 600, days: [2, 5], currency: 'USD' };
   const near = ['Singapore', 'Brunei', 'Indonesia', 'Australia'].includes(country);

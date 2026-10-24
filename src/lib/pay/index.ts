@@ -74,6 +74,8 @@ export async function markPaid(id: string, ref: string, amount: number, currency
   if (Math.abs(amount - Number(o.total)) > 0.01 || currency.toUpperCase() !== o.currency) { console.error('payment mismatch', o.no, amount, currency); return; }
   const events = [...(o.events as object[]), { at: new Date().toISOString(), step: o.status, note: `Payment received (${o.payMethod.toUpperCase()})` }];
   await db.order.update({ where: { id }, data: { payStatus: 'paid', payRef: ref, events } });
+  const { sendToCourierSafe } = await import('@/lib/fulfil');
+  await sendToCourierSafe(id);
 }
 export const markFailed = (id: string) => db.order.updateMany({ where: { id, payStatus: 'pending' }, data: { payStatus: 'failed' } });
 
