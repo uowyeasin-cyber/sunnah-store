@@ -22,3 +22,12 @@ export async function saveUpload(file: File, folder: string) {
   await writeFile(dest, Buffer.from(await file.arrayBuffer()));
   return `/uploads/${name}`;
 }
+
+const BLOB_URL = /^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\//;
+export const isVideoUrl = (u: string) => /\.(mp4|mov|webm|m4v|ogv)$/i.test(u);
+
+// Forms send either a File (local dev) or the Blob URL that BlobUploads already uploaded from the browser.
+export async function keepUpload(v: FormDataEntryValue | null, folder: string): Promise<string> {
+  if (typeof v === 'string') return BLOB_URL.test(v) ? v : '';
+  return v instanceof File && v.size ? saveUpload(v, folder) : '';
+}

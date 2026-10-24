@@ -4,6 +4,7 @@ import { currentCustomer, isAdminEmail } from '@/lib/auth';
 import { getSettings } from '@/lib/catalog';
 import AdminSignIn from './AdminSignIn';
 import AdminNav from './AdminNav';
+import BlobUploads from '@/components/BlobUploads';
 import Html from '@/components/Html';
 import '../globals.css';
 
@@ -22,6 +23,7 @@ async function Gate({ children }: { children: React.ReactNode }) {
   return (
     <div className="wrap"><div className="admin">
       <AdminNav />
+      <BlobUploads />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18, minWidth: 0 }}>{children}</div>
     </div></div>
   );

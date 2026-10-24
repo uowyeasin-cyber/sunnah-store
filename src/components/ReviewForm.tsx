@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { submitReview } from '@/app/actions';
 import { useStore } from './StoreProvider';
+import BlobUploads from './BlobUploads';
 
 export default function ReviewForm({ productId }: { productId: string }) {
   const { t } = useStore();
@@ -10,6 +11,7 @@ export default function ReviewForm({ productId }: { productId: string }) {
   if (done) return <p className="write">{done}</p>;
   return (
     <form className="write" action={async fd => { fd.set('stars', String(stars)); fd.set('productId', productId); const r = await submitReview(fd); setDone(r.message); }}>
+      <BlobUploads folder="reviews" />
       <div className="serif" style={{ fontSize: '1.2rem' }}>{t('Write a review')}</div>
       <div className="filters">{[1, 2, 3, 4, 5].map(n => <button type="button" key={n} className={`chip ${n === stars ? 'on' : ''}`} onClick={() => setStars(n)}>{n} ★</button>)}</div>
       <div className="two"><div className="field"><label htmlFor="rn">{t('Name')}</label><input id="rn" name="name" required maxLength={60} /></div><div className="field"><label htmlFor="rp">{t('City, country')}</label><input id="rp" name="place" maxLength={60} /></div></div>

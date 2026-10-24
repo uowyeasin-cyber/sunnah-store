@@ -4,14 +4,14 @@ import { redirect } from 'next/navigation';
 import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 import { getSettings } from '@/lib/catalog';
-import { saveUpload } from '@/lib/upload';
+import { keepUpload, isVideoUrl } from '@/lib/upload';
 import type { NavItem, Settings, Slide } from '@/lib/settings';
 
 // Every admin change: check the signer is an admin, write, then refresh the storefront cache.
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim();
 const num = (fd: FormData, k: string) => Number(fd.get(k)) || 0;
 const slugify = (s: string) => s.toLowerCase().normalize('NFKD').replace(/[^\w\s-]/g, '').trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-').slice(0, 60) || 'item';
-async function file(fd: FormData, k: string, folder: string) { const f = fd.get(k); return f instanceof File && f.size ? saveUpload(f, folder) : ''; }
+async function file(fd: FormData, k: string, folder: string) { return keepUpload(fd.get(k), folder); }
 async function setSetting<K extends keyof Settings>(key: K, value: Settings[K]) {
   await db.setting.upsert({ where: { key }, update: { value: value as object }, create: { key, value: value as object } });
 }
@@ -35,8 +35,8 @@ export async function saveSlides(fd: FormData) {
     const old = s.slides.find(x => x.id === id);
     let image = old?.image || '', video = old?.video || '';
     if (fd.get(`clear-${i}`)) image = video = '';
-    const up = fd.get(`media-${i}`);
-    if (up instanceof File && up.size) { const url = await saveUpload(up, 'slides'); if (up.type.startsWith('video/')) { video = url; image = ''; } else { image = url; video = ''; } }
+    const url = await keepUpload(fd.get(`media-${i}`), 'slides');
+    if (url) { if (isVideoUrl(url)) { video = url; image = ''; } else { image = url; video = ''; } }
     slides.push({ id, eyebrow: str(fd, `eyebrow-${i}`), title: str(fd, `title-${i}`), italic: str(fd, `italic-${i}`), text: str(fd, `text-${i}`), product: str(fd, `product-${i}`), cta: str(fd, `cta-${i}`), look: str(fd, `look-${i}`) === 'dark' ? 'dark' : 'light', image, video });
   }
   if (fd.get('add')) slides.push({ id: 's' + Date.now(), eyebrow: 'New', title: 'Your headline', italic: '', text: '', product: '', cta: 'Discover', look: 'light', image: '', video: '' });
@@ -88,7 +88,7 @@ export async function saveProduct(fd: FormData) {
   let images = old?.images || [];
   const remove = new Set(fd.getAll('removeImage').map(String));
   images = images.filter(u => !remove.has(u));
-  for (const f of fd.getAll('images')) if (f instanceof File && f.size) images.push(await saveUpload(f, 'products'));
+  for (const f of fd.getAll('images')) { const u = await keepUpload(f, 'products'); if (u) images.push(u); }
   let video = fd.get('clearVideo') ? '' : old?.video || '';
   const v = await file(fd, 'video', 'products'); if (v) video = v;
   const data = {
@@ -145,8 +145,8 @@ export async function saveAd(fd: FormData) {
   const old = id ? await db.ad.findUnique({ where: { id } }) : null;
   let image = old?.image || '', video = old?.video || '';
   if (fd.get('clearMedia')) image = video = '';
-  const up = fd.get('media');
-  if (up instanceof File && up.size) { const url = await saveUpload(up, 'ads'); if (up.type.startsWith('video/')) { video = url; image = ''; } else { image = url; video = ''; } }
+  const url = await keepUpload(fd.get('media'), 'ads');
+  if (url) { if (isVideoUrl(url)) { video = url; image = ''; } else { image = url; video = ''; } }
   const date = (k: string) => (str(fd, k) ? new Date(str(fd, k) + (k === 'endsAt' ? 'T23:59:59' : 'T00:00:00')) : null);
   const data = { on: !!fd.get('on'), place: str(fd, 'place'), kicker: str(fd, 'kicker'), title: str(fd, 'title') || 'Untitled', text: str(fd, 'text'), cta: str(fd, 'cta'), link: str(fd, 'link'), style: str(fd, 'style') || 'dark', image, video, startsAt: date('startsAt'), endsAt: date('endsAt'), sort: num(fd, 'sort') };
   if (id) await db.ad.update({ where: { id }, data }); else await db.ad.create({ data });
