@@ -108,7 +108,7 @@ button{cursor:pointer}
 .hero p.lead{font-size:1.08rem;max-width:30em;margin-top:26px;color:var(--muted)}
 .cta{display:flex;gap:28px;flex-wrap:wrap;align-items:center;margin-top:38px}
 .stage{background:radial-gradient(ellipse at 32% 22%,var(--surface),var(--cloth) 80%);border-radius:calc(var(--radius) * .6);aspect-ratio:5/4;display:grid;place-items:center;overflow:hidden;position:relative;max-width:100%}
-.stage>svg,.stage .float>svg{width:92%;transform:rotate(-24deg);overflow:visible}
+.stage svg,.stage .float svg{width:92%;transform:rotate(-24deg);overflow:visible}
 .stage img{width:100%;height:100%;object-fit:cover}
 .hero-stage{background:none}
 .hero-stage .float{width:100%;display:grid;place-items:center;animation:float 7s ease-in-out infinite}
@@ -515,12 +515,12 @@ body.leaving #app{opacity:0;transform:translateY(-10px)}
 .sec-head.reveal.in h2{clip-path:inset(-10% -5% -25% -5%);transform:none}
 .card.reveal .art,.cat-tile.reveal,.pdp .stage.reveal,.ad.reveal .ad-art{clip-path:inset(100% 0 0 0);transition:clip-path 1.4s cubic-bezier(.76,0,.24,1)}
 .card.reveal.in .art,.cat-tile.reveal.in,.pdp .stage.reveal.in,.ad.reveal.in .ad-art{clip-path:inset(0)}
-.card.reveal .art>svg,.card.reveal .art>img{scale:1.18;transition:scale 1.8s var(--ease),transform .9s var(--ease)}
-.card.reveal.in .art>svg,.card.reveal.in .art>img{scale:1}
+.card.reveal .art svg,.card.reveal .art img{scale:1.18;transition:scale 1.8s var(--ease),transform .9s var(--ease)}
+.card.reveal.in .art svg,.card.reveal.in .art img{scale:1}
 .card .art{transition:box-shadow .6s var(--ease)}
 .card:hover .art{box-shadow:0 30px 60px -40px rgba(40,28,10,.55)}
 .pdp .stage{perspective:900px}
-.pdp .stage>svg{transform:rotateY(calc(var(--mx,0) * 14deg)) rotateX(calc(var(--my,0) * -10deg)) rotate(-24deg);transition:transform .9s var(--ease)}
+.pdp .stage svg{transform:rotateY(calc(var(--mx,0) * 14deg)) rotateX(calc(var(--my,0) * -10deg)) rotate(-24deg);transition:transform .9s var(--ease)}
 .specs b i{font-style:normal;font-variant-numeric:tabular-nums}
 
 /* marquee */
@@ -565,9 +565,9 @@ body.leaving #app{opacity:0;transform:translateY(-10px)}
 
 /* popup */
 .ad-pop{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:16px;background:rgba(15,11,6,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .5s var(--ease)}
-body.pop-open .ad-pop{opacity:1;pointer-events:auto}
+.ad-pop.open{opacity:1;pointer-events:auto}
 .pop-card{position:relative;width:min(760px,100%);max-height:calc(100vh - 32px);overflow:auto;display:grid;grid-template-columns:1fr 1fr;border-radius:calc(var(--radius) * .6);background:var(--bg);transform:translateY(30px) scale(.96);opacity:0;transition:transform .8s var(--ease),opacity .6s var(--ease)}
-body.pop-open .pop-card{transform:none;opacity:1}
+.ad-pop.open .pop-card{transform:none;opacity:1}
 .pop-card.ad-dark{background:var(--night)} .pop-card.ad-gold{background:linear-gradient(120deg,#e9d3a1,#c9a35e 45%,#f3e3bb)}
 .pop-card.pop-wide{display:block;width:min(1100px,100%);background:transparent}
 .pop-wide .ad-ticker{border-radius:8px}
@@ -668,3 +668,4 @@ footer .logo{letter-spacing:.24em;text-transform:uppercase;font-size:1.3rem}
 @media (max-width:540px){.offer.stamp{width:58px;height:58px;padding:9px;font-size:.4rem;letter-spacing:.1em;top:10px;left:10px}.offer.pill{top:10px;left:10px;font-size:.44rem;letter-spacing:.14em;padding:6px 8px;gap:5px;max-width:calc(100% - 58px);white-space:nowrap}.offer.ribbon{font-size:.42rem;padding:5px 50px;left:-52px;top:12px}}
 @keyframes fade{from{opacity:.3;transform:translateY(8px)}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal,.split .ln>span,.s-copy .kicker,.s-copy .lead,.s-copy .cta,.m-links a,.pop-card,.sec-head h2{opacity:1!important;transform:none!important;clip-path:none!important}.reveal .art,.reveal .ad-art{clip-path:none!important}.mq-track{animation:none!important}.intro{display:none}}
+.line-item s,.price s{margin-right:8px}
