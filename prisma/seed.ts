@@ -3,6 +3,7 @@ const db = new PrismaClient();
 
 // Sample catalogue so a fresh database looks like the approved prototype. Safe to re-run.
 async function main() {
+  await addAdmins();
   // Runs on every deploy; only fills an empty database.
   if (await db.category.count()) return;
   const cats = [['miswak-pens', 'Miswak pens'], ['miswak-sticks', 'Miswak sticks'], ['attar-oils', 'Attar & oils'], ['gift-sets', 'Gift sets'], ['accessories', 'Accessories']];
@@ -42,5 +43,15 @@ async function main() {
   }
   const owner = process.env.SEED_ADMIN_EMAIL;
   if (owner) await db.setting.upsert({ where: { key: 'admins' }, update: {}, create: { key: 'admins', value: [owner, '', '', '', ''] } });
+}
+// SEED_ADMIN_EMAILS (comma separated) is merged into the admin list on every deploy.
+async function addAdmins() {
+  const add = (process.env.SEED_ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
+  if (!add.length) return;
+  const row = await db.setting.findUnique({ where: { key: 'admins' } });
+  const list = ((row?.value as string[] | undefined) || []).filter(Boolean);
+  for (const e of add) if (!list.some(a => a.toLowerCase() === e.toLowerCase())) list.push(e);
+  const value = [...list, '', '', '', '', ''].slice(0, 5);
+  await db.setting.upsert({ where: { key: 'admins' }, update: { value }, create: { key: 'admins', value } });
 }
 main().finally(() => db.$disconnect());
