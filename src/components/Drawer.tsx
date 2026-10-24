@@ -31,6 +31,7 @@ export default function Drawer() {
           </div>
           {lines.length > 1 && <p className="muted" style={{ fontSize: '.8rem', margin: 0 }}>{s.t('Tick the items to order now. The rest stay in your bag.')}</p>}
           <div className="sum-row total"><span>{s.t('Total')} ({chosen.reduce((a, l) => a + l.qty, 0)})</span><span>{s.price(total)}</span></div>
+          {s.pre && <p className="pre-line">{s.t('Pre-order')} · {s.t(s.pre)}</p>}
           {chosen.length ? <Link className="btn" href="/checkout" onClick={close}>{s.t('Checkout')}</Link> : <button className="btn" disabled>{s.t('Tick an item to check out')}</button>}
         </> : <div className="empty"><h2>{s.t('Your bag is empty')}</h2><p>{s.t('Add something you love.')}</p></div>)}
         {s.drawer === 'wish' && (s.wish.length ? <div className="items">{s.wish.map(slug => { const p = s.products[slug]; return (

@@ -36,7 +36,7 @@ async function Receipt({ params }: { params: Promise<{ id: string; lang: string 
         <div className="kv">
           <div><span>{t('Order number')}</span>{o.no}</div><div><span>{t('Order ID')}</span><code className="oid">{o.id}</code></div>
           <div><span>{t('Payment')}</span>{o.payMethod === 'cod' ? t('Cash on delivery') : o.payMethod.replace(/^m-/, '').toUpperCase()} · {t(o.payStatus === 'paid' ? 'Paid' : o.payStatus === 'cod' ? 'Pay on delivery' : 'Awaiting payment')}</div>
-          <div><span>{t('Arrives')}</span>{day(o.etaFrom)} – {day(o.etaTo)}</div>
+          {o.preorder && o.status === 0 ? <div><span>{t('Pre-order')}</span>{t(o.preorder)}</div> : <div><span>{t('Arrives')}</span>{day(o.etaFrom)} – {day(o.etaTo)}</div>}
           <div><span>{t('Courier')}</span>{o.courier}{o.trackingNo && ` · ${o.trackingNo}`}</div>
           <div><span>{t('Deliver to')}</span>{addr.address}{addr.city && `, ${addr.city}`} {addr.zip}, {o.country}</div>
         </div>

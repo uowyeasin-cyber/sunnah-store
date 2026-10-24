@@ -66,13 +66,14 @@ export async function placeOrder(input: CheckoutInput, source = '', campaign = '
   const now = new Date();
   const no = `PM-${String(now.getFullYear()).slice(2)}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${randomInt(10000, 99999)}`;
   const day = (n: number) => new Date(Date.now() + n * 864e5);
+  const st = await getSettings(), preorder = st.preorder?.on ? (st.preorder.ships || 'Pre-order').slice(0, 120) : '';
   const order = await db.$transaction(async tx => {
     const o = await tx.order.create({ data: {
       no, customerId: customer.id, name: input.name.trim(), email, phone: input.phone.trim(), country: input.country,
       address: { address: input.address.trim(), city: input.city.trim(), zip: input.zip.trim(), state: (input.state || '').trim().slice(0, 40) }, currency: q.cur,
       subtotal: D(q.subtotal), saved: D(q.saved), shipping: D(q.shipping), creditUsed: D(q.credit), total: D(q.total), rewardEarned: D(q.reward),
-      payMethod: input.pay, source, campaign, payStatus: input.pay === 'cod' || q.total === 0 ? 'cod' : 'pending', payRef: manual ? trx : '', warehouse: q.ship.warehouse, courier: q.ship.courier,
-      etaFrom: day(q.ship.days[0]), etaTo: day(q.ship.days[1]), events: [{ at: now.toISOString(), step: 0, note: STEPS[0] }],
+      payMethod: input.pay, source, campaign, preorder, payStatus: input.pay === 'cod' || q.total === 0 ? 'cod' : 'pending', payRef: manual ? trx : '', warehouse: q.ship.warehouse, courier: q.ship.courier,
+      etaFrom: day(q.ship.days[0]), etaTo: day(q.ship.days[1]), events: [{ at: now.toISOString(), step: 0, note: STEPS[0] }, ...(preorder ? [{ at: now.toISOString(), step: -1, note: `Pre-order: ${preorder}` }] : [])],
       lines: { create: q.lines.map(l => ({ productId: l.p.id, name: `${l.p.name}${l.p.kind === 'pen' ? ' · ' + l.p.sub : ''}`, qty: l.qty, unit: D(l.unit), full: D(l.full), cost: D(l.cost) })) },
     } });
     if (q.credit > 0) {
@@ -96,6 +97,6 @@ export async function sendReceipt(orderId: string) {
     `Thank you, ${o.name}. Order ${o.no} is placed.`, '',
     ...o.lines.map(l => `${l.qty} × ${l.name}  ${f(l.unit)}`), '',
     `Total: ${f(o.total)}${Number(o.saved) ? `  (you saved ${f(o.saved)})` : ''}`,
-    `Arrives ${o.etaFrom?.toDateString()} – ${o.etaTo?.toDateString()} by ${o.courier}.`, '', `Receipt and tracking: ${url}`,
+    o.preorder ? `Pre-order: ${o.preorder}. We email you when it ships.` : `Arrives ${o.etaFrom?.toDateString()} – ${o.etaTo?.toDateString()} by ${o.courier}.`, '', `Receipt and tracking: ${url}`,
   ].join('\n'));
 }

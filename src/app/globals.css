@@ -845,3 +845,23 @@ html:not([lang=en]) *{letter-spacing:0 !important}
   .s-copy{height:770px;justify-content:flex-start;padding-block:225px 90px}
   .s-copy h1{margin-top:14px}
 }
+
+/* Product media */
+.card .art img.alt{position:absolute;inset:0;opacity:0;transition:opacity .8s var(--ease),transform .9s var(--ease)}
+.card:hover .art img.alt{opacity:1}
+.stage video{width:100%;height:100%;object-fit:cover}
+.stage .fade-in{animation:fadeIn .6s var(--ease)}
+@keyframes fadeIn{from{opacity:.2}to{opacity:1}}
+.stage .thumbs{position:absolute;left:12px;right:12px;bottom:12px;z-index:4;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.stage .thumbs button{position:relative;width:54px;height:54px;padding:0;border:1px solid rgba(255,255,255,.25);border-radius:8px;overflow:hidden;background:#000;cursor:pointer;opacity:.7;transition:opacity .3s,border-color .3s,transform .3s}
+.stage .thumbs button.on{opacity:1;border-color:var(--gold-b);transform:translateY(-2px)}
+.stage .thumbs img{width:100%;height:100%;object-fit:cover}
+.stage .thumbs .play{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:.8rem;text-shadow:0 1px 4px #000}
+@media (max-width:540px){.stage .thumbs button{width:44px;height:44px}}
+.pdp .stage:has(.thumbs){aspect-ratio:1}
+
+/* Pre-order */
+.pre-pill{position:absolute;left:12px;bottom:12px;z-index:3;padding:5px 10px;border-radius:99px;background:rgba(15,13,11,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--gold-b);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;border:1px solid color-mix(in srgb,var(--gold-b) 45%,transparent)}
+.pre-note{display:flex;gap:12px;align-items:center;padding:12px 14px;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:calc(var(--radius) * .4);font-size:.88rem;background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.pre-tag{flex:none;padding:4px 9px;border-radius:99px;background:linear-gradient(135deg,var(--gold-a),var(--gold-b));color:#1c1510;font-size:.6rem;letter-spacing:.18em;text-transform:uppercase}
+.pre-line{font-size:.85rem;color:var(--accent);margin:0}

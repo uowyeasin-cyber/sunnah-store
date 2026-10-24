@@ -11,7 +11,7 @@ const STICKS: [string, number, number][] = [['Daily', 8, 95], ['Thin', 6, 80], [
 const POCKETS: [string, number][] = [['Shirt chest', 120], ['Thobe chest', 140], ['Jacket inner', 160]];
 
 export default function BuyBox({ p, finishes }: { p: CardProduct; finishes: CardProduct[] }) {
-  const { add, toast, open, t } = useStore();
+  const { add, toast, open, t, pre } = useStore();
   const router = useRouter();
   const [st, setSt] = useState(0), [pk, setPk] = useState(0);
   const [, th, len] = STICKS[st], depth = POCKETS[pk][1], shows = 152 - depth;
@@ -26,9 +26,10 @@ export default function BuyBox({ p, finishes }: { p: CardProduct; finishes: Card
       <p className="verdict">{th > 12 ? <><b className="no">{t('Shave to 12 mm.')}</b> {t('The collar grips 6–12 mm.')}</> : <><b>{t('Grips.')}</b> {t('{n} mm sits in the 6–12 mm collar.', { n: th })}</>}{' '}
         {len > 116 ? t('Trim {n} mm so the cap closes.', { n: len - 116 }) : t('Closes with {n} mm to spare.', { n: 116 - len })}{' '}
         {shows > 0 ? t('{n} mm shows above the pocket, clip on the edge.', { n: shows }) : t('Fully inside the pocket, {n} mm below the edge.', { n: -shows })}</p></div>}
+    {pre && <div className="pre-note"><span className="pre-tag">{t('Pre-order')}</span><span>{t(pre)}. {t('Reserve yours now, we ship in order of booking.')}</span></div>}
     <div className="add">
-      <button className="btn" onClick={e => { flyToBag(e.currentTarget); add(p.slug); toast(t('{x} added to your bag', { x: p.name })); open('bag'); }}>{t('Add to bag')}</button>
-      <button className="btn ghost" onClick={() => { add(p.slug); router.push('/checkout'); }}>{t('Buy now')}</button>
+      <button className="btn" onClick={e => { flyToBag(e.currentTarget); add(p.slug); toast(t('{x} added to your bag', { x: p.name })); open('bag'); }}>{t(pre ? 'Pre-order' : 'Add to bag')}</button>
+      <button className="btn ghost" onClick={() => { add(p.slug); router.push('/checkout'); }}>{t(pre ? 'Pre-order now' : 'Buy now')}</button>
     </div>
   </>;
 }

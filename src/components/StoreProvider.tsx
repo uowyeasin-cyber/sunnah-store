@@ -15,6 +15,7 @@ type Store = {
   toggleWish: (slug: string) => void; pick: (slug: string, on: boolean) => void; setCur: (c: Currency) => void; open: (d: Drawer) => void;
   price: (usdCents: number) => string; toast: (msg: string) => void; message: string;
   lang: Lang; t: T;
+  pre: string; // pre-order shipping note, empty when selling from stock
 };
 const Ctx = createContext<Store | null>(null);
 export const useStore = () => useContext(Ctx) as Store;
@@ -22,7 +23,7 @@ export const useStore = () => useContext(Ctx) as Store;
 const read = <T,>(k: string, fallback: T): T => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch { return fallback; } };
 const write = (k: string, v: unknown) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 
-export default function StoreProvider({ products, rates, lang, dict, children }: { products: CardProduct[]; rates: Rates; lang: Lang; dict: Dict; children: React.ReactNode }) {
+export default function StoreProvider({ products, rates, lang, dict, pre = '', children }: { products: CardProduct[]; rates: Rates; lang: Lang; dict: Dict; pre?: string; children: React.ReactNode }) {
   const t = useMemo(() => makeT(dict), [dict]);
   const [bag, setBag] = useState<Line[]>([]);
   const [wish, setWish] = useState<string[]>([]);
@@ -50,6 +51,6 @@ export default function StoreProvider({ products, rates, lang, dict, children }:
   const setCur = useCallback((c: Currency) => { setCurState(c); write('pm-cur', c); }, []);
   const price = useCallback((c: number) => formatPrice(c, cur, rates), [cur, rates]);
 
-  const value = { me, refreshMe, products: byslug, bag: bag.filter(l => byslug[l.slug]), wish: wish.filter(s => byslug[s]), cur, rates, drawer, add, setQty, toggleWish, pick, setCur, open: setDrawer, price, toast, message, lang, t };
+  const value = { me, refreshMe, products: byslug, bag: bag.filter(l => byslug[l.slug]), wish: wish.filter(s => byslug[s]), cur, rates, drawer, add, setQty, toggleWish, pick, setCur, open: setDrawer, price, toast, message, lang, t, pre };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

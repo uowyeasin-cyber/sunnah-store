@@ -174,6 +174,8 @@ model Order {
   source      String      @default("")
   // Social media post or ad the buyer came through (Campaign.code), from a /go link.
   campaign    String      @default("")
+  // Pre-order shipping note at the time of the order, e.g. "Ships in 4–6 weeks". Empty for in-stock orders.
+  preorder    String      @default("")
   // pending, paid, cod, failed, refunded
   payStatus   String      @default("pending")
   payRef      String      @default("")

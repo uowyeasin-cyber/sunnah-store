@@ -1,0 +1,21 @@
+-- Studio photos and a video loop for each launch product. Leaves products that already have their own media alone.
+UPDATE "Product" SET "images" = ARRAY['/media/products/pocket-pen-champagne/1.webp','/media/products/pocket-pen-champagne/2.webp','/media/products/pocket-pen-champagne/3.webp','/media/products/pocket-pen-champagne/4.webp'] WHERE "slug" = 'pocket-pen-champagne' AND coalesce(cardinality("images"), 0) = 0;
+UPDATE "Product" SET "video" = '/media/products/pocket-pen-champagne/loop.mp4' WHERE "slug" = 'pocket-pen-champagne' AND "video" = '';
+UPDATE "Product" SET "images" = ARRAY['/media/products/pocket-pen-graphite/1.webp','/media/products/pocket-pen-graphite/2.webp','/media/products/pocket-pen-graphite/3.webp','/media/products/pocket-pen-graphite/4.webp'] WHERE "slug" = 'pocket-pen-graphite' AND coalesce(cardinality("images"), 0) = 0;
+UPDATE "Product" SET "video" = '/media/products/pocket-pen-graphite/loop.mp4' WHERE "slug" = 'pocket-pen-graphite' AND "video" = '';
+UPDATE "Product" SET "images" = ARRAY['/media/products/pocket-pen-brass/1.webp','/media/products/pocket-pen-brass/2.webp','/media/products/pocket-pen-brass/3.webp','/media/products/pocket-pen-brass/4.webp'] WHERE "slug" = 'pocket-pen-brass' AND coalesce(cardinality("images"), 0) = 0;
+UPDATE "Product" SET "video" = '/media/products/pocket-pen-brass/loop.mp4' WHERE "slug" = 'pocket-pen-brass' AND "video" = '';
+UPDATE "Product" SET "images" = ARRAY['/media/products/travel-pouch/1.webp','/media/products/travel-pouch/2.webp','/media/products/travel-pouch/3.webp','/media/products/travel-pouch/4.webp'] WHERE "slug" = 'travel-pouch' AND coalesce(cardinality("images"), 0) = 0;
+UPDATE "Product" SET "video" = '/media/products/travel-pouch/loop.mp4' WHERE "slug" = 'travel-pouch' AND "video" = '';
+UPDATE "Product" SET "images" = ARRAY['/media/products/peelu-sticks/1.webp','/media/products/peelu-sticks/2.webp','/media/products/peelu-sticks/3.webp','/media/products/peelu-sticks/4.webp'] WHERE "slug" = 'peelu-sticks' AND coalesce(cardinality("images"), 0) = 0;
+UPDATE "Product" SET "video" = '/media/products/peelu-sticks/loop.mp4' WHERE "slug" = 'peelu-sticks' AND "video" = '';
+UPDATE "Product" SET "images" = ARRAY['/media/products/peelu-sticks-family/1.webp','/media/products/peelu-sticks-family/2.webp','/media/products/peelu-sticks-family/3.webp','/media/products/peelu-sticks-family/4.webp'] WHERE "slug" = 'peelu-sticks-family' AND coalesce(cardinality("images"), 0) = 0;
+UPDATE "Product" SET "video" = '/media/products/peelu-sticks-family/loop.mp4' WHERE "slug" = 'peelu-sticks-family' AND "video" = '';
+UPDATE "Product" SET "images" = ARRAY['/media/products/perfume-oils/1.webp','/media/products/perfume-oils/2.webp','/media/products/perfume-oils/3.webp','/media/products/perfume-oils/4.webp'] WHERE "slug" = 'perfume-oils' AND coalesce(cardinality("images"), 0) = 0;
+UPDATE "Product" SET "video" = '/media/products/perfume-oils/loop.mp4' WHERE "slug" = 'perfume-oils' AND "video" = '';
+UPDATE "Product" SET "images" = ARRAY['/media/products/amber-oud-attar/1.webp','/media/products/amber-oud-attar/2.webp','/media/products/amber-oud-attar/3.webp','/media/products/amber-oud-attar/4.webp'] WHERE "slug" = 'amber-oud-attar' AND coalesce(cardinality("images"), 0) = 0;
+UPDATE "Product" SET "video" = '/media/products/amber-oud-attar/loop.mp4' WHERE "slug" = 'amber-oud-attar' AND "video" = '';
+UPDATE "Product" SET "images" = ARRAY['/media/products/leather-pocket-sleeve/1.webp','/media/products/leather-pocket-sleeve/2.webp','/media/products/leather-pocket-sleeve/3.webp','/media/products/leather-pocket-sleeve/4.webp'] WHERE "slug" = 'leather-pocket-sleeve' AND coalesce(cardinality("images"), 0) = 0;
+UPDATE "Product" SET "video" = '/media/products/leather-pocket-sleeve/loop.mp4' WHERE "slug" = 'leather-pocket-sleeve' AND "video" = '';
+UPDATE "Product" SET "images" = ARRAY['/media/products/gift-set/1.webp','/media/products/gift-set/2.webp','/media/products/gift-set/3.webp','/media/products/gift-set/4.webp'] WHERE "slug" = 'gift-set' AND coalesce(cardinality("images"), 0) = 0;
+UPDATE "Product" SET "video" = '/media/products/gift-set/loop.mp4' WHERE "slug" = 'gift-set' AND "video" = '';

@@ -32,7 +32,7 @@ export default async function StoreLayout({ children, params }: LayoutProps<'/[l
   const pop = live.find(a => a.place === 'popup');
   return (
     <Html lang={lang}>
-      <StoreProvider products={products} rates={s.rates} lang={lang} dict={dict}>
+      <StoreProvider products={products} rates={s.rates} lang={lang} dict={dict} pre={s.preorder?.on ? s.preorder.ships || 'Pre-order' : ''}>
         {s.store.announce && <div className="announce">{s.store.announce}</div>}
         <Header name={s.store.name} nav={s.nav} ticker={ticker} />
         <main>{children}</main>

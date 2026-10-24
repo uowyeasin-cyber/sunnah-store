@@ -25,6 +25,7 @@ export type Settings = {
   warehouses: Record<'BD' | 'MY' | 'US', Sender>; // ship-from addresses used when booking couriers
   parcel: { kgPerItem: number; cm: [number, number, number] }; // default parcel for courier booking
   regions: Record<Region, { courier: string; cod: boolean }>; // courier and cash on delivery per region, see lib/shipping
+  preorder: { on: boolean; ships: string }; // everything sells as pre-order, with when it ships
   translations: Partial<Record<'en' | 'bn' | 'ar' | 'hi', Record<string, string>>>; // admin's own, see lib/i18n
 };
 
@@ -52,6 +53,7 @@ export const DEFAULT_SETTINGS: Settings = {
   admins: ['', '', '', '', ''],
   holdReviews: true,
   allowVideoReviews: true,
+  preorder: { on: true, ships: 'Ships in 4–6 weeks' },
   translations: {},
   warehouses: { BD: { name: '', phone: '', email: '', street: '', city: '', state: '', zip: '' }, MY: { name: '', phone: '', email: '', street: '', city: '', state: '', zip: '' }, US: { name: '', phone: '', email: '', street: '', city: '', state: '', zip: '' } },
   parcel: { kgPerItem: 0.2, cm: [20, 12, 6] },

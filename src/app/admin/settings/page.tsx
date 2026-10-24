@@ -1,7 +1,7 @@
 import { adminOrNull } from '@/lib/auth';
 import { getSettings } from '@/lib/catalog';
 import { BODY_FONTS, DISPLAY_FONTS, PRESETS } from '@/lib/settings';
-import { saveRules, saveStore } from '../actions';
+import { savePreorder, saveRules, saveStore } from '../actions';
 
 export default async function SettingsPage() {
   if (!(await adminOrNull())) return null;
@@ -20,6 +20,13 @@ export default async function SettingsPage() {
       <div className="two"><div className="field"><label>Accent colour</label><input type="color" name="accent" defaultValue={s.theme.accent || '#9a7a45'} /><label style={{ fontSize: '.8rem' }}><input type="checkbox" name="accentOn" defaultChecked={!!s.theme.accent} /> Use this colour</label></div>
         <div className="field"><label>Corner roundness (px)</label><input type="number" name="radius" min="0" max="20" defaultValue={s.theme.radius} /></div></div>
       <div><button className="btn">Save design</button></div>
+    </form>
+    <form className="panel" action={savePreorder}>
+      <h3>Pre-order</h3>
+      <p className="muted" style={{ fontSize: '.88rem' }}>While on, every product shows a Pre-order badge and button, and checkout and the receipt say when it ships instead of a delivery date. Switch off when stock arrives.</p>
+      <label className="toggle"><span>Sell everything as pre-order</span><input type="checkbox" name="on" defaultChecked={s.preorder.on} /></label>
+      <div className="field"><label htmlFor="ships">When it ships (shown to customers)</label><input id="ships" name="ships" defaultValue={s.preorder.ships} placeholder="e.g. Ships from 15 December" /></div>
+      <div><button className="btn">Save pre-order</button></div>
     </form>
     <form className="panel" action={saveRules}>
       <h3>Rewards, currency and reviews</h3>

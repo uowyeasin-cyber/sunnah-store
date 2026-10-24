@@ -86,6 +86,12 @@ export async function saveMenu(fd: FormData) {
   done();
 }
 
+export async function savePreorder(fd: FormData) {
+  await requireAdmin();
+  await setSetting('preorder', { on: !!fd.get('on'), ships: str(fd, 'ships').slice(0, 120) || 'Ships in 4–6 weeks' });
+  done();
+}
+
 export async function saveRules(fd: FormData) {
   await requireAdmin();
   await setSetting('rewardRate', Math.min(5, Math.max(0, num(fd, 'rewardRate'))));

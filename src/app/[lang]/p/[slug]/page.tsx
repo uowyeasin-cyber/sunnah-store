@@ -4,6 +4,7 @@ import { getAds, getDict, getLiveReviews, getProduct, getProducts, getSettings }
 import { isLang, makeT, type Lang } from '@/lib/i18n';
 
 import Art from '@/components/Art';
+import Gallery from '@/components/Gallery';
 import BuyBox from '@/components/BuyBox';
 import ProductCard, { Heart, OfferBadge } from '@/components/ProductCard';
 import Reviews from '@/components/Reviews';
@@ -18,10 +19,16 @@ export async function generateStaticParams() {
   return (await getProducts()).map(p => ({ slug: p.slug }));
 }
 
+// Share preview picture: the studio JPEG for built-in media (WebP is not read everywhere), else the first photo.
+const ogImage = (p: { images: string[]; video: string }) => {
+  const u = p.video.startsWith('/media/') ? p.video.replace(/loop\.mp4$/, 'poster.jpg') : p.images[0] || '';
+  return u.startsWith('/') ? (process.env.SITE_URL || '') + u : u;
+};
+
 export async function generateMetadata({ params }: PageProps<'/[lang]/p/[slug]'>) {
   const { slug, lang } = await params;
   const p = await getProduct(slug, isLang(lang) ? lang : 'en');
-  return p ? { title: `${p.name}, ${p.sub}`, description: p.details || p.sub } : {};
+  return p ? { title: `${p.name}, ${p.sub}`, description: p.details || p.sub, openGraph: ogImage(p) ? { images: [ogImage(p)] } : undefined } : {};
 }
 
 export default async function ProductPage({ params }: PageProps<'/[lang]/p/[slug]'>) {
@@ -38,7 +45,7 @@ export default async function ProductPage({ params }: PageProps<'/[lang]/p/[slug
     <div className="wrap view">
       <ProductSeen id={p.id} />
       <div className="pdp">
-        <div style={{ position: 'relative' }}><Heart slug={p.slug} /><div className={`stage ${p.offer?.style === 'glow' ? 'glow' : ''}`}><OfferBadge p={p} />{p.video ? <video src={p.video} autoPlay muted loop playsInline /> : <Art p={p} open brand={s.store.name} />}</div></div>
+        <div style={{ position: 'relative' }}><Heart slug={p.slug} /><div className={`stage ${p.offer?.style === 'glow' ? 'glow' : ''}`}><OfferBadge p={p} /><Gallery images={p.images} video={p.video} poster={p.video.startsWith('/media/') ? p.video.replace(/loop\.mp4$/, 'poster.jpg') : ''} alt={`${p.name}, ${p.sub}`}><Art p={p} open brand={s.store.name} /></Gallery></div></div>
         <div className="buy">
           <div><div className="kicker"><Link href={`/c/${p.category.slug}`} style={{ textDecoration: 'none' }}>{p.category.name}</Link></div><h1 style={{ marginTop: 8 }}>{p.name}</h1><p className="muted" style={{ marginTop: 6 }}>{p.sub}</p></div>
           <BuyBox p={p} finishes={finishes} />

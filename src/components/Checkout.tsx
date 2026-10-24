@@ -96,7 +96,8 @@ export default function Checkout() {
           <div className="sum-row total"><span>{s.t('Total')}</span><span>{money(q.total)}</span></div>
           {q.saved > 0 && <div className="saved"><span>{s.t('You save')}</span><b>{money(q.saved)}</b></div>}
           {q.reward > 0 && <p className="earn">{s.t('You earn {x} in store credit when this order is delivered.', { x: money(q.reward) })}</p>}
-          <p className="muted" style={{ fontSize: '.85rem' }}>{s.t('Arrives in {a}–{b} days.', { a: q.days[0], b: q.days[1] })}</p>
+          {s.pre ? <p className="pre-line">{s.t('Pre-order')} · {s.t(s.pre)}. {s.t('Delivery takes {a}–{b} days after it ships.', { a: q.days[0], b: q.days[1] })}</p>
+            : <p className="muted" style={{ fontSize: '.85rem' }}>{s.t('Arrives in {a}–{b} days.', { a: q.days[0], b: q.days[1] })}</p>}
         </> : <p className="muted">{s.t('Choose your country to see delivery and total.')}</p>}
         {err && <p className="err">{s.t(err)}</p>}
         <button className="btn" disabled={busy || !q}>{s.t(busy ? 'Placing order…' : 'Place order')}</button>
