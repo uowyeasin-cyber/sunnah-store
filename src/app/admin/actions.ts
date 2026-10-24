@@ -188,6 +188,18 @@ export async function setReview(fd: FormData) {
   done();
 }
 
+export async function editReview(fd: FormData) {
+  await requireAdmin();
+  const id = str(fd, 'id'), old = await db.review.findUniqueOrThrow({ where: { id } });
+  const drop = new Set(fd.getAll('dropMedia').map(String));
+  await db.review.update({ where: { id }, data: {
+    name: str(fd, 'name').slice(0, 60) || old.name, place: str(fd, 'place').slice(0, 60), stars: Math.min(5, Math.max(1, num(fd, 'stars') || old.stars)),
+    text: str(fd, 'text').slice(0, 2000) || old.text, verified: !!fd.get('verified'), status: str(fd, 'status') === 'live' ? 'live' : str(fd, 'status') === 'pending' ? 'pending' : 'hidden',
+    media: old.media.filter(m => !drop.has(m)), createdAt: str(fd, 'date') ? new Date(str(fd, 'date') + 'T12:00:00Z') : old.createdAt,
+  } });
+  done();
+}
+
 // Stores only what differs from the built-in translation, so later built-in fixes still reach untouched text.
 export async function saveTranslations(fd: FormData) {
   await requireAdmin();
