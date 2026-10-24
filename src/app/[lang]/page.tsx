@@ -3,6 +3,7 @@ import { getAds, getCategories, getDict, getLiveReviews, getProducts, getSetting
 import { isLang, makeT, type Lang } from '@/lib/i18n';
 
 import Hero, { type HeroSlide } from '@/components/Hero';
+import LaunchFilm from '@/components/LaunchFilm';
 import Rail from '@/components/Rail';
 import ProductCard from '@/components/ProductCard';
 import Art from '@/components/Art';
@@ -26,6 +27,7 @@ export default async function Home({ params }: PageProps<'/[lang]'>) {
   const homeAds = ads.filter(a => adLive(a) && ['home-top', 'home-mid'].includes(a.place)).map(a => a.id);
   return (
     <div className="view">
+      {s.film.on && (s.film.wide || s.film.tall) && <LaunchFilm wide={s.film.wide} tall={s.film.tall} poster={s.film.poster} cta={t(s.film.cta)} labels={{ replay: t('Replay'), pause: t('Pause'), play: t('Play'), skip: t('Skip'), sound: t('Sound on'), mute: t('Mute') }} />}
       {slides.length > 0 && <Hero slides={slides} secs={s.slideSecs} />}
       <AdSlot ads={ads} place="home-top" products={products} brand={brand} />
       {first?.kind === 'pen' && <div className="wrap"><div className="specs">

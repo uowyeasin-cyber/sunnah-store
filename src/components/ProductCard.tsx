@@ -3,7 +3,7 @@ import Link from 'next/link';
 import type { CardProduct } from '@/lib/catalog';
 import Art from './Art';
 import Price from './Price';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore } from './StoreProvider';
 
 export function OfferBadge({ p }: { p: CardProduct }) {
@@ -53,7 +53,7 @@ export default function ProductCard({ p, brand }: { p: CardProduct; brand?: stri
       <div className="frame">
         <Heart slug={p.slug} />
         <Link className={`art ${p.offer?.style === 'glow' ? 'glow' : ''}`} href={`/p/${p.slug}`} aria-label={`${p.name}, ${p.sub}`}>
-          <OfferBadge p={p} /><Art p={p} brand={brand} />{p.images[1] && <img className="alt" src={p.images[1]} alt="" loading="lazy" />}{pre && <span className="pre-pill">{t('Pre-order')}</span>}
+          <OfferBadge p={p} /><Art p={p} brand={brand} />{p.video && <CardVideo src={p.video} poster={p.image} />}{pre && <span className="pre-pill">{t('Pre-order')}</span>}
         </Link>
         <button className="quick" onClick={e => { flyToBag(e.currentTarget); add(p.slug); toast(t('{x} added to your bag', { x: p.name })); }}>{t(pre ? 'Pre-order' : 'Add to bag')}</button>
       </div>
@@ -63,4 +63,15 @@ export default function ProductCard({ p, brand }: { p: CardProduct; brand?: stri
       </Link>
     </article>
   );
+}
+
+// Product loop in the card: loads and plays only while the card is on screen.
+function CardVideo({ src, poster }: { src: string; poster: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const v = ref.current; if (!v) return;
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { if (!v.src) v.src = src; v.play().catch(() => {}); } else v.pause(); }, { rootMargin: '120px' });
+    io.observe(v); return () => io.disconnect();
+  }, [src]);
+  return <video ref={ref} className="card-video" poster={poster || undefined} muted loop playsInline preload="none" aria-hidden="true" />;
 }

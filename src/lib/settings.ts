@@ -26,6 +26,7 @@ export type Settings = {
   parcel: { kgPerItem: number; cm: [number, number, number] }; // default parcel for courier booking
   regions: Record<Region, { courier: string; cod: boolean }>; // courier and cash on delivery per region, see lib/shipping
   preorder: { on: boolean; ships: string }; // everything sells as pre-order, with when it ships
+  film: { on: boolean; wide: string; tall: string; poster: string; cta: string }; // launch film at the top of the home page; tall is for phones
   translations: Partial<Record<'en' | 'bn' | 'ar' | 'hi', Record<string, string>>>; // admin's own, see lib/i18n
 };
 
@@ -54,6 +55,7 @@ export const DEFAULT_SETTINGS: Settings = {
   holdReviews: true,
   allowVideoReviews: true,
   preorder: { on: true, ships: 'Ships in 4–6 weeks' },
+  film: { on: true, wide: '/media/film/launch-16x9.mp4', tall: '/media/film/launch-4x5.mp4', poster: '/media/film/launch-16x9.jpg', cta: 'Pre-order now' },
   translations: {},
   warehouses: { BD: { name: '', phone: '', email: '', street: '', city: '', state: '', zip: '' }, MY: { name: '', phone: '', email: '', street: '', city: '', state: '', zip: '' }, US: { name: '', phone: '', email: '', street: '', city: '', state: '', zip: '' } },
   parcel: { kgPerItem: 0.2, cm: [20, 12, 6] },

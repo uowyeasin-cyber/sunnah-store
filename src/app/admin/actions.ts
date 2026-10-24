@@ -5,7 +5,7 @@ import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 import { getSettings } from '@/lib/catalog';
 import { keepUpload, isVideoUrl } from '@/lib/upload';
-import type { NavItem, Settings, Slide } from '@/lib/settings';
+import { DEFAULT_SETTINGS, type NavItem, type Settings, type Slide } from '@/lib/settings';
 
 // Every admin change: check the signer is an admin, write, then refresh the storefront cache.
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim();
@@ -89,6 +89,14 @@ export async function saveMenu(fd: FormData) {
 export async function savePreorder(fd: FormData) {
   await requireAdmin();
   await setSetting('preorder', { on: !!fd.get('on'), ships: str(fd, 'ships').slice(0, 120) || 'Ships in 4–6 weeks' });
+  done();
+}
+
+export async function saveFilm(fd: FormData) {
+  await requireAdmin();
+  const f = DEFAULT_SETTINGS.film, cur = (await getSettings()).film;
+  const pick = async (k: 'wide' | 'tall' | 'poster') => fd.get(`reset-${k}`) ? f[k] : (await keepUpload(fd.get(k), 'film')) || str(fd, `${k}Url`) || cur[k];
+  await setSetting('film', { on: !!fd.get('on'), wide: await pick('wide'), tall: await pick('tall'), poster: await pick('poster'), cta: str(fd, 'cta').slice(0, 40) || f.cta });
   done();
 }
 

@@ -861,7 +861,20 @@ html:not([lang=en]) *{letter-spacing:0 !important}
 .pdp .stage:has(.thumbs){aspect-ratio:1}
 
 /* Pre-order */
-.pre-pill{position:absolute;left:12px;bottom:12px;z-index:3;padding:5px 10px;border-radius:99px;background:rgba(15,13,11,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--gold-b);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;border:1px solid color-mix(in srgb,var(--gold-b) 45%,transparent)}
+.pre-pill{position:absolute;right:12px;top:62px;z-index:3;padding:5px 10px;border-radius:99px;background:rgba(15,13,11,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--gold-b);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;border:1px solid color-mix(in srgb,var(--gold-b) 45%,transparent)}
 .pre-note{display:flex;gap:12px;align-items:center;padding:12px 14px;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:calc(var(--radius) * .4);font-size:.88rem;background:color-mix(in srgb,var(--accent) 7%,transparent)}
 .pre-tag{flex:none;padding:4px 9px;border-radius:99px;background:linear-gradient(135deg,var(--gold-a),var(--gold-b));color:#1c1510;font-size:.6rem;letter-spacing:.18em;text-transform:uppercase}
 .pre-line{font-size:.85rem;color:var(--accent);margin:0}
+.card .art .card-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;transition:transform .9s var(--ease)}
+.card:hover .art .card-video{transform:scale(1.04)}
+@media (max-width:540px){.pre-pill{right:8px;top:50px;font-size:.5rem;padding:4px 8px}}
+
+/* Launch film at the top of the home page */
+.film{position:relative;background:#050505;width:100%;height:min(56.25vw,calc(100svh - 200px));min-height:320px;overflow:hidden}
+.film video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#050505}
+.film-bar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:10px;padding:14px clamp(14px,3vw,32px);background:linear-gradient(0deg,rgba(0,0,0,.6),transparent);z-index:2}
+.film-bar button{appearance:none;border:1px solid rgba(236,214,164,.45);background:rgba(10,9,8,.45);color:#ecd6a4;border-radius:99px;min-width:38px;height:38px;padding:0 14px;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;backdrop-filter:blur(6px)}
+.film-bar button:hover{border-color:#ecd6a4}
+.film-cta{color:#121110;background:#ecd6a4;border-radius:99px;height:38px;display:inline-flex;align-items:center;padding:0 20px;font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;text-decoration:none}
+@media (max-aspect-ratio:1/1){.film{height:auto;aspect-ratio:4/5;min-height:0}}
+@media (max-width:600px){.film-skip,.film-lbl{display:none}.film-bar{padding:10px 12px}}
