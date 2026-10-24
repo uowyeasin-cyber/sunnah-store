@@ -2,6 +2,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { confirmCode, requestCode } from '@/app/actions';
+import { GoogleG } from '@/components/Drawer';
 
 export default function AdminSignIn() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function AdminSignIn() {
       const r = sent ? await confirmCode(to, code) : await requestCode(to);
       if ('error' in r && r.error) setErr(r.error); else if (!sent) setSent(true); else router.refresh();
     }}>
+      {!sent && process.env.NEXT_PUBLIC_GOOGLE_ON && <a className="btn ghost google" href="/api/auth/google?next=/admin"><GoogleG />Continue with Google</a>}
       {!sent ? <div className="field"><label htmlFor="ae">Admin email</label><input id="ae" type="email" required value={to} onChange={e => setTo(e.target.value)} /></div>
         : <div className="field"><label htmlFor="ac">Code sent to {to}</label><input id="ac" inputMode="numeric" maxLength={6} required value={code} onChange={e => setCode(e.target.value)} /></div>}
       {err && <p className="err">{err}</p>}

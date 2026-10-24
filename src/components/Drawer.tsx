@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { unitCents } from '@/lib/money';
 import { confirmCode, logout, requestCode } from '@/app/actions';
@@ -50,15 +50,17 @@ function Account({ email }: { email: string | null }) {
   const [code, setCode] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const path = usePathname();
   if (email) return <div className="items"><p>{t('Signed in as {x}', { x: email })}</p><Link className="btn ghost" href="/track" onClick={() => open(null)}>{t('Your orders and credit')}</Link>
     <button className="btn ghost" onClick={async () => { await logout(); refreshMe(); router.refresh(); }}>{t('Sign out')}</button></div>;
   return (
     <form className="items" onSubmit={async e => {
       e.preventDefault(); setBusy(true); setErr('');
       if (step === 'email') { const r = await requestCode(to); if ('error' in r && r.error) setErr(r.error); else setStep('code'); }
-      else { const r = await confirmCode(to, code); if ('error' in r && r.error) setErr(r.error); else { open(null); refreshMe(); if (r.admin) router.push('/admin'); } }
+      else { const r = await confirmCode(to, code); if ('error' in r && r.error) setErr(r.error); else { open(null); refreshMe(); if ('admin' in r && r.admin) router.push('/admin'); } }
       setBusy(false);
     }}>
+      {step === 'email' && process.env.NEXT_PUBLIC_GOOGLE_ON && <><a className="btn ghost google" href={`/api/auth/google?next=${encodeURIComponent(path)}`}><GoogleG />{t('Continue with Google')}</a><p className="or">{t('or')}</p></>}
       <p className="muted">{t('No password. We email you a six-digit code.')}</p>
       {step === 'email'
         ? <div className="field"><label htmlFor="em">{t('Email')}</label><input id="em" type="email" required autoComplete="email" value={to} onChange={e => setTo(e.target.value)} /></div>
@@ -68,3 +70,5 @@ function Account({ email }: { email: string | null }) {
     </form>
   );
 }
+
+export const GoogleG = () => <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.6 13.3l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 7l7.3 5.7c4.3-4 7-9.9 7-17.2z"/><path fill="#FBBC05" d="M10.5 28.6A14.6 14.6 0 0 1 9.5 24c0-1.6.3-3.2.8-4.6l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.3-5.7c-2 1.4-4.7 2.3-8.6 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>;

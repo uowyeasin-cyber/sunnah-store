@@ -688,3 +688,5 @@ html:not([lang=en]) *{letter-spacing:0 !important}
 .m-lang{display:none}
 @media (max-width:600px){.tools .lang{display:none}.m-lang{display:block;margin-top:14px}}
 .manual-pay{margin-top:14px;padding:16px 18px;border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);background:color-mix(in srgb,var(--accent) 6%,transparent)}.manual-pay p{margin:0 0 10px}
+.btn.google{display:flex;align-items:center;justify-content:center;gap:10px}
+.or{text-align:center;color:var(--muted,#888);font-size:.85em;margin:2px 0}

@@ -29,7 +29,16 @@ export async function verifyLoginCode(email: string, code: string) {
   if (!row || row.tries >= 5) return { error: 'That code has expired. Send a new one.' };
   if (row.codeHash !== hash(code.trim())) { await db.loginCode.update({ where: { id: row.id }, data: { tries: { increment: 1 } } }); return { error: 'That code is not right.' }; }
   await db.loginCode.deleteMany({ where: { to } });
-  const customer = await db.customer.upsert({ where: { email: to }, update: {}, create: { email: to } });
+  return startSession(to);
+}
+
+// Signs in (and registers on first visit) a verified email. Google sign-in uses this too.
+export async function startSession(email: string, name = '') {
+  const to = norm(email);
+  const found = await db.customer.findUnique({ where: { email: to } });
+  const customer = found
+    ? (name && !found.name ? await db.customer.update({ where: { id: found.id }, data: { name } }) : found)
+    : await db.customer.create({ data: { email: to, name } });
   const id = randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + 60 * 864e5);
   await db.session.create({ data: { id: hash(id), customerId: customer.id, expiresAt } });
