@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 // One report part: a small card that opens on click, with its own download, print and share.
-export default function Section({ id, title, headline, csv, children }: { id: string; title: string; headline: string; csv: string; children: React.ReactNode }) {
+export default function Section({ id, title, headline, sub, viz, csv, children }: { id: string; title: string; headline: string; sub?: string; viz?: React.ReactNode; csv: string; children: React.ReactNode }) {
   const box = useRef<HTMLDetailsElement>(null);
   const [note, setNote] = useState('');
   useEffect(() => { if (location.hash === '#' + id && box.current) { box.current.open = true; box.current.scrollIntoView({ block: 'start' }); } }, [id]);
@@ -17,7 +17,7 @@ export default function Section({ id, title, headline, csv, children }: { id: st
     try { await navigator.clipboard.writeText(link()); setNote('Link copied'); setTimeout(() => setNote(''), 2000); } catch {}
   };
   return <details ref={box} id={id} className="rsec panel">
-    <summary><span className="label">{title}</span><b>{headline}</b><i aria-hidden="true">＋</i></summary>
+    <summary><span className="label">{title}</span><b>{headline}</b>{sub && <small>{sub}</small>}{viz && <span className="rsec-viz">{viz}</span>}<i aria-hidden="true">＋</i></summary>
     <div className="rsec-tools no-print">
       <a className="btn ghost sm" href={csv}>⬇ CSV</a>
       <button type="button" className="btn ghost sm" onClick={print}>Print / PDF</button>

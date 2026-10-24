@@ -5,6 +5,7 @@ import { currentCustomer } from '@/lib/auth';
 import { formatAmount, type Currency } from '@/lib/money';
 import { STEPS } from '@/lib/tracking';
 import TrackForm from '@/components/TrackForm';
+import DeviceOrders from '@/components/DeviceOrders';
 import { getDict } from '@/lib/catalog';
 import { isLang, makeT, type Lang } from '@/lib/i18n';
 
@@ -36,6 +37,7 @@ export default async function Track({ params }: PageProps<'/[lang]/track'>) {
   const lang: Lang = isLang(l) ? l : 'en';
   const t = makeT(await getDict(lang));
   return <div className="wrap view" style={{ display: 'grid', gap: 24, maxWidth: 640, margin: '48px auto' }}>
+    <DeviceOrders />
     <section className="panel"><div className="kicker">{t('Orders')}</div><h2>{t('Track your order')}</h2><TrackForm /></section>
     <Suspense fallback={null}><Mine lang={lang} /></Suspense>
   </div>;

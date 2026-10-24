@@ -56,3 +56,10 @@ export async function findOrder(fd: FormData) {
   const { redirect } = await import('next/navigation');
   redirect(`/order/${o.id}`);
 }
+
+// Status of orders remembered on the customer's device. Order ids are long and random, so knowing one is the key.
+export async function deviceOrders(ids: string[]) {
+  const { db } = await import('@/lib/db');
+  const list = await db.order.findMany({ where: { id: { in: ids.filter(x => typeof x === 'string').slice(0, 30) } }, orderBy: { createdAt: 'desc' }, include: { lines: { select: { name: true, qty: true } } } });
+  return list.map(o => ({ id: o.id, no: o.no, at: o.createdAt.toISOString(), status: o.status, total: Number(o.total), currency: o.currency, items: o.lines.map(l => `${l.qty}× ${l.name}`).join(', ').slice(0, 60) }));
+}
