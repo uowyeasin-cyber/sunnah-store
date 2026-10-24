@@ -20,7 +20,9 @@ export default function BlobUploads({ folder }: { folder?: string }) {
         form.querySelectorAll(`input[type=hidden][data-up="${name}"]`).forEach(h => h.remove());
         for (const f of [...input.files]) {
           const clean = f.name.toLowerCase().replace(/[^a-z0-9.]+/g, '-');
-          const r = await upload(`${dir}/${clean}`, f, { access: 'public', handleUploadUrl: '/api/upload' });
+          const ext = clean.split('.').pop() || '';
+          const type = f.type || (/^(mp4|mov|webm|m4v)$/.test(ext) ? 'video/' + (ext === 'mov' ? 'quicktime' : ext) : 'image/' + (ext === 'jpg' ? 'jpeg' : ext || 'jpeg'));
+          const r = await upload(`${dir}/${clean}`, f, { access: 'public', handleUploadUrl: '/api/upload', contentType: type, multipart: f.size > 20 * 1024 * 1024 });
           const h = Object.assign(document.createElement('input'), { type: 'hidden', name, value: r.url });
           h.dataset.up = name;
           form.append(h);
@@ -29,9 +31,11 @@ export default function BlobUploads({ folder }: { folder?: string }) {
         input.removeAttribute('name');
         note.textContent = 'Uploaded ✓';
       } catch (err) {
-        // No Blob (local dev) or a failed token: leave the file in the form so the server saves it.
-        console.warn('Blob upload skipped', err);
-        note.remove();
+        if (location.hostname === 'localhost') { note.remove(); return; } // no Blob locally: the server saves the file
+        // Never fall back to sending the file with the form: large files crash the save.
+        note.textContent = 'Upload failed: ' + (err as Error).message + '. Try again or use a JPG/PNG.';
+        note.style.color = '#c0392b';
+        input.value = '';
       } finally {
         buttons.forEach(b => (b.disabled = false));
       }
