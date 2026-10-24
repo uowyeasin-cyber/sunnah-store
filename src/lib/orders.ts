@@ -13,7 +13,7 @@ import { sendMail } from './mail';
 export type CheckoutInput = {
   lines: { slug: string; qty: number }[];
   name: string; email: string; phone: string; country: string; address: string; city: string; zip: string;
-  pay: string; useCredit: boolean;
+  pay: string; useCredit: boolean; trx?: string;
 };
 
 const D = (n: number) => new Prisma.Decimal(n.toFixed(2));
@@ -49,6 +49,9 @@ export async function placeOrder(input: CheckoutInput) {
   if (!input.lines.length) return { error: 'Your bag is empty.' };
   if (!input.name.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || input.phone.replace(/\D/g, '').length < 6 || !input.address.trim() || !input.country) return { error: 'Please fill in your name, email, phone and address.' };
   if (!(await readyMethods(input.country)).some(m => m.id === input.pay)) return { error: 'Choose a payment method.' };
+  const manual = input.pay.startsWith('m-');
+  const trx = (input.trx || '').trim().slice(0, 60);
+  if (manual && trx.length < 4) return { error: 'Enter the transaction ID from your payment.' };
   // The account is created at checkout from the email; nothing to register first.
   const customer = await db.customer.upsert({ where: { email }, update: { name: input.name, country: input.country, address: { address: input.address, city: input.city, zip: input.zip } }, create: { email, name: input.name, country: input.country, address: { address: input.address, city: input.city, zip: input.zip } } });
   const q0 = await quote(input);
@@ -65,7 +68,7 @@ export async function placeOrder(input: CheckoutInput) {
       no, customerId: customer.id, name: input.name.trim(), email, phone: input.phone.trim(), country: input.country,
       address: { address: input.address.trim(), city: input.city.trim(), zip: input.zip.trim() }, currency: q.cur,
       subtotal: D(q.subtotal), saved: D(q.saved), shipping: D(q.shipping), creditUsed: D(q.credit), total: D(q.total), rewardEarned: D(q.reward),
-      payMethod: input.pay, payStatus: input.pay === 'cod' || q.total === 0 ? 'cod' : 'pending', warehouse: q.ship.warehouse, courier: q.ship.courier,
+      payMethod: input.pay, payStatus: input.pay === 'cod' || q.total === 0 ? 'cod' : 'pending', payRef: manual ? trx : '', warehouse: q.ship.warehouse, courier: q.ship.courier,
       etaFrom: day(q.ship.days[0]), etaTo: day(q.ship.days[1]), events: [{ at: now.toISOString(), step: 0, note: STEPS[0] }],
       lines: { create: q.lines.map(l => ({ productId: l.p.id, name: `${l.p.name}${l.p.kind === 'pen' ? ' · ' + l.p.sub : ''}`, qty: l.qty, unit: D(l.unit), full: D(l.full) })) },
     } });
@@ -77,7 +80,7 @@ export async function placeOrder(input: CheckoutInput) {
   });
   await sendReceipt(order.id).catch(e => console.error('receipt mail failed', e));
   if (order.payStatus === 'cod') await sendToCourierSafe(order.id);
-  return { id: order.id, pay: order.payStatus === 'pending' };
+  return { id: order.id, pay: order.payStatus === 'pending' && !manual };
 }
 
 export async function sendReceipt(orderId: string) {

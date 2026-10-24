@@ -112,4 +112,11 @@ export async function verifySsl(valId: string) {
 
 
 // What checkout may offer right now for this country.
-export const readyMethods = async (country: string) => (await import('@/lib/shipping')).payMethodsFor(country).filter(m => gatewayReady(m.id));
+export const isManual = (method: string) => method.startsWith('m-');
+export const readyMethods = async (country: string) => {
+  const { payMethodsFor } = await import('@/lib/shipping');
+  const { getSettings } = await import('@/lib/catalog');
+  const manual = (await getSettings()).manualPay.filter(m => m.on && m.details.trim() && (m.where === 'all' || m.where === country))
+    .map(m => ({ id: 'm-' + m.id, label: m.label, note: m.details, manual: true }));
+  return [...payMethodsFor(country).filter(m => gatewayReady(m.id)).map(m => ({ ...m, manual: false })), ...manual];
+};

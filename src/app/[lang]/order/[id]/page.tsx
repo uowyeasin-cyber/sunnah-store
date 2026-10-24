@@ -31,12 +31,13 @@ async function Receipt({ params }: { params: Promise<{ id: string; lang: string 
         <div className="codes"><div className="qr" dangerouslySetInnerHTML={{ __html: qr }} /><div className="bar" dangerouslySetInnerHTML={{ __html: bar }} /></div>
         <div className="kv">
           <div><span>{t('Order number')}</span>{o.no}</div><div><span>{t('Order ID')}</span>{o.id}</div>
-          <div><span>{t('Payment')}</span>{o.payMethod === 'cod' ? t('Cash on delivery') : o.payMethod.toUpperCase()} · {t(o.payStatus === 'paid' ? 'Paid' : o.payStatus === 'cod' ? 'Pay on delivery' : 'Awaiting payment')}</div>
+          <div><span>{t('Payment')}</span>{o.payMethod === 'cod' ? t('Cash on delivery') : o.payMethod.replace(/^m-/, '').toUpperCase()} · {t(o.payStatus === 'paid' ? 'Paid' : o.payStatus === 'cod' ? 'Pay on delivery' : 'Awaiting payment')}</div>
           <div><span>{t('Arrives')}</span>{day(o.etaFrom)} – {day(o.etaTo)}</div>
           <div><span>{t('Courier')}</span>{o.courier}{o.trackingNo && ` · ${o.trackingNo}`}</div>
           <div><span>{t('Deliver to')}</span>{addr.address}{addr.city && `, ${addr.city}`} {addr.zip}, {o.country}</div>
         </div>
-        {o.payMethod !== 'cod' && (o.payStatus === 'pending' || o.payStatus === 'failed') && <div className="paynow"><p>{t(o.payStatus === 'failed' ? 'The payment did not go through.' : 'This order is waiting for payment.')}</p><a className="btn brass" href={`/api/pay/start?o=${o.id}`}>{t('Pay {x} now', { x: f(o.total) })}</a></div>}
+        {o.payMethod.startsWith('m-') && o.payStatus === 'pending' && <div className="paynow"><p>{t('We received your transaction ID {x} and will confirm the payment soon.', { x: o.payRef })}</p></div>}
+        {o.payMethod !== 'cod' && !o.payMethod.startsWith('m-') && (o.payStatus === 'pending' || o.payStatus === 'failed') && <div className="paynow"><p>{t(o.payStatus === 'failed' ? 'The payment did not go through.' : 'This order is waiting for payment.')}</p><a className="btn brass" href={`/api/pay/start?o=${o.id}`}>{t('Pay {x} now', { x: f(o.total) })}</a></div>}
         <div className="tear" />
         {o.lines.map(l => <div className="sum-row" key={l.id}><span>{l.qty} × {l.name}</span><span>{f(Number(l.full) * l.qty)}</span></div>)}
         {Number(o.saved) > 0 && <div className="sum-row"><span>{t('Offers')}</span><span>−{f(o.saved)}</span></div>}

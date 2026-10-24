@@ -687,3 +687,4 @@ footer .logo{letter-spacing:.24em;text-transform:uppercase;font-size:1.3rem}
 html:not([lang=en]) *{letter-spacing:0 !important}
 .m-lang{display:none}
 @media (max-width:600px){.tools .lang{display:none}.m-lang{display:block;margin-top:14px}}
+.manual-pay{margin-top:14px;padding:16px 18px;border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);background:color-mix(in srgb,var(--accent) 6%,transparent)}.manual-pay p{margin:0 0 10px}

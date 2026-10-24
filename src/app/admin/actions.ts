@@ -47,6 +47,13 @@ export async function saveSlides(fd: FormData) {
   done();
 }
 
+export async function savePayments(fd: FormData) {
+  await requireAdmin();
+  const ids = fd.getAll('id').map(String), labels = fd.getAll('label').map(String), where = fd.getAll('where').map(String), details = fd.getAll('details').map(String);
+  await setSetting('manualPay', ids.map((id, i) => ({ id, label: labels[i].trim() || id, where: where[i] || 'all', details: details[i].trim().slice(0, 500), on: !!fd.get(`on-${i}`) })));
+  done();
+}
+
 export async function saveMenu(fd: FormData) {
   await requireAdmin();
   const n = fd.getAll('label').length;

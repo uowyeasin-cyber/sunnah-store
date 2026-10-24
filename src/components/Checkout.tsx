@@ -27,6 +27,7 @@ export default function Checkout() {
   const router = useRouter();
   const [f, setF] = useState<Form>({ name: '', email: '', phone: '', country: '', address: '', city: '', zip: '' });
   const [pay, setPay] = useState('cod');
+  const [trx, setTrx] = useState('');
   const [useCredit, setUseCredit] = useState(true);
   const [q, setQ] = useState<Q | null>(null);
   const [err, setErr] = useState('');
@@ -59,7 +60,7 @@ export default function Checkout() {
       e.preventDefault(); setErr('');
       start(async () => {
         try { localStorage.setItem('pm-details', JSON.stringify(f)); } catch {}
-        const r = await checkout({ lines, ...f, pay, useCredit });
+        const r = await checkout({ lines, ...f, pay, useCredit, trx });
         if ('error' in r && r.error) { setErr(r.error); return; }
         lines.forEach(l => s.setQty(l.slug, 0));
         const o = r as { id: string; pay: boolean };
@@ -76,8 +77,11 @@ export default function Checkout() {
         <div className="field"><label htmlFor="a">{s.t('Address')}</label><input id="a" autoComplete="street-address" required value={f.address} onChange={set('address')} /></div>
         <div className="two"><div className="field"><label htmlFor="ci">{s.t('City')}</label><input id="ci" autoComplete="address-level2" value={f.city} onChange={set('city')} /></div>
           <div className="field"><label htmlFor="z">{s.t('Postcode')}</label><input id="z" autoComplete="postal-code" value={f.zip} onChange={set('zip')} /></div></div>
-        {q && <><h3>{s.t('Payment')}</h3><div className="pays">{q.pay.map(m => <label key={m.id} className="pay"><input type="radio" name="pay" value={m.id} checked={pay === m.id} onChange={() => setPay(m.id)} /><span>{s.t(m.label)}<small>{s.t(m.note)}</small></span></label>)}</div>
-          {pay !== 'cod' && <p className="muted" style={{ fontSize: '.85rem' }}>{s.t('Online payment opens after you place the order.')}</p>}</>}
+        {q && <><h3>{s.t('Payment')}</h3><div className="pays">{q.pay.map(m => <label key={m.id} className="pay"><input type="radio" name="pay" value={m.id} checked={pay === m.id} onChange={() => setPay(m.id)} /><span>{s.t(m.label)}{!m.manual && <small>{s.t(m.note)}</small>}</span></label>)}</div>
+          {(() => { const m = q.pay.find(x => x.id === pay); if (!m?.manual) return pay !== 'cod' && <p className="muted" style={{ fontSize: '.85rem' }}>{s.t('Online payment opens after you place the order.')}</p>;
+            return <div className="manual-pay"><p style={{ whiteSpace: 'pre-line' }}><b>{s.t('Send {x} to:', { x: money(q.total) })}</b><br />{m.note}</p>
+              <div className="field"><label htmlFor="trx">{s.t('Transaction ID')}</label><input id="trx" required value={trx} onChange={e => setTrx(e.target.value)} placeholder="e.g. 9JK3L2M8PQ" /></div>
+              <p className="muted" style={{ fontSize: '.82rem' }}>{s.t('We confirm the payment and then ship your order.')}</p></div>; })()}</>}
       </div>
       <div className="panel">
         <h3>{s.t('Your order')}</h3>

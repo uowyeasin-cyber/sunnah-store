@@ -4,6 +4,9 @@ import type { Rates } from './money';
 export type NavItem = { label: string; to: string; show: boolean }; // to: "all", "cat:<slug>", "track" or a path
 export type Slide = { id: string; eyebrow: string; title: string; italic: string; text: string; product: string; cta: string; look: 'light' | 'dark'; image: string; video: string };
 
+// Pay-by-hand methods: the customer sends money to these details and types the transaction ID.
+export type ManualPay = { id: string; label: string; details: string; where: string; on: boolean };
+
 export type Settings = {
   store: { name: string; mono: string; announce: string; tagline: string; logo: string };
   theme: { preset: string; accent: string; font: string; body: string; radius: number };
@@ -16,6 +19,7 @@ export type Settings = {
   admins: string[]; // up to five emails that open the admin panel
   holdReviews: boolean;
   allowVideoReviews: boolean;
+  manualPay: ManualPay[];
   translations: Partial<Record<'en' | 'bn' | 'ar' | 'hi', Record<string, string>>>; // admin's own, see lib/i18n
 };
 
@@ -44,6 +48,16 @@ export const DEFAULT_SETTINGS: Settings = {
   holdReviews: true,
   allowVideoReviews: true,
   translations: {},
+  manualPay: [
+    { id: 'bkash', label: 'bKash (Send Money)', details: '', where: 'Bangladesh', on: false },
+    { id: 'nagad', label: 'Nagad (Send Money)', details: '', where: 'Bangladesh', on: false },
+    { id: 'rocket', label: 'Rocket', details: '', where: 'Bangladesh', on: false },
+    { id: 'bank-bd', label: 'Bank transfer', details: '', where: 'Bangladesh', on: false },
+    { id: 'tng', label: "Touch 'n Go eWallet", details: '', where: 'Malaysia', on: false },
+    { id: 'bank-my', label: 'Bank transfer (DuitNow)', details: '', where: 'Malaysia', on: false },
+    { id: 'zelle', label: 'Zelle', details: '', where: 'United States', on: false },
+    { id: 'paypal', label: 'PayPal', details: '', where: 'all', on: false },
+  ],
 };
 
 export const PRESETS: Record<string, { label: string; swatch: string; vars: Record<string, string> | null; dark?: boolean }> = {
