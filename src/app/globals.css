@@ -816,3 +816,32 @@ html:not([lang=en]) *{letter-spacing:0 !important}
 .btn:disabled{opacity:.38;cursor:not-allowed;pointer-events:none}
 .soc-kpis{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
 .soc-new{padding:16px 20px;gap:0}
+
+/* Mobile polish */
+.kv>div{min-width:0}
+.oid{font-family:inherit;font-size:.82em;word-break:break-all;overflow-wrap:anywhere;color:var(--muted)}
+.m-foot{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase}
+.m-foot>button,.m-foot>a,.m-foot>select{display:flex;align-items:center;justify-content:center;height:44px;padding:0 12px;border:1px solid var(--line);border-radius:calc(var(--radius) * .3);background:transparent;color:var(--ink);text-decoration:none;font:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer;width:100%;text-align:center;text-align-last:center}
+.m-foot>button:hover,.m-foot>a:hover{border-color:var(--accent);color:var(--accent)}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;padding:4px;border-radius:10px;background:var(--cloth);gap:4px}
+.auth-tabs button{height:42px;border:0;border-radius:7px;background:transparent;color:var(--muted);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;cursor:pointer}
+.auth-tabs button.on{background:var(--bg);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.auth-intro h3{font-size:1.5rem;margin-bottom:6px}
+.auth-intro p,.auth-note{font-size:.88rem;margin:0}
+@media (max-width:600px){
+  section{padding-block:36px}
+  #allgrid{margin-top:0}
+  .ad-slot{margin-top:8px}
+  footer{margin-top:36px}
+  .specs{margin:16px 0 8px}
+  .tools .cur{display:none}
+  .nav .top{gap:6px}
+  .logo{min-width:0;font-size:.95rem;letter-spacing:.14em;padding-left:.14em}
+  .logo span{overflow:hidden;text-overflow:ellipsis}
+  .icon-btn{width:38px;height:38px}
+  .lux-hero{min-height:770px}
+  .s-art{inset:0 0 auto 0;height:225px}
+  .s-art svg{max-height:210px}
+  .s-copy{height:770px;justify-content:flex-start;padding-block:225px 90px}
+  .s-copy h1{margin-top:14px}
+}

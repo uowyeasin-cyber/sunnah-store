@@ -34,7 +34,7 @@ async function Receipt({ params }: { params: Promise<{ id: string; lang: string 
         <ReceiptActions url={`/order/${o.id}`} title={`${s.store.name} · ${o.no}`} t={{ download: t('Download PDF'), share: t('Share'), copied: t('Link copied'), whatsapp: 'WhatsApp' }} />
         <div className="codes"><div className="qr" dangerouslySetInnerHTML={{ __html: qr }} /><div className="bar" dangerouslySetInnerHTML={{ __html: bar }} /></div>
         <div className="kv">
-          <div><span>{t('Order number')}</span>{o.no}</div><div><span>{t('Order ID')}</span>{o.id}</div>
+          <div><span>{t('Order number')}</span>{o.no}</div><div><span>{t('Order ID')}</span><code className="oid">{o.id}</code></div>
           <div><span>{t('Payment')}</span>{o.payMethod === 'cod' ? t('Cash on delivery') : o.payMethod.replace(/^m-/, '').toUpperCase()} · {t(o.payStatus === 'paid' ? 'Paid' : o.payStatus === 'cod' ? 'Pay on delivery' : 'Awaiting payment')}</div>
           <div><span>{t('Arrives')}</span>{day(o.etaFrom)} – {day(o.etaTo)}</div>
           <div><span>{t('Courier')}</span>{o.courier}{o.trackingNo && ` · ${o.trackingNo}`}</div>

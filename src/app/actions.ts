@@ -2,7 +2,7 @@
 import { sendLoginCode, signOut, verifyLoginCode } from '@/lib/auth';
 
 export async function requestCode(email: string) { return sendLoginCode(email); }
-export async function confirmCode(email: string, code: string) { return verifyLoginCode(email, code); }
+export async function confirmCode(email: string, code: string, name = '', phone = '') { return verifyLoginCode(email, code, name.trim().slice(0, 80), phone.replace(/[^+0-9 ()-]/g, '').slice(0, 24)); }
 export async function logout() { await signOut(); }
 
 export async function submitReview(fd: FormData) {

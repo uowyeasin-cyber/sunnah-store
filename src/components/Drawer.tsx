@@ -50,6 +50,9 @@ function Account({ email }: { email: string | null }) {
   const { open, refreshMe, t } = useStore();
   const [to, setTo] = useState('');
   const [step, setStep] = useState<'email' | 'code'>('email');
+  const [mode, setMode] = useState<'in' | 'new'>('in');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
@@ -60,16 +63,26 @@ function Account({ email }: { email: string | null }) {
     <form className="items" onSubmit={async e => {
       e.preventDefault(); setBusy(true); setErr('');
       if (step === 'email') { const r = await requestCode(to); if ('error' in r && r.error) setErr(r.error); else setStep('code'); }
-      else { const r = await confirmCode(to, code); if ('error' in r && r.error) setErr(r.error); else { open(null); refreshMe(); if ('admin' in r && r.admin) router.push('/admin'); } }
+      else { const r = await confirmCode(to, code, mode === 'new' ? name : '', mode === 'new' ? phone : ''); if ('error' in r && r.error) setErr(r.error); else { open(null); refreshMe(); if ('admin' in r && r.admin) router.push('/admin'); } }
       setBusy(false);
     }}>
+      <div className="auth-tabs" role="tablist">
+        <button type="button" role="tab" aria-selected={mode === 'in'} className={mode === 'in' ? 'on' : ''} onClick={() => { setMode('in'); setStep('email'); setErr(''); }}>{t('Sign in')}</button>
+        <button type="button" role="tab" aria-selected={mode === 'new'} className={mode === 'new' ? 'on' : ''} onClick={() => { setMode('new'); setStep('email'); setErr(''); }}>{t('Create account')}</button>
+      </div>
+      <div className="auth-intro"><h3>{t(mode === 'in' ? 'Welcome back' : 'Join the store')}</h3>
+        <p className="muted">{t(mode === 'in' ? 'Sign in to see your orders, live tracking and store credit.' : 'Track every order, keep your address for next time and collect store credit.')}</p></div>
       {step === 'email' && process.env.NEXT_PUBLIC_GOOGLE_ON && <><a className="btn ghost google" href={`/api/auth/google?next=${encodeURIComponent(path)}`}><GoogleG />{t('Continue with Google')}</a><p className="or">{t('or')}</p></>}
-      <p className="muted">{t('No password. We email you a six-digit code.')}</p>
+      {step === 'email' && mode === 'new' && <>
+        <div className="field"><label htmlFor="nm">{t('Full name')}</label><input id="nm" required autoComplete="name" value={name} onChange={e => setName(e.target.value)} /></div>
+        <div className="field"><label htmlFor="ph">{t('Phone')}</label><input id="ph" type="tel" inputMode="tel" autoComplete="tel" pattern="[+0-9 ()\-]{6,}" placeholder="+880 1XXX XXXXXX" value={phone} onChange={e => setPhone(e.target.value)} /></div></>}
       {step === 'email'
         ? <div className="field"><label htmlFor="em">{t('Email')}</label><input id="em" type="email" required autoComplete="email" value={to} onChange={e => setTo(e.target.value)} /></div>
         : <div className="field"><label htmlFor="cd">{t('Code sent to {x}', { x: to })}</label><input id="cd" inputMode="numeric" autoComplete="one-time-code" required maxLength={6} value={code} onChange={e => setCode(e.target.value)} /></div>}
       {err && <p className="err">{err}</p>}
-      <button className="btn" disabled={busy}>{t(step === 'email' ? 'Send code' : 'Sign in')}</button>
+      <button className="btn" disabled={busy}>{t(step === 'email' ? 'Send code' : mode === 'new' ? 'Create account' : 'Sign in')}</button>
+      <p className="muted auth-note">{t(step === 'email' ? 'No password needed. We email you a six-digit code.' : 'Check your inbox and spam folder. The code works for 10 minutes.')}</p>
+      {step === 'code' && <button type="button" className="link-btn" onClick={() => { setStep('email'); setCode(''); }}>{t('Use a different email')}</button>}
     </form>
   );
 }

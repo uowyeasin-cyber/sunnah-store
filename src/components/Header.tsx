@@ -65,7 +65,14 @@ export default function Header({ name, nav, ticker }: { name: string; nav: NavIt
       <aside className="menu-panel" aria-label="Menu" aria-hidden={!menu}>
         <div className="m-head"><span className="kicker">{t('Menu')}</span><button className="icon-btn" aria-label={t('Close menu')} onClick={() => setMenu(false)}>✕</button></div>
         <nav className="m-links">{links.map((n, i) => <Link key={n.label + n.to} href={href(n)} style={{ transitionDelay: `${120 + i * 60}ms` }}>{n.label}<span aria-hidden="true">→</span></Link>)}</nav>
-        <div className="m-foot"><button className="link-btn" onClick={() => { setMenu(false); open('account'); }}>{t('Account')}</button><Link href="/track">{t('Track order')}</Link>{langSelect('cur m-lang')}</div>
+        <div className="m-foot">
+          <button onClick={() => { setMenu(false); open('account'); }}>{t('Account')}</button>
+          <Link href="/track" onClick={() => setMenu(false)}>{t('Track order')}</Link>
+          {langSelect('m-sel')}
+          <select className="m-sel" aria-label={t('Currency')} value={cur} onChange={e => setCur(e.target.value as Currency)}>
+            {Object.entries(CURRENCIES).map(([k, c]) => <option key={k} value={k}>{c.label}</option>)}
+          </select>
+        </div>
       </aside>
       <div className={`scrim ${menu ? 'open' : ''}`} onClick={() => setMenu(false)} />
     </>
