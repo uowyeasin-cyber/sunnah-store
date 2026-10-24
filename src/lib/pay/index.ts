@@ -1,10 +1,11 @@
 import 'server-only';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { db } from '@/lib/db';
+import { key as env, loadKeys } from '@/lib/keys';
 
 // Online payments. Each gateway turns on when its keys are set; until then checkout only offers what works.
+// Keys come from Admin → Connections (lib/keys); await loadKeys() before reading them.
 // PAY_DEMO=1 adds a fake gateway for local testing and must never be set in production.
-const env = (k: string) => process.env[k] || '';
 const sslBase = () => (env('SSLCZ_SANDBOX') ? 'https://sandbox.sslcommerz.com' : 'https://securepay.sslcommerz.com');
 const ppBase = () => (env('PAYPAL_ENV') === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com');
 
@@ -22,6 +23,7 @@ const cents = (o: Order) => Math.round(Number(o.total) * 100);
 
 // Returns the gateway page to send the customer to.
 export async function startPayment(id: string, site: string): Promise<string> {
+  await loadKeys();
   const o = await load(id);
   if (!o) throw new Error('No such order');
   const back = `${site}/order/${o.id}`;
@@ -80,6 +82,7 @@ export async function markPaid(id: string, ref: string, amount: number, currency
 export const markFailed = (id: string) => db.order.updateMany({ where: { id, payStatus: 'pending' }, data: { payStatus: 'failed' } });
 
 export async function verifyStripe(id: string, session: string) {
+  await loadKeys();
   const r = await fetch(`https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(session)}`, { headers: { Authorization: `Bearer ${env('STRIPE_SECRET_KEY')}` } }).then(r => r.json());
   if (r.metadata?.order === id && r.payment_status === 'paid') await markPaid(id, r.payment_intent || r.id, r.amount_total / 100, r.currency);
 }
@@ -87,13 +90,14 @@ export async function verifyStripe(id: string, session: string) {
 // Stripe webhook signature: HMAC-SHA256 of "t.body" with the endpoint secret.
 export function stripeSigOk(body: string, header: string) {
   const parts = Object.fromEntries(header.split(',').map(p => p.split('=') as [string, string]));
-  if (!parts.t || !parts.v1 || Math.abs(Date.now() / 1000 - Number(parts.t)) > 600) return false;
+  if (!env('STRIPE_WEBHOOK_SECRET') || !parts.t || !parts.v1 || Math.abs(Date.now() / 1000 - Number(parts.t)) > 600) return false;
   const want = createHmac('sha256', env('STRIPE_WEBHOOK_SECRET')).update(`${parts.t}.${body}`).digest();
   const got = Buffer.from(parts.v1, 'hex');
   return got.length === want.length && timingSafeEqual(got, want);
 }
 
 export async function capturePaypal(id: string, token: string) {
+  await loadKeys();
   const o = await load(id);
   if (!o || o.payRef !== token) return;
   const r = await fetch(`${ppBase()}/v2/checkout/orders/${encodeURIComponent(token)}/capture`, { method: 'POST', headers: { Authorization: `Bearer ${await ppToken()}`, 'Content-Type': 'application/json' } }).then(r => r.json());
@@ -104,6 +108,7 @@ export async function capturePaypal(id: string, token: string) {
 
 // SSLCommerz posts back val_id; ask its validator what really happened.
 export async function verifySsl(valId: string) {
+  await loadKeys();
   const q = new URLSearchParams({ val_id: valId, store_id: env('SSLCZ_STORE_ID'), store_passwd: env('SSLCZ_STORE_PASS'), format: 'json' });
   const r = await fetch(`${sslBase()}/validator/api/validationserverAPI.php?${q}`).then(r => r.json());
   if ((r.status === 'VALID' || r.status === 'VALIDATED') && r.value_a) await markPaid(r.value_a, r.bank_tran_id || valId, Number(r.currency_amount ?? r.amount), r.currency_type ?? r.currency);
@@ -116,7 +121,10 @@ export const isManual = (method: string) => method.startsWith('m-');
 export const readyMethods = async (country: string) => {
   const { payMethodsFor } = await import('@/lib/shipping');
   const { getSettings } = await import('@/lib/catalog');
-  const manual = (await getSettings()).manualPay.filter(m => m.on && m.details.trim() && (m.where === 'all' || m.where === country))
+  await loadKeys();
+  const { regionOf } = await import('@/lib/shipping');
+  const s = await getSettings();
+  const manual = s.manualPay.filter(m => m.on && m.details.trim() && (m.where === 'all' || m.where === country || (m.where === 'other' && regionOf(country) === 'INTL')))
     .map(m => ({ id: 'm-' + m.id, label: m.label, note: m.details, manual: true }));
-  return [...payMethodsFor(country).filter(m => gatewayReady(m.id)).map(m => ({ ...m, manual: false })), ...manual];
+  return [...payMethodsFor(country, s.regions).filter(m => gatewayReady(m.id)).map(m => ({ ...m, manual: false })), ...manual];
 };

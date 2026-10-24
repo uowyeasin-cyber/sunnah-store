@@ -1,14 +1,16 @@
 import { adminOrNull } from '@/lib/auth';
 import { getSettings } from '@/lib/catalog';
 import { gatewayReady } from '@/lib/pay';
+import { loadKeys } from '@/lib/keys';
 import { savePayments } from '../actions';
 
-const WHERE = [['all', 'Every country'], ['Bangladesh', 'Bangladesh'], ['Malaysia', 'Malaysia'], ['United States', 'United States']];
-const GATEWAYS = [['card', 'Card (Stripe)', 'STRIPE_SECRET_KEY'], ['paypal', 'PayPal checkout', 'PAYPAL_CLIENT_ID + PAYPAL_SECRET'], ['sslcommerz', 'SSLCommerz (bKash, Nagad, cards)', 'SSLCZ_STORE_ID + SSLCZ_STORE_PASS']];
+const WHERE = [['all', 'Every country'], ['Bangladesh', 'Bangladesh'], ['Malaysia', 'Malaysia'], ['United States', 'United States'], ['other', 'Other countries']];
+const GATEWAYS = [['card', 'Card, Apple Pay, Google Pay (Stripe)'], ['paypal', 'PayPal checkout'], ['sslcommerz', 'bKash, Nagad, cards in Bangladesh (SSLCommerz)']];
 
 export default async function Payments() {
   if (!(await adminOrNull())) return null;
   const s = await getSettings();
+  await loadKeys(true);
   return <>
     <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Payments</h2></div>
     <form className="panel" action={savePayments}>
@@ -25,8 +27,8 @@ export default async function Payments() {
     </form>
     <div className="panel">
       <h3>Automatic gateways</h3>
-      <p className="muted" style={{ fontSize: '.88rem' }}>These turn on by themselves once their keys are added in Vercel → Settings → Environment Variables.</p>
-      <ul>{GATEWAYS.map(([id, l, k]) => <li key={id}>{gatewayReady(id) ? '✅' : '⚪'} {l} <small className="muted">({k})</small></li>)}</ul>
+      <p className="muted" style={{ fontSize: '.88rem' }}>These turn on by themselves once their keys are saved in <a href="/admin/connections">Connections</a>.</p>
+      <ul>{GATEWAYS.map(([id, l]) => <li key={id}>{gatewayReady(id) ? '✅' : '⚪'} {l}</li>)}</ul>
     </div>
   </>;
 }

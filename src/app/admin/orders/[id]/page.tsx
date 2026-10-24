@@ -23,7 +23,7 @@ export default async function OrderAdmin({ params }: PageProps<'/admin/orders/[i
       <div className="sum-row"><span>Delivery</span><span>{f(o.shipping)}</span></div>
       {Number(o.creditUsed) > 0 && <div className="sum-row"><span>Credit used</span><span>−{f(o.creditUsed)}</span></div>}
       <div className="sum-row total"><span>Total</span><span>{f(o.total)}</span></div>
-      <p className="muted" style={{ fontSize: '.85rem' }}>Reward credit on delivery: {f(o.rewardEarned)} · Payment: {o.payMethod.replace(/^m-/, '').toUpperCase()} ({o.payStatus}){o.payRef && o.payMethod.startsWith('m-') ? ` · Transaction ID: ${o.payRef}` : ''}</p>
+      <p className="muted" style={{ fontSize: '.85rem' }}>Reward credit on delivery: {f(o.rewardEarned)} · Payment: {o.payMethod.replace(/^m-/, '').toUpperCase()} ({o.payStatus}){o.payRef && o.payMethod.startsWith('m-') ? ` · Transaction ID: ${o.payRef}` : ''}{o.source ? ` · Came from: ${o.source}` : ''}</p>
     </div>
     <form action={saveOrder} className="panel" style={{ display: 'grid', gap: 14 }}>
       <input type="hidden" name="id" value={o.id} />

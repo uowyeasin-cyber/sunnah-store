@@ -31,10 +31,10 @@ export async function quote(input: Pick<CheckoutInput, 'lines' | 'country'>, cus
     return [{ p, qty, unitUsd: unitCents(p.priceCents, o?.pct || 0), fullUsd: p.priceCents }];
   });
   const subUsd = lines.reduce((a, l) => a + l.unitUsd * l.qty, 0);
-  const ship = shippingFor(input.country, subUsd);
+  const ship = shippingFor(input.country, subUsd, s.regions);
   const cur = ship.currency;
   const c = (usd: number) => convert(usd, cur, s.rates);
-  const priced = lines.map(l => ({ ...l, unit: c(l.unitUsd), full: c(l.fullUsd) }));
+  const priced = lines.map(l => ({ ...l, unit: c(l.unitUsd), full: c(l.fullUsd), cost: c(l.p.costCents) }));
   const subtotal = round(priced.reduce((a, l) => a + l.unit * l.qty, 0), cur);
   const full = round(priced.reduce((a, l) => a + l.full * l.qty, 0), cur);
   const shipping = c(ship.costCents);
@@ -44,7 +44,7 @@ export async function quote(input: Pick<CheckoutInput, 'lines' | 'country'>, cus
   return { lines: priced, cur, ship, subtotal, saved: round(full - subtotal, cur), shipping, credit, total, reward };
 }
 
-export async function placeOrder(input: CheckoutInput) {
+export async function placeOrder(input: CheckoutInput, source = '') {
   const email = input.email.trim().toLowerCase();
   if (!input.lines.length) return { error: 'Your bag is empty.' };
   if (!input.name.trim()) return { error: 'Enter your full name.' };
@@ -71,9 +71,9 @@ export async function placeOrder(input: CheckoutInput) {
       no, customerId: customer.id, name: input.name.trim(), email, phone: input.phone.trim(), country: input.country,
       address: { address: input.address.trim(), city: input.city.trim(), zip: input.zip.trim() }, currency: q.cur,
       subtotal: D(q.subtotal), saved: D(q.saved), shipping: D(q.shipping), creditUsed: D(q.credit), total: D(q.total), rewardEarned: D(q.reward),
-      payMethod: input.pay, payStatus: input.pay === 'cod' || q.total === 0 ? 'cod' : 'pending', payRef: manual ? trx : '', warehouse: q.ship.warehouse, courier: q.ship.courier,
+      payMethod: input.pay, source, payStatus: input.pay === 'cod' || q.total === 0 ? 'cod' : 'pending', payRef: manual ? trx : '', warehouse: q.ship.warehouse, courier: q.ship.courier,
       etaFrom: day(q.ship.days[0]), etaTo: day(q.ship.days[1]), events: [{ at: now.toISOString(), step: 0, note: STEPS[0] }],
-      lines: { create: q.lines.map(l => ({ productId: l.p.id, name: `${l.p.name}${l.p.kind === 'pen' ? ' · ' + l.p.sub : ''}`, qty: l.qty, unit: D(l.unit), full: D(l.full) })) },
+      lines: { create: q.lines.map(l => ({ productId: l.p.id, name: `${l.p.name}${l.p.kind === 'pen' ? ' · ' + l.p.sub : ''}`, qty: l.qty, unit: D(l.unit), full: D(l.full), cost: D(l.cost) })) },
     } });
     if (q.credit > 0) {
       await tx.customer.update({ where: { id: customer.id }, data: { credit: { decrement: D(q.credit) } } });

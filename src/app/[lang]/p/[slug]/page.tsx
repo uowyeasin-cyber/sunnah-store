@@ -9,6 +9,7 @@ import ProductCard, { Heart, OfferBadge } from '@/components/ProductCard';
 import Reviews from '@/components/Reviews';
 import ReviewForm from '@/components/ReviewForm';
 import { AdSlot } from '@/components/Ads';
+import ProductSeen from '@/components/ProductSeen';
 
 // New products and categories added in admin render on first visit, then stay cached.
 export const instant = false;
@@ -35,6 +36,7 @@ export default async function ProductPage({ params }: PageProps<'/[lang]/p/[slug
   const sugg = all.filter(x => x.slug !== p.slug && (p.kind === 'pen' ? x.kind !== 'pen' : x.kind === 'pen' || x.category.slug === p.category.slug)).slice(0, 3);
   return (
     <div className="wrap view">
+      <ProductSeen id={p.id} />
       <div className="pdp">
         <div style={{ position: 'relative' }}><Heart slug={p.slug} /><div className={`stage ${p.offer?.style === 'glow' ? 'glow' : ''}`}><OfferBadge p={p} />{p.video ? <video src={p.video} autoPlay muted loop playsInline /> : <Art p={p} open brand={s.store.name} />}</div></div>
         <div className="buy">

@@ -23,7 +23,8 @@ export default async function EditProduct({ params, searchParams }: PageProps<'/
       <div className="two"><div className="field"><label>Name</label><input name="name" required defaultValue={p?.name} /></div><div className="field"><label>Short line under the name</label><input name="sub" defaultValue={p?.sub} /></div></div>
       <div className="field"><label>Description</label><textarea name="details" rows={4} defaultValue={p?.details} /></div>
       <div className="two"><div className="field"><label>Price (USD)</label><input name="price" type="number" step="0.01" min="0" required defaultValue={p ? (p.priceCents / 100).toFixed(2) : ''} /></div>
-        <div className="field"><label>Collection</label><select name="categoryId" defaultValue={p?.categoryId}>{cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div></div>
+        <div className="field"><label>Cost to you (USD), for profit reports</label><input name="cost" type="number" step="0.01" min="0" defaultValue={p ? (p.costCents / 100).toFixed(2) : ''} placeholder="0.00" /></div></div>
+      <div className="two"><div className="field"><label>Collection</label><select name="categoryId" defaultValue={p?.categoryId}>{cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div><div /></div>
       <div className="two"><div className="field"><label>Web address (slug)</label><input name="slug" defaultValue={p?.slug} placeholder="made from the name" /></div><div className="field"><label>Order in lists</label><input name="sort" type="number" defaultValue={p?.sort ?? 0} /></div></div>
       <label className="toggle"><span>Show in the store</span><input type="checkbox" name="active" defaultChecked={p ? p.active : true} /></label>
       <h3>Stock by warehouse</h3>

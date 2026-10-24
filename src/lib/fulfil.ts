@@ -2,7 +2,7 @@ import 'server-only';
 import { db } from './db';
 import { sendMail } from './mail';
 import { payReward } from './credit';
-import { bookSteadfast, isSteadfast, steadfastReady, track } from './couriers';
+import { bookSteadfast, isSteadfast, loadKeys, steadfastReady, track } from './couriers';
 import { DELIVERED, STEPS } from './tracking';
 
 type Ev = { at: string; step: number; note: string };
@@ -25,6 +25,7 @@ export async function advance(id: string, step: number, data: Record<string, unk
 export async function sendToCourier(id: string) {
   const o = await db.order.findUniqueOrThrow({ where: { id } });
   if (o.trackingNo || (o.payStatus !== 'paid' && o.payStatus !== 'cod')) return;
+  await loadKeys();
   if (o.country === 'Bangladesh' && isSteadfast(o.courier) && steadfastReady()) {
     await advance(id, Math.max(o.status, 1), {}, true);
     const r = await bookSteadfast({ no: o.no, name: o.name, phone: o.phone, address: o.address, codDue: o.payStatus === 'cod' ? Number(o.total) : 0 });

@@ -47,6 +47,22 @@ export async function saveSlides(fd: FormData) {
   done();
 }
 
+export async function saveConnections(fd: FormData) {
+  await requireAdmin();
+  const { SERVICES, saveKeys, storedKeys } = await import('@/lib/keys');
+  const keys = await storedKeys(), clear = new Set(fd.getAll('clear').map(String));
+  for (const s of SERVICES) for (const [env, , kind] of s.fields) {
+    const v = str(fd, env);
+    if (clear.has(s.id)) delete keys[env];
+    else if (Array.isArray(kind) || v) keys[env] = v.slice(0, 500);
+  }
+  await saveKeys(Object.fromEntries(Object.entries(keys).filter(([, v]) => v)));
+  const regions = (await getSettings()).regions;
+  for (const r of Object.keys(regions) as (keyof typeof regions)[]) regions[r] = { courier: str(fd, `courier-${r}`) || regions[r].courier, cod: !!fd.get(`cod-${r}`) };
+  await setSetting('regions', regions);
+  done();
+}
+
 export async function savePayments(fd: FormData) {
   await requireAdmin();
   const ids = fd.getAll('id').map(String), labels = fd.getAll('label').map(String), where = fd.getAll('where').map(String), details = fd.getAll('details').map(String);
@@ -99,7 +115,7 @@ export async function saveProduct(fd: FormData) {
   let video = fd.get('clearVideo') ? '' : old?.video || '';
   const v = await file(fd, 'video', 'products'); if (v) video = v;
   const data = {
-    name, sub: str(fd, 'sub'), details: str(fd, 'details'), priceCents: Math.round(num(fd, 'price') * 100), kind: str(fd, 'kind') || 'gift', finish: str(fd, 'finish'),
+    name, sub: str(fd, 'sub'), details: str(fd, 'details'), priceCents: Math.round(num(fd, 'price') * 100), costCents: Math.round(num(fd, 'cost') * 100), kind: str(fd, 'kind') || 'gift', finish: str(fd, 'finish'),
     swatch: str(fd, 'swatch'), active: !!fd.get('active'), sort: num(fd, 'sort'), categoryId: str(fd, 'categoryId'), images, video,
     stock: { US: num(fd, 'stockUS'), MY: num(fd, 'stockMY'), BD: num(fd, 'stockBD') },
   };
@@ -184,4 +200,16 @@ export async function saveTranslations(fd: FormData) {
   }
   await setSetting('translations', out);
   done();
+}
+
+export async function saveExpense(fd: FormData) {
+  await requireAdmin();
+  const amount = num(fd, 'amount');
+  if (amount <= 0) throw new Error('Enter an amount');
+  await db.expense.create({ data: { date: new Date(str(fd, 'date') || Date.now()), category: str(fd, 'category') || 'Other', note: str(fd, 'note').slice(0, 200), amount: amount.toFixed(2), currency: str(fd, 'currency') || 'USD' } });
+}
+
+export async function deleteExpense(fd: FormData) {
+  await requireAdmin();
+  await db.expense.deleteMany({ where: { id: str(fd, 'id') } });
 }

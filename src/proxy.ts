@@ -8,7 +8,22 @@ export function proxy(req: NextRequest) {
   // Remember the visitor's country (from Vercel's IP lookup) so checkout can pre-select it.
   const cc = req.headers.get('x-vercel-ip-country');
   if (cc && /^[A-Z]{2}$/.test(cc) && req.cookies.get('pm-cc')?.value !== cc) res.cookies.set('pm-cc', cc, { path: '/', maxAge: 2592000, sameSite: 'lax' });
+  if (!req.cookies.get('pm-src')) res.cookies.set('pm-src', sourceOf(req), { path: '/', maxAge: 2592000, sameSite: 'lax' });
   return res;
+}
+
+// First place a visitor came from, for Reports → Sources: an ?utm_source tag wins, else the referring site.
+const SITES: [RegExp, string][] = [[/facebook|fb\.|fbclid/, 'Facebook'], [/instagram/, 'Instagram'], [/google/, 'Google'], [/youtube|youtu\.be/, 'YouTube'],
+  [/tiktok/, 'TikTok'], [/whatsapp|wa\.me/, 'WhatsApp'], [/t\.co$|twitter|x\.com/, 'X (Twitter)'], [/bing/, 'Bing'], [/messenger/, 'Messenger'], [/linkedin/, 'LinkedIn'], [/pinterest/, 'Pinterest']];
+function sourceOf(req: NextRequest) {
+  const q = req.nextUrl.searchParams;
+  const tag = q.get('utm_source') || q.get('ref') || (q.get('fbclid') ? 'facebook' : q.get('gclid') ? 'google ads' : '');
+  let host = '';
+  try { host = new URL(req.headers.get('referer') || '').hostname.replace(/^www\./, ''); } catch {}
+  if (host === req.nextUrl.hostname) host = '';
+  const raw = (tag || host).toLowerCase().slice(0, 40);
+  if (!raw) return 'Direct';
+  return SITES.find(([re]) => re.test(raw))?.[1] || raw;
 }
 
 function route(req: NextRequest) {

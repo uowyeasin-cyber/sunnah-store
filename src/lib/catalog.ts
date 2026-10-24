@@ -1,5 +1,6 @@
 import { cacheLife, cacheTag } from 'next/cache';
 import { db } from './db';
+import { SECRETS } from './keys';
 import { DEFAULT_SETTINGS, type Settings } from './settings';
 import { dictFor, makeT, type Lang } from './i18n';
 
@@ -12,7 +13,7 @@ async function rawSettings(): Promise<Settings> {
   cacheLife('days');
   const rows = await db.setting.findMany();
   const s = structuredClone(DEFAULT_SETTINGS) as Record<string, unknown>;
-  for (const r of rows) s[r.key] = r.value;
+  for (const r of rows) if (r.key !== SECRETS) s[r.key] = r.value; // service keys never join public settings
   return s as Settings;
 }
 

@@ -43,7 +43,8 @@ export async function checkoutQuote(input: { lines: { slug: string; qty: number 
 
 export async function checkout(input: import('@/lib/orders').CheckoutInput) {
   const { placeOrder } = await import('@/lib/orders');
-  return placeOrder(input);
+  const { cookies } = await import('next/headers');
+  return placeOrder(input, decodeURIComponent((await cookies()).get('pm-src')?.value || 'Direct').slice(0, 40));
 }
 
 export async function findOrder(fd: FormData) {

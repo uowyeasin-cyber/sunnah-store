@@ -5,6 +5,7 @@ export type NavItem = { label: string; to: string; show: boolean }; // to: "all"
 export type Slide = { id: string; eyebrow: string; title: string; italic: string; text: string; product: string; cta: string; look: 'light' | 'dark'; image: string; video: string };
 
 // Pay-by-hand methods: the customer sends money to these details and types the transaction ID.
+export type Region = 'BD' | 'MY' | 'US' | 'INTL';
 export type ManualPay = { id: string; label: string; details: string; where: string; on: boolean };
 
 export type Settings = {
@@ -20,6 +21,7 @@ export type Settings = {
   holdReviews: boolean;
   allowVideoReviews: boolean;
   manualPay: ManualPay[];
+  regions: Record<Region, { courier: string; cod: boolean }>; // courier and cash on delivery per region, see lib/shipping
   translations: Partial<Record<'en' | 'bn' | 'ar' | 'hi', Record<string, string>>>; // admin's own, see lib/i18n
 };
 
@@ -48,6 +50,7 @@ export const DEFAULT_SETTINGS: Settings = {
   holdReviews: true,
   allowVideoReviews: true,
   translations: {},
+  regions: { BD: { courier: 'Steadfast Courier', cod: true }, MY: { courier: 'J&T Express', cod: true }, US: { courier: 'USPS', cod: true }, INTL: { courier: 'DHL Express', cod: false } },
   manualPay: [
     { id: 'bkash', label: 'bKash (Send Money)', details: '', where: 'Bangladesh', on: false },
     { id: 'nagad', label: 'Nagad (Send Money)', details: '', where: 'Bangladesh', on: false },
