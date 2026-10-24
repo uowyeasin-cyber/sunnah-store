@@ -1,7 +1,15 @@
 import 'server-only';
+import nodemailer from 'nodemailer';
 
-// Sends through Resend when RESEND_API_KEY is set; otherwise prints to the server log (local dev).
+// Sends through Gmail when GMAIL_USER + GMAIL_APP_PASSWORD are set, else Resend when
+// RESEND_API_KEY is set; otherwise prints to the server log (local dev).
 export async function sendMail(to: string, subject: string, text: string) {
+  const user = process.env.GMAIL_USER, pass = process.env.GMAIL_APP_PASSWORD;
+  if (user && pass) {
+    const smtp = nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user, pass: pass.replace(/\s/g, '') } });
+    await smtp.sendMail({ from: `${process.env.MAIL_NAME || 'Store'} <${user}>`, to, subject, text });
+    return;
+  }
   const key = process.env.RESEND_API_KEY;
   if (!key) { console.log(`[mail] to ${to}: ${subject}\n${text}`); return; }
   const res = await fetch('https://api.resend.com/emails', {
