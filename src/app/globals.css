@@ -876,7 +876,7 @@ html:not([lang=en]) *{letter-spacing:0 !important}
 .film-bar button{appearance:none;border:1px solid rgba(236,214,164,.45);background:rgba(10,9,8,.45);color:#ecd6a4;border-radius:99px;min-width:38px;height:38px;padding:0 14px;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;backdrop-filter:blur(6px)}
 .film-bar button:hover{border-color:#ecd6a4}
 .film-cta{color:#121110;background:#ecd6a4;border-radius:99px;height:38px;display:inline-flex;align-items:center;padding:0 20px;font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;text-decoration:none}
-@media (max-aspect-ratio:1/1){.film{height:auto;aspect-ratio:4/5;min-height:0}}
+@media (max-aspect-ratio:1/1){.film{height:auto;aspect-ratio:4/5;min-height:0}.film.wide-only{aspect-ratio:auto;height:auto;min-height:0}.film.wide-only video{position:relative;display:block;height:auto;aspect-ratio:16/9}.film.wide-only .film-bar{position:static;background:#050505}}
 @media (max-width:600px){.film-skip,.film-lbl{display:none}.film-bar{padding:10px 12px}}
 
 /* Admin orders: status tabs, search and bulk actions */

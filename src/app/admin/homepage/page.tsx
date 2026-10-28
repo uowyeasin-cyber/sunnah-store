@@ -16,7 +16,7 @@ export default async function Homepage() {
       {([['wide', 'Wide video, for computers (16:9)', 'video/*'], ['tall', 'Tall video, for phones (4:5 or 9:16)', 'video/*'], ['poster', 'Cover picture, shown while it loads', 'image/*']] as const).map(([k, label, accept]) =>
         <div key={k} className="field"><label>{label}</label><input type="file" name={k} accept={accept} />
           <input name={`${k}Url`} placeholder="or paste a link" defaultValue="" />
-          <small className="muted">Now: {s.film[k].split('/').pop()} · <label><input type="checkbox" name={`reset-${k}`} /> Use original</label></small></div>)}
+          <small className="muted">Now: {s.film[k].split('/').pop() || (k === 'tall' ? 'same as the wide video' : 'none')} · <label><input type="checkbox" name={`reset-${k}`} /> Use original</label></small></div>)}
       <div><button className="btn">Save film</button></div>
     </form>
     <div><h2 style={{ fontSize: '2rem' }}>Homepage slides</h2></div>

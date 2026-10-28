@@ -96,7 +96,10 @@ export async function saveFilm(fd: FormData) {
   await requireAdmin();
   const f = DEFAULT_SETTINGS.film, cur = (await getSettings()).film;
   const pick = async (k: 'wide' | 'tall' | 'poster') => fd.get(`reset-${k}`) ? f[k] : (await keepUpload(fd.get(k), 'film')) || str(fd, `${k}Url`) || cur[k];
-  await setSetting('film', { on: !!fd.get('on'), wide: await pick('wide'), tall: await pick('tall'), poster: await pick('poster'), cta: str(fd, 'cta').slice(0, 40) || f.cta });
+  const wide = await pick('wide'), tall = await pick('tall'), poster = await pick('poster');
+  // A new wide video without a new tall one: phones show the wide one rather than the old built-in film.
+  const newWide = wide !== cur.wide, newTall = tall !== cur.tall;
+  await setSetting('film', { on: !!fd.get('on'), wide, tall: newWide && !newTall && tall === f.tall ? '' : tall, poster: newWide && poster === f.poster ? '' : poster, cta: str(fd, 'cta').slice(0, 40) || f.cta });
   done();
 }
 

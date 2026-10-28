@@ -4,6 +4,7 @@ import { isLang, makeT, type Lang } from '@/lib/i18n';
 
 import Hero, { type HeroSlide } from '@/components/Hero';
 import LaunchFilm from '@/components/LaunchFilm';
+import { DEFAULT_SETTINGS } from '@/lib/settings';
 import Rail from '@/components/Rail';
 import ProductCard from '@/components/ProductCard';
 import Art from '@/components/Art';
@@ -16,6 +17,9 @@ export default async function Home({ params }: PageProps<'/[lang]'>) {
   const lang: Lang = isLang(l) ? l : 'en';
   const [s, products, cats, ads, reviews, dict] = await Promise.all([getSettings(lang), getProducts(lang), getCategories(lang), getAds(lang), getLiveReviews(), getDict(lang)]);
   const t = makeT(dict);
+  // A newly uploaded wide film replaces the built-in phone version too, unless a tall one was uploaded as well.
+  const df = DEFAULT_SETTINGS.film, ownWide = s.film.wide !== df.wide;
+  const filmTall = ownWide && s.film.tall === df.tall ? '' : s.film.tall, filmPoster = ownWide && s.film.poster === df.poster ? '' : s.film.poster;
   const brand = s.store.name;
   const slides: HeroSlide[] = s.slides.map(sl => {
     const p = products.find(x => x.slug === sl.product);
@@ -27,7 +31,7 @@ export default async function Home({ params }: PageProps<'/[lang]'>) {
   const homeAds = ads.filter(a => adLive(a) && ['home-top', 'home-mid'].includes(a.place)).map(a => a.id);
   return (
     <div className="view">
-      {s.film.on && (s.film.wide || s.film.tall) && <LaunchFilm wide={s.film.wide} tall={s.film.tall} poster={s.film.poster} cta={t(s.film.cta)} labels={{ replay: t('Replay'), pause: t('Pause'), play: t('Play'), skip: t('Skip'), sound: t('Sound on'), mute: t('Mute') }} />}
+      {s.film.on && (s.film.wide || s.film.tall) && <LaunchFilm wide={s.film.wide} tall={filmTall} poster={filmPoster} cta={t(s.film.cta)} labels={{ replay: t('Replay'), pause: t('Pause'), play: t('Play'), skip: t('Skip'), sound: t('Sound on'), mute: t('Mute') }} />}
       {slides.length > 0 && <Hero slides={slides} secs={s.slideSecs} />}
       <AdSlot ads={ads} place="home-top" products={products} brand={brand} />
       {first?.kind === 'pen' && <div className="wrap"><div className="specs">
