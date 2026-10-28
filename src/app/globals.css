@@ -897,3 +897,16 @@ html:not([lang=en]) *{letter-spacing:0 !important}
 .ord-empty h3{font-size:1.4rem}.ord-empty p{max-width:30em}
 .ord-new input,.ord-new select{min-width:110px;padding:6px 8px;font-size:.85rem}
 .ord-tbl .status{white-space:nowrap}
+
+/* Category tiles: product on top, label in its own band below so text never covers the art */
+.cats{grid-auto-rows:300px}
+.cat-tile{flex-direction:column;align-items:stretch;padding:0}
+.cat-tile::after{display:none}
+.cat-tile .ca{position:relative;inset:auto;flex:1 1 auto;min-height:0;overflow:hidden}
+.cat-tile .ca svg{width:auto;max-width:72%;height:auto;max-height:82%}
+.cat-tile:first-child .ca svg{width:88%;max-width:none;max-height:none}
+.cat-tile .ct{flex:none;padding:16px 24px 20px;background:color-mix(in srgb,var(--bg) 78%,transparent);border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+@media (max-width:900px){.cats{grid-auto-rows:250px}.cat-tile{padding:0}.cat-tile .ct{padding:12px 14px 14px}.cat-tile h3{font-size:1.25rem}}
+.cats{grid-auto-rows:350px}
+.cat-tile .ca img{object-position:center 68%}
+@media (max-width:900px){.cats{grid-auto-rows:240px}.cat-tile:first-child{grid-row:span 2}}
