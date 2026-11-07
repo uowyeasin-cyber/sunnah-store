@@ -1,5 +1,27 @@
 import 'server-only';
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 import { db } from './db';
+
+// Saved keys are encrypted (AES-256-GCM) with SECRETS_KEY from the Vercel environment, so a copy of the
+// database alone does not reveal them. Without SECRETS_KEY they are stored as before, and old plain values still read.
+const sk = () => (process.env.SECRETS_KEY ? createHash('sha256').update(process.env.SECRETS_KEY).digest() : null);
+function seal(v: string) {
+  const k = sk();
+  if (!k || !v) return v;
+  const iv = randomBytes(12), c = createCipheriv('aes-256-gcm', k, iv);
+  const body = Buffer.concat([c.update(v, 'utf8'), c.final()]);
+  return `enc:v1:${Buffer.concat([iv, c.getAuthTag(), body]).toString('base64')}`;
+}
+function open(v: string) {
+  if (!v.startsWith('enc:v1:')) return v;
+  const k = sk();
+  if (!k) { console.error('A saved key is encrypted but SECRETS_KEY is not set'); return ''; }
+  try {
+    const raw = Buffer.from(v.slice(7), 'base64'), d = createDecipheriv('aes-256-gcm', k, raw.subarray(0, 12));
+    d.setAuthTag(raw.subarray(12, 28));
+    return Buffer.concat([d.update(raw.subarray(28)), d.final()]).toString('utf8');
+  } catch { console.error('A saved key could not be decrypted; save it again in Admin → Connections'); return ''; }
+}
 
 // Service keys (payment gateways, couriers) typed in Admin → Connections and kept in the database.
 // A key left blank there falls back to the Vercel environment variable of the same name.
@@ -52,7 +74,10 @@ let cache: { at: number; v: Record<string, string> } | null = null;
 export async function loadKeys(fresh = false) {
   if (cache && !fresh && Date.now() - cache.at < 30e3) return;
   const row = await db.setting.findUnique({ where: { key: SECRETS } });
-  cache = { at: Date.now(), v: (row?.value as Record<string, string>) || {} };
+  const v = (row?.value as Record<string, string>) || {};
+  cache = { at: Date.now(), v: Object.fromEntries(Object.entries(v).map(([k, x]) => [k, open(String(x))])) };
+  // Keys saved before encryption was switched on are sealed the first time they are read.
+  if (sk() && Object.values(v).some(x => x && !String(x).startsWith('enc:v1:'))) await saveKeys(cache.v);
 }
 export const key = (k: string) => cache?.v[k] || process.env[k] || '';
 export const connected = (s: Service) => s.need.every(k => key(k));
@@ -60,7 +85,8 @@ export const connected = (s: Service) => s.need.every(k => key(k));
 export const keyHint = (k: string) => (cache?.v[k] ? `saved ••••${cache.v[k].slice(-4)}` : process.env[k] ? 'set in Vercel' : '');
 
 export async function saveKeys(next: Record<string, string>) {
-  await db.setting.upsert({ where: { key: SECRETS }, update: { value: next }, create: { key: SECRETS, value: next } });
+  const sealed = Object.fromEntries(Object.entries(next).map(([k, v]) => [k, seal(v)]));
+  await db.setting.upsert({ where: { key: SECRETS }, update: { value: sealed }, create: { key: SECRETS, value: sealed } });
   await loadKeys(true);
 }
 export const storedKeys = async () => { await loadKeys(true); return { ...cache!.v }; };
