@@ -9,11 +9,13 @@ export async function POST(request: Request) {
     const json = await handleUpload({
       body, request,
       onBeforeGenerateToken: async pathname => {
-        if (!pathname.startsWith('reviews/')) {
+        const review = pathname.startsWith('reviews/');
+        if (!review) {
           const me = await currentCustomer();
           if (!me?.email || !(await isAdminEmail(me.email))) throw new Error('Not allowed');
         }
-        return { allowedContentTypes: ['image/*', 'video/*'], maximumSizeInBytes: 100 * 1024 * 1024, addRandomSuffix: true };
+        // Shoppers' review files are capped like server uploads (lib/upload); admins can upload long product films.
+        return { allowedContentTypes: ['image/*', 'video/*'], maximumSizeInBytes: (review ? 60 : 100) * 1024 * 1024, addRandomSuffix: true };
       },
       onUploadCompleted: async () => {},
     });

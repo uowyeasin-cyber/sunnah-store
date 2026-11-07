@@ -10,6 +10,7 @@ import { sendToCourierSafe } from './fulfil';
 import { STEPS } from './tracking';
 import { sendMail } from './mail';
 import { currentCustomer } from './auth';
+import { OutOfStock, takeStock } from './stock';
 
 export type CheckoutInput = {
   lines: { slug: string; qty: number }[];
@@ -77,10 +78,12 @@ export async function placeOrder(input: CheckoutInput, source = '', campaign = '
       no, customerId: customer.id, name: input.name.trim(), email, phone: input.phone.trim(), country: input.country,
       address: { address: input.address.trim(), city: input.city.trim(), zip: input.zip.trim(), state: (input.state || '').trim().slice(0, 40) }, currency: q.cur,
       subtotal: D(q.subtotal), saved: D(q.saved), shipping: D(q.shipping), creditUsed: D(q.credit), total: D(q.total), rewardEarned: D(q.reward),
-      payMethod: input.pay, source, campaign, preorder, payStatus: input.pay === 'cod' || q.total === 0 ? 'cod' : 'pending', payRef: manual ? trx : '', warehouse: q.ship.warehouse, courier: q.ship.courier,
+      payMethod: input.pay, source, campaign, preorder, stockHeld: !preorder, payStatus: input.pay === 'cod' || q.total === 0 ? 'cod' : 'pending', payRef: manual ? trx : '', warehouse: q.ship.warehouse, courier: q.ship.courier,
       etaFrom: day(q.ship.days[0]), etaTo: day(q.ship.days[1]), events: [{ at: now.toISOString(), step: 0, note: STEPS[0] }, ...(preorder ? [{ at: now.toISOString(), step: -1, note: `Pre-order: ${preorder}` }] : [])],
       lines: { create: q.lines.map(l => ({ productId: l.p.id, name: `${l.p.name}${l.p.kind === 'pen' ? ' · ' + l.p.sub : ''}`, qty: l.qty, unit: D(l.unit), full: D(l.full), cost: D(l.cost) })) },
     } });
+    // In pre-order mode nothing is in stock yet, so only normal orders take units from the warehouse.
+    if (!preorder) await takeStock(tx, q.ship.warehouse, q.lines.map(l => ({ productId: l.p.id, qty: l.qty, name: l.p.name })));
     if (q.credit > 0) {
       // Conditional decrement: two orders placed at once cannot spend the same credit twice.
       const took = await tx.customer.updateMany({ where: { id: customer.id, credit: { gte: D(q.credit) } }, data: { credit: { decrement: D(q.credit) } } });
@@ -88,7 +91,8 @@ export async function placeOrder(input: CheckoutInput, source = '', campaign = '
       await tx.creditEntry.create({ data: { customerId: customer.id, amount: D(-q.credit), note: `Used on order ${no}`, orderNo: no } });
     }
     return o;
-  }).catch(e => { if ((e as Error).message === 'CREDIT_CHANGED') return null; throw e; });
+  }).catch(e => { if (e instanceof OutOfStock) return e; if ((e as Error).message === 'CREDIT_CHANGED') return null; throw e; });
+  if (order instanceof OutOfStock) return { error: order.message };
   if (!order) return { error: 'Your store credit changed. Please review your total and try again.' };
   await sendReceipt(order.id).catch(e => console.error('receipt mail failed', e));
   if (order.payStatus === 'cod') await sendToCourierSafe(order.id);

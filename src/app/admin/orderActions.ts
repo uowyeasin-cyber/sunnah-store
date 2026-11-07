@@ -71,7 +71,13 @@ export async function editOrder(fd: FormData) {
 export async function deleteOrder(fd: FormData) {
   await requireAdmin();
   if (fd.get('sure') !== 'yes') throw new Error('Tick the box to confirm');
-  await db.order.delete({ where: { id: str(fd, 'id') } });
+  // Units an undelivered order took from stock go back on the shelf.
+  const o = await db.order.findUniqueOrThrow({ where: { id: str(fd, 'id') }, include: { lines: true } });
+  const { returnStock } = await import('@/lib/stock');
+  await db.$transaction(async tx => {
+    if (o.stockHeld && o.status < DELIVERED) await returnStock(tx, o.warehouse, o.lines.flatMap(l => (l.productId ? [{ productId: l.productId, qty: l.qty }] : [])));
+    await tx.order.delete({ where: { id: o.id } });
+  });
   const { redirect } = await import('next/navigation');
   redirect('/admin/orders');
 }
