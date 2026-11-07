@@ -16,6 +16,8 @@ export default function ChatWidget() {
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => { fetch('/api/assistant').then(r => r.json()).then(r => setOn(!!r.on)).catch(() => {}); }, []);
   useEffect(() => { end.current?.scrollIntoView({ block: 'end' }); }, [turns, busy]);
+  // Other parts of the page (Help → Contact) open the chat with this event.
+  useEffect(() => { const o = () => setOpen(true); addEventListener('pm-chat-open', o); return () => removeEventListener('pm-chat-open', o); }, []);
   if (!on) return null;
   async function send(e: React.FormEvent) {
     e.preventDefault();
