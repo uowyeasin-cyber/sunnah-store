@@ -347,3 +347,48 @@ model LedgerEntry {
   @@index([at])
   @@index([orderId])
 }
+
+// Makers and wholesalers the store buys stock from.
+model Supplier {
+  id        String          @id @default(cuid())
+  name      String
+  contact   String          @default("")
+  email     String          @default("")
+  phone     String          @default("")
+  country   String          @default("")
+  currency  String          @default("USD")
+  leadDays  Int             @default(14)
+  notes     String          @default("")
+  active    Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  orders    PurchaseOrder[]
+}
+
+// A purchase from a supplier. Receiving it adds the units to the chosen warehouse's stock.
+model PurchaseOrder {
+  id         String         @id @default(cuid())
+  no         String         @unique
+  supplier   Supplier       @relation(fields: [supplierId], references: [id])
+  supplierId String
+  warehouse  String // BD, MY or US
+  status     String         @default("draft") // draft, ordered, received, cancelled
+  currency   String
+  shipping   Decimal        @default(0) @db.Decimal(12, 2)
+  note       String         @default("")
+  createdAt  DateTime       @default(now())
+  orderedAt  DateTime?
+  receivedAt DateTime?
+  lines      PurchaseLine[]
+
+  @@index([status])
+}
+
+model PurchaseLine {
+  id        String        @id @default(cuid())
+  order     PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String
+  productId String
+  name      String
+  qty       Int
+  unitCost  Decimal       @db.Decimal(12, 2)
+}
