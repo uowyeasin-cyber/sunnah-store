@@ -10,7 +10,7 @@ import { useStore } from './StoreProvider';
 const STICKS: [string, number, number][] = [['Daily', 8, 95], ['Thin', 6, 80], ['Thick', 12, 110], ['Long', 10, 140], ['Shop stick', 15, 180]];
 const POCKETS: [string, number][] = [['Shirt chest', 120], ['Thobe chest', 140], ['Jacket inner', 160]];
 
-export default function BuyBox({ p, finishes }: { p: CardProduct; finishes: CardProduct[] }) {
+export default function BuyBox({ p, finishes, soldOut = false }: { p: CardProduct; finishes: CardProduct[]; soldOut?: boolean }) {
   const { add, toast, open, t, pre } = useStore();
   const router = useRouter();
   const [st, setSt] = useState(0), [pk, setPk] = useState(0);
@@ -27,9 +27,9 @@ export default function BuyBox({ p, finishes }: { p: CardProduct; finishes: Card
         {len > 116 ? t('Trim {n} mm so the cap closes.', { n: len - 116 }) : t('Closes with {n} mm to spare.', { n: 116 - len })}{' '}
         {shows > 0 ? t('{n} mm shows above the pocket, clip on the edge.', { n: shows }) : t('Fully inside the pocket, {n} mm below the edge.', { n: -shows })}</p></div>}
     {pre && <div className="pre-note"><span className="pre-tag">{t('Pre-order')}</span><span>{t(pre)}. {t('Reserve yours now, we ship in order of booking.')}</span></div>}
-    <div className="add">
+    {soldOut ? <div className="add"><button className="btn" disabled>{t('Sold out')}</button><p className="muted" style={{ margin: 0, fontSize: '.85rem' }}>{t('Back soon. Join our news at the bottom of the page to hear first.')}</p></div> : <div className="add">
       <button className="btn" onClick={e => { flyToBag(e.currentTarget); add(p.slug); toast(t('{x} added to your bag', { x: p.name })); open('bag'); }}>{t(pre ? 'Pre-order' : 'Add to bag')}</button>
       <button className="btn ghost" onClick={() => { add(p.slug); router.push('/checkout'); }}>{t(pre ? 'Pre-order now' : 'Buy now')}</button>
-    </div>
+    </div>}
   </>;
 }

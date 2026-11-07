@@ -5,6 +5,7 @@ export const JOBS = [
   { id: 'tracking', name: 'Tracking updates', does: 'Checks the courier for every open order once a day and moves it forward. Customers get an email at each step.', modes: ['off', 'auto'] as Mode[], def: 'auto' as Mode },
   { id: 'lowStock', name: 'Low-stock alert', does: 'Emails the owners when a product is at or under the low-stock level in any warehouse.', modes: ['off', 'auto'] as Mode[], def: 'off' as Mode },
   { id: 'abandonedBag', name: 'Abandoned bag reminder', does: 'One email, a day after someone typed their email at checkout and did not order, with a link that puts the same items back in their bag.', modes: ['off', 'auto'] as Mode[], def: 'off' as Mode },
+  { id: 'releaseUnpaid', name: 'Release unpaid stock', does: 'Online-payment orders still unpaid after 48 hours are cancelled and their units go back on the shelf. Bank or wallet orders waiting for you to check the transaction ID are left alone.', modes: ['off', 'auto'] as Mode[], def: 'off' as Mode },
   { id: 'dailySummary', name: 'Daily summary email', does: "Emails the owners yesterday's orders and sales, and what is waiting for them.", modes: ['off', 'auto'] as Mode[], def: 'off' as Mode },
 ] as const;
 export type JobId = (typeof JOBS)[number]['id'];
