@@ -8,7 +8,7 @@ const OTHER: Lang[] = ['bn', 'ar', 'hi'];
 
 // Everything a shopper reads, in English, with a box per language. Empty boxes fall back to English.
 export default async function Languages() {
-  if (!(await adminOrNull())) return null;
+  if (!(await adminOrNull('languages'))) return null;
   const [s, products, cats, ads] = await Promise.all([getSettings(), db.product.findMany({ include: { offer: true }, orderBy: { sort: 'asc' } }), db.category.findMany({ orderBy: { sort: 'asc' } }), db.ad.findMany({ orderBy: { sort: 'asc' } })]);
   const content = [...new Set([
     s.store.announce, s.store.tagline, ...s.nav.map(n => n.label), ...s.slides.flatMap(x => [x.eyebrow, x.title, x.italic, x.text, x.cta]),

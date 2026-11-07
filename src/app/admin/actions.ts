@@ -18,7 +18,7 @@ async function setSetting<K extends keyof Settings>(key: K, value: Settings[K]) 
 const done = () => updateTag('catalog');
 
 export async function saveStore(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('settings', 'saveStore');
   const s = await getSettings();
   await setSetting('store', { ...s.store, name: str(fd, 'name') || s.store.name, mono: str(fd, 'mono').slice(0, 3), announce: str(fd, 'announce'), tagline: str(fd, 'tagline') });
   await setSetting('theme', { preset: str(fd, 'preset') || 'porcelain', accent: str(fd, 'accentOn') ? str(fd, 'accent') : '', font: str(fd, 'font'), body: str(fd, 'body'), radius: Math.min(20, Math.max(0, num(fd, 'radius'))) });
@@ -26,7 +26,7 @@ export async function saveStore(fd: FormData) {
 }
 
 export async function saveSlides(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('homepage', 'saveSlides');
   const s = await getSettings();
   const ids = fd.getAll('id').map(String);
   const slides: Slide[] = [];
@@ -48,7 +48,7 @@ export async function saveSlides(fd: FormData) {
 }
 
 export async function saveConnections(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('connections', 'saveConnections');
   const { SERVICES, saveKeys, storedKeys } = await import('@/lib/keys');
   const keys = await storedKeys(), clear = new Set(fd.getAll('clear').map(String));
   for (const s of SERVICES) for (const [env, , kind] of s.fields) {
@@ -68,14 +68,14 @@ export async function saveConnections(fd: FormData) {
 }
 
 export async function savePayments(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('payments', 'savePayments');
   const ids = fd.getAll('id').map(String), labels = fd.getAll('label').map(String), where = fd.getAll('where').map(String), details = fd.getAll('details').map(String);
   await setSetting('manualPay', ids.map((id, i) => ({ id, label: labels[i].trim() || id, where: where[i] || 'all', details: details[i].trim().slice(0, 500), on: !!fd.get(`on-${i}`) })));
   done();
 }
 
 export async function saveMenu(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('menu', 'saveMenu');
   const n = fd.getAll('label').length;
   const nav: NavItem[] = [];
   for (let i = 0; i < n; i++) if (!fd.get(`del-${i}`)) nav.push({ label: String(fd.getAll('label')[i]), to: String(fd.getAll('to')[i]), show: !!fd.get(`show-${i}`) });
@@ -87,13 +87,13 @@ export async function saveMenu(fd: FormData) {
 }
 
 export async function savePreorder(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('settings', 'savePreorder');
   await setSetting('preorder', { on: !!fd.get('on'), ships: str(fd, 'ships').slice(0, 120) || 'Ships in 4–6 weeks' });
   done();
 }
 
 export async function saveFilm(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('homepage', 'saveFilm');
   const f = DEFAULT_SETTINGS.film, cur = (await getSettings()).film;
   const pick = async (k: 'wide' | 'tall' | 'poster') => fd.get(`reset-${k}`) ? f[k] : (await keepUpload(fd.get(k), 'film')) || str(fd, `${k}Url`) || cur[k];
   const wide = await pick('wide'), tall = await pick('tall'), poster = await pick('poster');
@@ -104,7 +104,7 @@ export async function saveFilm(fd: FormData) {
 }
 
 export async function saveRules(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('settings', 'saveRules');
   await setSetting('rewardRate', Math.min(5, Math.max(0, num(fd, 'rewardRate'))));
   await setSetting('rates', { USD: 1, MYR: num(fd, 'MYR') || 4.7, BDT: num(fd, 'BDT') || 120 });
   await setSetting('holdReviews', !!fd.get('holdReviews'));
@@ -114,17 +114,22 @@ export async function saveRules(fd: FormData) {
 }
 
 export async function saveTeam(fd: FormData) {
-  const me = await requireAdmin();
-  const admins = fd.getAll('admin').map(String).map(s => s.trim().toLowerCase()).slice(0, 5);
-  // Keep the person saving in the list, so nobody locks themselves out.
-  if (me.email && !admins.includes(me.email)) admins[0] = me.email;
+  const me = await requireAdmin('team', 'saveTeam');
+  const { isRole } = await import('@/lib/roles');
+  const emails = fd.getAll('admin').map(String).map(s => s.trim().toLowerCase()).slice(0, 10);
+  const picked = fd.getAll('role').map(String);
+  const admins: string[] = [], roles: Record<string, string> = {};
+  emails.forEach((e, i) => { if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !admins.includes(e)) { admins.push(e); roles[e] = isRole(picked[i]) ? picked[i] : 'owner'; } });
+  // Keep the person saving in the list as an owner, so nobody locks themselves out.
+  if (me.email) { if (!admins.includes(me.email)) admins.unshift(me.email); roles[me.email] = 'owner'; }
   while (admins.length < 5) admins.push('');
-  await setSetting('admins', admins);
+  await setSetting('admins', admins.slice(0, 10));
+  await setSetting('roles', roles);
   done();
 }
 
 export async function saveProduct(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('products', 'saveProduct');
   const id = str(fd, 'id');
   const name = str(fd, 'name');
   if (!name) throw new Error('Name is required');
@@ -153,7 +158,7 @@ export async function saveProduct(fd: FormData) {
 }
 
 export async function deleteProduct(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('products', 'deleteProduct');
   const id = str(fd, 'id');
   // Products with orders are hidden rather than deleted, so receipts stay intact.
   if (await db.orderLine.count({ where: { productId: id } })) await db.product.update({ where: { id }, data: { active: false } });
@@ -163,7 +168,7 @@ export async function deleteProduct(fd: FormData) {
 }
 
 export async function saveCategories(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('categories', 'saveCategories');
   const ids = fd.getAll('id').map(String);
   for (const [i, id] of ids.entries()) {
     if (fd.get(`del-${i}`)) { if (!(await db.product.count({ where: { categoryId: id } }))) await db.category.delete({ where: { id } }); continue; }
@@ -183,7 +188,7 @@ export async function saveCategories(fd: FormData) {
 }
 
 export async function saveAd(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('ads', 'saveAd');
   const id = str(fd, 'id');
   if (fd.get('delete')) { await db.ad.delete({ where: { id } }); done(); return; }
   const old = id ? await db.ad.findUnique({ where: { id } }) : null;
@@ -198,7 +203,7 @@ export async function saveAd(fd: FormData) {
 }
 
 export async function setReview(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('reviews', 'setReview');
   const id = str(fd, 'id'), to = str(fd, 'to');
   if (to === 'delete') await db.review.delete({ where: { id } });
   else await db.review.update({ where: { id }, data: { status: to === 'live' ? 'live' : 'hidden' } });
@@ -206,7 +211,7 @@ export async function setReview(fd: FormData) {
 }
 
 export async function editReview(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('reviews', 'editReview');
   const id = str(fd, 'id'), old = await db.review.findUniqueOrThrow({ where: { id } });
   const drop = new Set(fd.getAll('dropMedia').map(String));
   await db.review.update({ where: { id }, data: {
@@ -219,7 +224,7 @@ export async function editReview(fd: FormData) {
 
 // Stores only what differs from the built-in translation, so later built-in fixes still reach untouched text.
 export async function saveTranslations(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('languages', 'saveTranslations');
   const { dictFor } = await import('@/lib/i18n');
   const out: Settings['translations'] = {};
   for (const l of ['bn', 'ar', 'hi'] as const) {
@@ -236,13 +241,13 @@ export async function saveTranslations(fd: FormData) {
 }
 
 export async function saveExpense(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('expenses', 'saveExpense');
   const amount = num(fd, 'amount');
   if (amount <= 0) throw new Error('Enter an amount');
   await db.expense.create({ data: { date: new Date(str(fd, 'date') || Date.now()), category: str(fd, 'category') || 'Other', note: str(fd, 'note').slice(0, 200), amount: amount.toFixed(2), currency: str(fd, 'currency') || 'USD' } });
 }
 
 export async function deleteExpense(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('expenses', 'deleteExpense');
   await db.expense.deleteMany({ where: { id: str(fd, 'id') } });
 }

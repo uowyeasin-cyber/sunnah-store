@@ -5,7 +5,7 @@ import { formatAmount, type Currency } from '@/lib/money';
 import { decideReturn } from '../orderActions';
 
 export default async function Returns() {
-  if (!(await adminOrNull())) return null;
+  if (!(await adminOrNull('returns'))) return null;
   const list = await db.returnRequest.findMany({ orderBy: [{ status: 'desc' }, { createdAt: 'desc' }], take: 200, include: { order: { include: { lines: true } } } });
   const open = list.filter(r => r.status === 'pending').length;
   return <>

@@ -13,7 +13,7 @@ const NAMES: Record<Period, string> = { day: 'Daily', week: 'Weekly', month: 'Mo
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 
 export default async function Reports({ searchParams }: PageProps<'/admin/reports'>) {
-  if (!(await adminOrNull())) return null;
+  if (!(await adminOrNull('reports'))) return null;
   const q = (await searchParams) as Q;
   const p: Period = PERIODS.includes(q.p as Period) ? (q.p as Period) : 'month';
   const cur: Currency = isCurrency(q.cur) ? q.cur : 'USD';

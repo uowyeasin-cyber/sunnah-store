@@ -10,7 +10,7 @@ import { bookCourier, deleteOrder, editOrder, refundOrder, saveOrder } from '../
 const iso = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : '');
 
 export default async function OrderAdmin({ params }: PageProps<'/admin/orders/[id]'>) {
-  if (!(await adminOrNull())) return null;
+  if (!(await adminOrNull('orders'))) return null;
   const { id } = await params;
   const [o, products] = await Promise.all([db.order.findUnique({ where: { id }, include: { lines: true, customer: true } }), db.product.findMany({ orderBy: { sort: 'asc' }, select: { id: true, name: true, sub: true, kind: true } })]);
   if (!o) return <p>Order not found.</p>;

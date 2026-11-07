@@ -20,7 +20,7 @@ async function spendExpense(c: { id: string; code: string; name: string; currenc
 }
 
 export async function saveCampaign(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('social', 'saveCampaign');
   const id = str(fd, 'id');
   const platform = PLATFORMS[str(fd, 'platform')] ? str(fd, 'platform') : 'other';
   let target = str(fd, 'target') || '/';
@@ -37,7 +37,7 @@ export async function saveCampaign(fd: FormData) {
 }
 
 export async function saveStats(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('social', 'saveStats');
   const id = str(fd, 'id');
   const c = await db.campaign.update({ where: { id }, data: {
     views: num(fd, 'views'), reach: num(fd, 'reach'), shares: num(fd, 'shares'), likes: num(fd, 'likes'), comments: num(fd, 'comments'),
@@ -48,7 +48,7 @@ export async function saveStats(fd: FormData) {
 }
 
 export async function syncOne(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('social', 'syncOne');
   const id = str(fd, 'id');
   const err = await syncCampaign(id);
   const c = await db.campaign.findUnique({ where: { id } });
@@ -57,7 +57,7 @@ export async function syncOne(fd: FormData) {
 }
 
 export async function syncAll() {
-  await requireAdmin();
+  await requireAdmin('social', 'syncAll');
   const list = await db.campaign.findMany({ where: { externalId: { not: '' }, status: { not: 'ended' } } });
   let ok = 0;
   for (const c of list) if (!(await syncCampaign(c.id))) { ok++; const f = await db.campaign.findUnique({ where: { id: c.id } }); if (f) await spendExpense(f, Number(f.spend)); }
@@ -66,7 +66,7 @@ export async function syncAll() {
 }
 
 export async function publish(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('social', 'publish');
   const id = str(fd, 'id'), where = str(fd, 'where');
   const c = await db.campaign.findUnique({ where: { id } });
   if (!c) return;
@@ -81,7 +81,7 @@ export async function publish(fd: FormData) {
 }
 
 export async function deleteCampaign(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('social', 'deleteCampaign');
   const id = str(fd, 'id');
   const c = await db.campaign.delete({ where: { id } });
   await spendExpense(c, 0);

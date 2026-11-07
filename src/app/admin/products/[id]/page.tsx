@@ -8,7 +8,7 @@ const KINDS = [['pen', 'Pen'], ['sticks', 'Miswak sticks'], ['oil', 'Oil set'], 
 const STYLES = [['ribbon', 'Gold ribbon'], ['stamp', 'Black and gold seal'], ['pill', 'Ivory label'], ['glow', 'Gold glow'], ['timer', 'Countdown']];
 
 export default async function EditProduct({ params, searchParams }: PageProps<'/admin/products/[id]'>) {
-  if (!(await adminOrNull())) return null;
+  if (!(await adminOrNull('products'))) return null;
   const { id } = await params;
   const { saved } = (await searchParams) as { saved?: string };
   const [p, cats] = await Promise.all([id === 'new' ? null : db.product.findUnique({ where: { id }, include: { offer: true } }), db.category.findMany({ orderBy: { sort: 'asc' } })]);

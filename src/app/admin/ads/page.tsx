@@ -27,7 +27,7 @@ function AdForm({ ad, links }: { ad: Ad | null; links: string[][] }) {
 }
 
 export default async function Ads() {
-  if (!(await adminOrNull())) return null;
+  if (!(await adminOrNull('ads'))) return null;
   const [ads, cats, products] = await Promise.all([db.ad.findMany({ orderBy: [{ place: 'asc' }, { sort: 'asc' }] }), db.category.findMany({ orderBy: { sort: 'asc' } }), db.product.findMany({ orderBy: { sort: 'asc' } })]);
   const links = [['', 'No link'], ...cats.map(c => [`cat:${c.slug}`, `Category: ${c.name}`]), ...products.map(p => [p.slug, `Product: ${p.name} · ${p.sub}`])];
   return <>

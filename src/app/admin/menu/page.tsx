@@ -4,7 +4,7 @@ import { getSettings } from '@/lib/catalog';
 import { saveMenu } from '../actions';
 
 export default async function Menu() {
-  if (!(await adminOrNull())) return null;
+  if (!(await adminOrNull('menu'))) return null;
   const [s, cats] = await Promise.all([getSettings(), db.category.findMany({ orderBy: { sort: 'asc' } })]);
   const targets = [['all', 'Shop all products'], ...cats.map(c => [`cat:${c.slug}`, `Category: ${c.name}`]), ['track', 'Track order page']];
   return <>
