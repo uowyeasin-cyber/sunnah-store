@@ -41,6 +41,12 @@ export default async function Marketing({ searchParams }: { searchParams: Promis
       {!campaigns.length && <tr><td className="muted">Nothing sent yet.</td></tr>}
     </tbody></table></div></div>
 
+    <div className="panel"><h3 style={{ marginTop: 0 }}>Product feeds for Google and Facebook</h3>
+      <p className="muted" style={{ fontSize: '.85rem' }}>Paste a feed link into Google Merchant Center (free Google Shopping listings and ads) or Meta Commerce Manager (Facebook and Instagram Shop) as a scheduled feed. They read prices, offers, photos and pre-order dates from here, so changes show up there by themselves. Products need a real photo to be accepted.</p>
+      <div className="tbl-wrap"><table><tbody>{['USD', 'MYR', 'BDT'].map(c => <tr key={c}><td>{c}</td><td><code style={{ wordBreak: 'break-all' }}>{`${process.env.SITE_URL || 'https://sunnahstore.vercel.app'}/api/feed?cur=${c}`}</code></td></tr>)}</tbody></table></div>
+      <p className="muted" style={{ fontSize: '.8rem', marginBottom: 0 }}>Google: <a href="https://merchants.google.com/" target="_blank" rel="noreferrer">merchants.google.com</a> → Products → Add products → Add from a file → Scheduled fetch. Facebook: <a href="https://business.facebook.com/commerce/" target="_blank" rel="noreferrer">business.facebook.com/commerce</a> → Catalog → Data sources → Data feed → Scheduled feed.</p>
+    </div>
+
     <div className="panel"><h3 style={{ marginTop: 0 }}>Newest subscribers</h3><div className="tbl-wrap"><table><tbody>
       {recent.map(r => <tr key={r.email}><td>{r.email}</td><td>{r.lang}</td><td>{r.createdAt.toISOString().slice(0, 10)}</td></tr>)}
       {!recent.length && <tr><td className="muted">No subscribers yet.</td></tr>}
