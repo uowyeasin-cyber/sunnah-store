@@ -30,7 +30,9 @@ export default function Checkout() {
   const [trx, setTrx] = useState('');
   const [useCredit, setUseCredit] = useState(true);
   const [q, setQ] = useState<Q | null>(null);
-  const [qFor, setQFor] = useState(''); // which inputs the shown quote was made for
+  const [qFor, setQFor] = useState('');
+  const [qFail, setQFail] = useState(''); // inputs whose quote failed to load
+  const [retry, setRetry] = useState(0); // which inputs the shown quote was made for
   const [err, setErr] = useState('');
   const [busy, start] = useTransition();
   const lines = s.bag.filter(l => !l.off).map(({ slug, qty }) => ({ slug, qty }));
@@ -51,12 +53,12 @@ export default function Checkout() {
     if (!lines.length || !f.country) { setQ(null); return; }
     let live = true;
     checkoutQuote({ lines, country: f.country, useCredit, email: mail || undefined }).then(r => {
-      if (!live) return; setQ(r); setQFor(want);
+      if (!live) return; setQ(r); setQFor(want); setQFail('');
       if (!r.pay.some(m => m.id === pay)) setPay(r.pay[0].id);
       if (r.me) { const a = (r.me.address || {}) as Record<string, string>; setF(x => ({ ...x, email: x.email || r.me!.email || '', name: x.name || r.me!.name, phone: x.phone || r.me!.phone || '', address: x.address || a.address || '', city: x.city || a.city || '', zip: x.zip || a.zip || '', state: x.state || a.state || '' })); }
-    });
+    }).catch(e => { console.error('quote failed', e); if (live) setQFail(want); });
     return () => { live = false; };
-  }, [key, f.country, useCredit, mail]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key, f.country, useCredit, mail, retry]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!lines.length) return <div className="empty"><h2>Your bag is empty</h2><p>Add something you love, then come back.</p></div>;
   const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
@@ -107,6 +109,7 @@ export default function Checkout() {
             : <p className="muted" style={{ fontSize: '.85rem' }}>{s.t('Arrives in {a}–{b} days.', { a: q.days[0], b: q.days[1] })}</p>}
         </> : <p className="muted">{s.t('Choose your country to see delivery and total.')}</p>}
         {err && <p className="err">{s.t(err)}</p>}
+        {qFail === want && <p className="err">{s.t('We could not load your total.')} <button type="button" style={{ background: 'none', border: 0, padding: 0, color: 'inherit', textDecoration: 'underline', cursor: 'pointer', font: 'inherit' }} onClick={() => { setQFail(''); setRetry(n => n + 1); }}>{s.t('Try again')}</button></p>}
         <button className="btn" disabled={busy || !fresh}>{s.t(busy ? 'Placing order…' : 'Place order')}</button>
       </div>
     </form>
