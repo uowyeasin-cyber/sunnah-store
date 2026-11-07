@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getAds, getDict, getLiveReviews, getProduct, getProducts, getSettings } from '@/lib/catalog';
 import { isLang, makeT, type Lang } from '@/lib/i18n';
+import { unitCents } from '@/lib/money';
 
 import Art from '@/components/Art';
 import Gallery from '@/components/Gallery';
@@ -41,8 +42,19 @@ export default async function ProductPage({ params }: PageProps<'/[lang]/p/[slug
   const finishes = p.kind === 'pen' ? all.filter(x => x.kind === 'pen' && x.category.slug === p.category.slug) : [];
   // Suggestions: refills follow a pen, a pen follows refills.
   const sugg = all.filter(x => x.slug !== p.slug && (p.kind === 'pen' ? x.kind !== 'pen' : x.kind === 'pen' || x.category.slug === p.category.slug)).slice(0, 3);
+  // Product facts for search engines, from the real price, stock and live reviews only.
+  const site = process.env.SITE_URL || '';
+  const inStock = Object.values(p.stock || {}).some(n => Number(n) > 0);
+  const ld = {
+    '@context': 'https://schema.org', '@type': 'Product', name: `${p.name}, ${p.sub}`, description: p.details || p.sub, sku: p.slug,
+    image: p.images.map(u => (u.startsWith('/') ? site + u : u)), brand: { '@type': 'Brand', name: s.store.name }, category: p.category.name,
+    offers: { '@type': 'Offer', url: `${site}/p/${p.slug}`, priceCurrency: 'USD', price: (unitCents(p.priceCents, p.offer?.pct || 0) / 100).toFixed(2),
+      availability: `https://schema.org/${s.preorder?.on ? 'PreOrder' : inStock ? 'InStock' : 'OutOfStock'}` },
+    ...(reviews.length ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: (reviews.reduce((a, r) => a + r.stars, 0) / reviews.length).toFixed(1), reviewCount: reviews.length } } : {}),
+  };
   return (
     <div className="wrap view">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, '\\u003c') }} />
       <ProductSeen id={p.id} />
       <div className="pdp">
         <div style={{ position: 'relative' }}><Heart slug={p.slug} /><div className={`stage ${p.offer?.style === 'glow' ? 'glow' : ''}`}><OfferBadge p={p} /><Gallery images={p.images} video={p.video} poster={p.video.startsWith('/media/') ? p.video.replace(/loop\.mp4$/, 'poster.jpg') : ''} alt={`${p.name}, ${p.sub}`}><Art p={p} open brand={s.store.name} /></Gallery></div></div>
