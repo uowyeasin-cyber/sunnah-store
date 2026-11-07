@@ -36,6 +36,7 @@ export async function checkoutQuote(input: { lines: { slug: string; qty: number 
   const email = (input.email ?? me?.email ?? '').trim().toLowerCase();
   const credit = me && me.email === email && me.currency === q0.cur ? Number(me.credit) : 0;
   const q = await quote(input, credit, input.useCredit);
+  if (input.email) await import('@/lib/newsletter').then(n => n.rememberBag(email, input.lines)).catch(e => console.error('remember bag failed', e));
   return {
     cur: q.cur, subtotal: q.subtotal, saved: q.saved, shipping: q.shipping, credit: q.credit, total: q.total, reward: q.reward, available: credit,
     courier: q.ship.courier, days: q.ship.days, pay: await readyMethods(input.country), soon: await soonMethods(input.country),

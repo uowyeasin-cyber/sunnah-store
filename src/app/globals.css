@@ -923,3 +923,5 @@ html:not([lang=en]) *{letter-spacing:0 !important}
 .chat-form input{flex:1;min-width:0}
 .chat-note{font-size:.72rem;margin:0;padding:0 12px 10px}
 @media print{.chat-fab,.chat-box{display:none!important}}
+.news-form{display:flex;gap:8px;flex-wrap:wrap;max-width:420px;margin-top:10px}
+.news-form input[type=email]{flex:1;min-width:180px}

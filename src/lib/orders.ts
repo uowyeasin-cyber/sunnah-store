@@ -96,6 +96,7 @@ export async function placeOrder(input: CheckoutInput, source = '', campaign = '
   if (order instanceof OutOfStock) return { error: order.message };
   if (!order) return { error: 'Your store credit changed. Please review your total and try again.' };
   await sendReceipt(order.id).catch(e => console.error('receipt mail failed', e));
+  await import('./newsletter').then(n => n.forgetBag(order.email)).catch(() => {});
   if (order.payStatus === 'cod') await onOrderReadySafe(order.id);
   return { id: order.id, pay: order.payStatus === 'pending' && !manual };
 }

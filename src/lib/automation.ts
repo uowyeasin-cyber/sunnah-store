@@ -141,6 +141,11 @@ const WORK: Record<JobId, (mode: Mode) => Promise<Result>> = {
     await tellOwners(`Low stock: ${low.length} items`, `${low.join('\n')}\n\nUpdate stock in ${site()}/admin/products`);
     return { status: 'ok', summary: `${low.length} low: emailed owners` };
   },
+  async abandonedBag() {
+    const { remindBags } = await import('./newsletter');
+    const r = await remindBags();
+    return { status: 'ok', summary: `${r.checked} bags checked · ${r.sent} reminders sent` };
+  },
   // A short morning email: yesterday's orders and money, and what needs a hand.
   async dailySummary() {
     const end = new Date(); end.setUTCHours(0, 0, 0, 0);
