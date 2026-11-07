@@ -13,6 +13,7 @@ import AdSeen from '@/components/AdSeen';
 import { adLive, AdSlot } from '@/components/Ads';
 import Trust from '@/components/Trust';
 import RecentlyViewed from '@/components/RecentlyViewed';
+import PickedForYou from '@/components/PickedForYou';
 import NewsletterForm from '@/components/NewsletterForm';
 
 export default async function Home({ params }: PageProps<'/[lang]'>) {
@@ -58,6 +59,7 @@ export default async function Home({ params }: PageProps<'/[lang]'>) {
         <div className="grid">{products.map(p => <ProductCard key={p.id} p={p} brand={brand} />)}</div>
       </section>
       <RecentlyViewed brand={brand} />
+      <PickedForYou brand={brand} />
       <div className="wrap"><Reviews reviews={reviews} t={t} /></div>
       <section className="wrap"><div className="news-band"><div><div className="kicker">{t('News and offers')}</div><h2>{t('Hear about new')} <em>{t('pieces first')}</em></h2><p className="muted">{t('A few emails a year. Unsubscribe with one tap.')}</p></div><NewsletterForm /></div></section>
       <AdSeen ids={homeAds} />
