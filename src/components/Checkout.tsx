@@ -30,6 +30,7 @@ export default function Checkout() {
   const [trx, setTrx] = useState('');
   const [useCredit, setUseCredit] = useState(true);
   const [q, setQ] = useState<Q | null>(null);
+  const [qFor, setQFor] = useState(''); // which inputs the shown quote was made for
   const [err, setErr] = useState('');
   const [busy, start] = useTransition();
   const lines = s.bag.filter(l => !l.off).map(({ slug, qty }) => ({ slug, qty }));
@@ -43,11 +44,14 @@ export default function Checkout() {
   }, []);
   // The quote re-checks credit when the email changes, so the total shown matches the order placed.
   const mail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim()) ? f.email.trim().toLowerCase() : '';
+  // Until the quote for the current inputs arrives, the shown total may be stale, so ordering waits.
+  const want = JSON.stringify([key, f.country, useCredit, mail]);
+  const fresh = !!q && qFor === want;
   useEffect(() => {
     if (!lines.length || !f.country) { setQ(null); return; }
     let live = true;
     checkoutQuote({ lines, country: f.country, useCredit, email: mail || undefined }).then(r => {
-      if (!live) return; setQ(r);
+      if (!live) return; setQ(r); setQFor(want);
       if (!r.pay.some(m => m.id === pay)) setPay(r.pay[0].id);
       if (r.me) { const a = (r.me.address || {}) as Record<string, string>; setF(x => ({ ...x, email: x.email || r.me!.email || '', name: x.name || r.me!.name, phone: x.phone || r.me!.phone || '', address: x.address || a.address || '', city: x.city || a.city || '', zip: x.zip || a.zip || '', state: x.state || a.state || '' })); }
     });
@@ -60,6 +64,7 @@ export default function Checkout() {
   return (
     <form className="co" onSubmit={e => {
       e.preventDefault(); setErr('');
+      if (!fresh) return;
       start(async () => {
         try { localStorage.setItem('pm-details', JSON.stringify(f)); } catch {}
         const r = await checkout({ lines, ...f, pay, useCredit, trx });
@@ -102,7 +107,7 @@ export default function Checkout() {
             : <p className="muted" style={{ fontSize: '.85rem' }}>{s.t('Arrives in {a}–{b} days.', { a: q.days[0], b: q.days[1] })}</p>}
         </> : <p className="muted">{s.t('Choose your country to see delivery and total.')}</p>}
         {err && <p className="err">{s.t(err)}</p>}
-        <button className="btn" disabled={busy || !q}>{s.t(busy ? 'Placing order…' : 'Place order')}</button>
+        <button className="btn" disabled={busy || !fresh}>{s.t(busy ? 'Placing order…' : 'Place order')}</button>
       </div>
     </form>
   );
