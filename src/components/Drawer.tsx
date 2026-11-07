@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { unitCents } from '@/lib/money';
+import { freeOver } from '@/lib/shipping';
 import { confirmCode, logout, requestCode } from '@/app/actions';
 import Art from './Art';
 import Price from './Price';
@@ -20,13 +21,15 @@ export default function Drawer() {
       <aside className={`drawer ${s.drawer ? 'open' : ''}`} aria-label="Bag and account" aria-hidden={!s.drawer}>
         <div className="head"><h2>{s.t(s.drawer === 'wish' ? 'Wishlist' : s.drawer === 'account' ? 'Account' : 'Your bag')}</h2><button className="icon-btn" onClick={close} aria-label={s.t('Close')}>✕</button></div>
         {s.drawer === 'bag' && (lines.length ? <>
+          <FreeShip total={total} />
           <div className="items">{lines.map(l => (
             <div className={`line-item ${l.off ? 'off' : ''}`} key={l.slug}>
               <input type="checkbox" className="pick" checked={!l.off} onChange={e => s.pick(l.slug, e.target.checked)} aria-label={s.t('Buy {x} now', { x: l.p.name })} />
               <div className="thumb"><Art p={l.p} /></div>
               <div style={{ flex: 1, minWidth: 0 }}><div>{l.p.name}</div><div className="muted" style={{ fontSize: '.82rem' }}>{l.p.sub}</div>
                 <div className="qty" style={{ marginTop: 6 }}><button onClick={() => s.setQty(l.slug, l.qty - 1)} aria-label={s.t('One less')}>−</button><span>{l.qty}</span><button onClick={() => s.setQty(l.slug, l.qty + 1)} aria-label={s.t('One more')}>+</button></div></div>
-              <div className="num"><Price cents={l.p.priceCents * l.qty} pct={l.p.offer?.pct} /></div>
+              <div className="num" style={{ textAlign: 'right' }}><Price cents={l.p.priceCents * l.qty} pct={l.p.offer?.pct} />
+                <button className="link-btn later" onClick={() => { if (!s.wish.includes(l.slug)) s.toggleWish(l.slug); s.setQty(l.slug, 0); s.toast(s.t('Saved for later in your wishlist')); }}>{s.t('Save for later')}</button></div>
             </div>))}
           </div>
           {lines.length > 1 && <p className="muted" style={{ fontSize: '.8rem', margin: 0 }}>{s.t('Tick the items to order now. The rest stay in your bag.')}</p>}
@@ -44,6 +47,16 @@ export default function Drawer() {
       <div className={`toast ${s.message ? 'show' : ''}`} role="status">{s.message}</div>
     </>
   );
+}
+
+// How far the ticked items are from free delivery, for the country the visitor's currency points to.
+function FreeShip({ total }: { total: number }) {
+  const { cur, price, t } = useStore();
+  const country = cur === 'BDT' ? 'Bangladesh' : cur === 'MYR' ? 'Malaysia' : cur === 'USD' ? 'United States' : '';
+  if (!country || !total) return null;
+  const goal = freeOver(country), left = goal - total, pct = Math.min(100, Math.round((total / goal) * 100));
+  return <div className="freeship"><p>{left > 0 ? t('{x} more for free delivery in {c}', { x: price(left), c: t(country) }) : t('Free delivery in {c} unlocked', { c: t(country) })}</p>
+    <div className="bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><i style={{ width: `${pct}%` }} /></div></div>;
 }
 
 function Account({ email }: { email: string | null }) {
