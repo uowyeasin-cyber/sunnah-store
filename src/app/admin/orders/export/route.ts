@@ -4,7 +4,7 @@ import { STEPS } from '@/lib/tracking';
 
 // CSV of the ticked orders (or the latest 1000), for couriers and spreadsheets.
 export async function GET(req: Request) {
-  if (!(await adminOrNull())) return new Response('Not allowed', { status: 403 });
+  if (!(await adminOrNull('orders'))) return new Response('Not allowed', { status: 403 });
   const ids = (new URL(req.url).searchParams.get('ids') || '').split(',').filter(Boolean);
   const list = await db.order.findMany({ where: ids.length ? { id: { in: ids } } : {}, orderBy: { createdAt: 'desc' }, take: 1000, include: { lines: true } });
   const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;

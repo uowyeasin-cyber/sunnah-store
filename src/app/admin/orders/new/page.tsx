@@ -8,7 +8,7 @@ const ROWS = 8;
 
 // Bulk Create Order: type several phone/WhatsApp orders in rows, or paste them from a sheet.
 export default async function NewOrders({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
-  if (!(await adminOrNull())) return null;
+  if (!(await adminOrNull('orders'))) return null;
   const sp = await searchParams, rows = Math.min(40, Math.max(ROWS, Number(sp.rows) || ROWS));
   const products = await db.product.findMany({ where: { active: true }, orderBy: { sort: 'asc' } });
   const opts = <>{products.map(p => <option key={p.id} value={p.slug}>{p.name} · {p.sub}</option>)}</>;

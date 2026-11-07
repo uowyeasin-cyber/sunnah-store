@@ -11,7 +11,7 @@ const str = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim();
 const D = (n: number) => new Prisma.Decimal(n.toFixed(2));
 
 export async function saveOrder(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('orders', 'saveOrder');
   const o = await db.order.findUniqueOrThrow({ where: { id: str(fd, 'id') } });
   const status = Math.min(DELIVERED, Math.max(0, Number(fd.get('status')) || 0));
   const date = (k: string) => (str(fd, k) ? new Date(str(fd, k)) : null);
@@ -22,12 +22,12 @@ export async function saveOrder(fd: FormData) {
 }
 
 export async function bookCourier(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('orders', 'bookCourier');
   await sendToCourier(str(fd, 'id')).catch(() => {}); // the reason is logged on the order
 }
 
 export async function refundOrder(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('orders', 'refundOrder');
   const o = await db.order.findUniqueOrThrow({ where: { id: str(fd, 'id') } });
   const amount = Math.min(Number(o.total) + Number(o.creditUsed), Math.max(0, Number(fd.get('amount')) || 0));
   if (!o.customerId || !amount) return;
@@ -39,7 +39,7 @@ export async function refundOrder(fd: FormData) {
 
 // Edit the customer, address, items, prices and delivery charge; totals are worked out again.
 export async function editOrder(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('orders', 'editOrder');
   const o = await db.order.findUniqueOrThrow({ where: { id: str(fd, 'id') }, include: { lines: true } });
   const { getSettings } = await import('@/lib/catalog');
   const { convert } = await import('@/lib/money');
@@ -69,7 +69,7 @@ export async function editOrder(fd: FormData) {
 }
 
 export async function deleteOrder(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('orders', 'deleteOrder');
   if (fd.get('sure') !== 'yes') throw new Error('Tick the box to confirm');
   // Units an undelivered order took from stock go back on the shelf.
   const o = await db.order.findUniqueOrThrow({ where: { id: str(fd, 'id') }, include: { lines: true } });
@@ -84,7 +84,7 @@ export async function deleteOrder(fd: FormData) {
 
 // Ticked orders on the Orders page: mark paid, move to a step, or send to the courier.
 export async function bulkOrders(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('orders', 'bulkOrders');
   const ids = fd.getAll('ids').map(String).filter(Boolean).slice(0, 300), act = str(fd, 'act');
   let done = 0;
   for (const id of ids) {
@@ -99,7 +99,7 @@ export async function bulkOrders(fd: FormData) {
 // Bulk Create Order: rows typed into the form, plus lines pasted from a sheet (tab or | between columns):
 // Name | Phone | Country | Address | City | Products | Payment | Email | Note. Products: "slug x2, other-slug".
 export async function bulkCreate(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('orders', 'bulkCreate');
   const { createAdminOrder } = await import('@/lib/orders');
   const { COUNTRIES } = await import('@/lib/shipping');
   const products = await db.product.findMany({ where: { active: true } });
@@ -130,7 +130,7 @@ export async function bulkCreate(fd: FormData) {
 
 // Approve (refund as store credit, optional restock) or decline a customer's return request. Each request is decided once.
 export async function decideReturn(fd: FormData) {
-  await requireAdmin();
+  await requireAdmin('returns', 'decideReturn');
   const to = str(fd, 'to') === 'approved' ? 'approved' : 'declined';
   const r = await db.returnRequest.findUniqueOrThrow({ where: { id: str(fd, 'id') }, include: { order: { include: { lines: true } } } });
   const o = r.order;

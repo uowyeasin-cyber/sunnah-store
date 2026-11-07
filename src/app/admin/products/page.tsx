@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { adminOrNull } from '@/lib/auth';
 
 export default async function Products() {
-  if (!(await adminOrNull())) return null;
+  if (!(await adminOrNull('products'))) return null;
   const list = await db.product.findMany({ orderBy: [{ sort: 'asc' }, { createdAt: 'asc' }], include: { category: true, offer: true } });
   return <>
     <div className="row2" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', gap: 12 }}><div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Products & offers</h2></div><Link className="btn" href="/admin/products/new">Add a product</Link></div>

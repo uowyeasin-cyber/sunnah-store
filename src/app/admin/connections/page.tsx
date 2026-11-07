@@ -8,7 +8,7 @@ import { saveConnections } from '../actions';
 const COUNTRY = { BD: 'Bangladesh', MY: 'Malaysia', US: 'United States', INTL: 'Other' } as const;
 
 export default async function Connections() {
-  if (!(await adminOrNull())) return null;
+  if (!(await adminOrNull('connections'))) return null;
   await loadKeys(true);
   const st = await getSettings();
   return <>

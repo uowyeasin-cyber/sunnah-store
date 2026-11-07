@@ -3,7 +3,7 @@ import { adminOrNull } from '@/lib/auth';
 import { saveCategories } from '../actions';
 
 export default async function Categories() {
-  if (!(await adminOrNull())) return null;
+  if (!(await adminOrNull('categories'))) return null;
   const cats = await db.category.findMany({ orderBy: { sort: 'asc' }, include: { _count: { select: { products: true } } } });
   return <>
     <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Categories</h2></div>

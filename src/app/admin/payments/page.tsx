@@ -8,7 +8,7 @@ const WHERE = [['all', 'Every country'], ['Bangladesh', 'Bangladesh'], ['Malaysi
 const GATEWAYS = [['card', 'Card, Apple Pay, Google Pay (Stripe)'], ['paypal', 'PayPal checkout'], ['sslcommerz', 'bKash, Nagad, cards in Bangladesh (SSLCommerz)']];
 
 export default async function Payments() {
-  if (!(await adminOrNull())) return null;
+  if (!(await adminOrNull('payments'))) return null;
   const s = await getSettings();
   await loadKeys(true);
   return <>

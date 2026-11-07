@@ -6,7 +6,7 @@ import { deleteExpense, saveExpense } from '../actions';
 const CATS = ['Buying stock', 'Packaging', 'Courier and shipping', 'Advertising', 'Rent', 'Salaries', 'Website and apps', 'Payment fees', 'Bank charges', 'Tax', 'Other'];
 
 export default async function Expenses() {
-  if (!(await adminOrNull())) return null;
+  if (!(await adminOrNull('expenses'))) return null;
   const list = await db.expense.findMany({ orderBy: { date: 'desc' }, take: 300 });
   return <>
     <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Expenses</h2></div>

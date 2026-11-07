@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { currentCustomer, isAdminEmail } from '@/lib/auth';
+import { ROLES, roleOf } from '@/lib/roles';
 import { getSettings } from '@/lib/catalog';
 import AdminSignIn from './AdminSignIn';
 import AdminNav from './AdminNav';
@@ -22,7 +23,7 @@ async function Gate({ children }: { children: React.ReactNode }) {
   );
   return (
     <div className="wrap"><div className="admin">
-      <AdminNav />
+      <AdminNav areas={[...ROLES[roleOf(me.email, s.roles)].areas]} />
       <BlobUploads />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18, minWidth: 0 }}>{children}</div>
     </div></div>

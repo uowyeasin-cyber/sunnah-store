@@ -4,7 +4,7 @@ import { getSettings } from '@/lib/catalog';
 import { saveFilm, saveSlides } from '../actions';
 
 export default async function Homepage() {
-  if (!(await adminOrNull())) return null;
+  if (!(await adminOrNull('homepage'))) return null;
   const [s, products] = await Promise.all([getSettings(), db.product.findMany({ orderBy: { sort: 'asc' } })]);
   return <>
     <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Launch film</h2></div>

@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { db } from './db';
 import { getSettings } from './catalog';
 import { sendMail } from './mail';
+import { canUse, roleOf, type Area } from './roles';
 
 // Passwordless sign-in: a six-digit code by email. The same sign-in opens the admin panel
 // when the email is one of the admin emails set in Settings → Admin team.
@@ -66,15 +67,25 @@ export async function isAdminEmail(email?: string | null) {
   return admins.some(a => a && norm(a) === norm(email));
 }
 
-// Admin pages render alongside the layout's sign-in gate, so they bail out quietly.
-export async function adminOrNull() {
+// The signed-in admin's role, or null for shoppers.
+export async function adminRole() {
   const c = await currentCustomer();
-  return c && (await isAdminEmail(c.email)) ? c : null;
+  if (!c?.email || !(await isAdminEmail(c.email))) return null;
+  const { roles } = await getSettings();
+  return { customer: c, role: roleOf(c.email, roles) };
 }
 
-// Use at the top of every admin server action.
-export async function requireAdmin() {
-  const c = await adminOrNull();
-  if (!c) throw new Error('Not allowed');
-  return c;
+// Admin pages render alongside the layout's sign-in gate, so they bail out quietly.
+// With an area, staff whose role does not open that area get nothing.
+export async function adminOrNull(area?: Area) {
+  const a = await adminRole();
+  return a && (!area || canUse(a.role, area)) ? a.customer : null;
+}
+
+// Use at the top of every admin server action: checks the role opens the area, then records who did what.
+export async function requireAdmin(area?: Area, action = '', detail = '') {
+  const a = await adminRole();
+  if (!a || (area && !canUse(a.role, area))) throw new Error('Not allowed');
+  if (action) await db.adminLog.create({ data: { email: a.customer.email || '', area: area || '', action, detail: detail.slice(0, 300) } }).catch(e => console.error('admin log failed', e));
+  return a.customer;
 }

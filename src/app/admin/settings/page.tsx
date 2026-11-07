@@ -4,7 +4,7 @@ import { BODY_FONTS, DISPLAY_FONTS, PRESETS } from '@/lib/settings';
 import { savePreorder, saveRules, saveStore } from '../actions';
 
 export default async function SettingsPage() {
-  if (!(await adminOrNull())) return null;
+  if (!(await adminOrNull('settings'))) return null;
   const s = await getSettings();
   return <>
     <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Design & settings</h2></div>

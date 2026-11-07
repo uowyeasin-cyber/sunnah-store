@@ -3,7 +3,7 @@ import { adminOrNull } from '@/lib/auth';
 import { editReview, setReview } from '../actions';
 
 export default async function Reviews() {
-  if (!(await adminOrNull())) return null;
+  if (!(await adminOrNull('reviews'))) return null;
   const list = await db.review.findMany({ orderBy: [{ status: 'asc' }, { createdAt: 'desc' }], include: { product: true }, take: 200 });
   return <>
     <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Reviews</h2></div>

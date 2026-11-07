@@ -6,7 +6,7 @@ import { STEPS } from '@/lib/tracking';
 
 // Reports as a spreadsheet: the summary, then every order in the period.
 export async function GET(req: NextRequest) {
-  if (!(await adminOrNull())) return new Response('Not allowed', { status: 403 });
+  if (!(await adminOrNull('reports'))) return new Response('Not allowed', { status: 403 });
   const q = req.nextUrl.searchParams;
   const p = (PERIODS.includes(q.get('p') as Period) ? q.get('p') : 'month') as Period;
   const cur = isCurrency(q.get('cur')) ? (q.get('cur') as 'USD') : 'USD';

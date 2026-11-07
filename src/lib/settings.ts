@@ -18,7 +18,8 @@ export type Settings = {
   popupDelay: number;
   rewardRate: number; // percent of order total given back as store credit
   rates: Rates; // 1 USD in each currency
-  admins: string[]; // up to five emails that open the admin panel
+  admins: string[]; // up to ten emails that open the admin panel
+  roles: Record<string, string>; // admin email → role (lib/roles); missing means owner
   holdReviews: boolean;
   allowVideoReviews: boolean;
   manualPay: ManualPay[];
@@ -52,6 +53,7 @@ export const DEFAULT_SETTINGS: Settings = {
   rewardRate: 0.5,
   rates: { USD: 1, MYR: 4.7, BDT: 120 },
   admins: ['', '', '', '', ''],
+  roles: {},
   holdReviews: true,
   allowVideoReviews: true,
   preorder: { on: true, ships: 'Ships in 4–6 weeks' },

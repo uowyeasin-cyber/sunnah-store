@@ -21,7 +21,7 @@ const SORTS: Record<string, Prisma.OrderOrderByWithRelationInput> = { new: { cre
 const PAY: Record<string, string> = { pending: 'Unpaid', paid: 'Paid', cod: 'Cash on delivery', failed: 'Failed', refunded: 'Refunded' };
 
 export default async function Orders({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
-  if (!(await adminOrNull())) return null;
+  if (!(await adminOrNull('orders'))) return null;
   const sp = await searchParams;
   const tab = TABS.find(t => t.id === sp.tab) || TABS[0], q = (sp.q || '').trim(), sort = SORTS[sp.sort || ''] ? sp.sort! : 'new';
   const search: Prisma.OrderWhereInput = q ? { OR: ['no', 'name', 'email', 'phone', 'trackingNo'].map(k => ({ [k]: { contains: q, mode: 'insensitive' } })) } : {};

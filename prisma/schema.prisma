@@ -287,3 +287,15 @@ model ReturnRequest {
 
   @@index([status])
 }
+
+// Who changed what in the admin panel.
+model AdminLog {
+  id     String   @id @default(cuid())
+  at     DateTime @default(now())
+  email  String
+  area   String   @default("")
+  action String
+  detail String   @default("")
+
+  @@index([at])
+}

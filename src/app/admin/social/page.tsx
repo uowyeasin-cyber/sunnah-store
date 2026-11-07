@@ -14,7 +14,7 @@ const LOST = ['failed', 'refunded', 'cancelled'];
 const ISO = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : '');
 
 export default async function Social({ searchParams }: PageProps<'/admin/social'>) {
-  if (!(await adminOrNull())) return null;
+  if (!(await adminOrNull('social'))) return null;
   const q = (await searchParams) as Q;
   const cur: Currency = isCurrency(q.cur) ? q.cur : 'BDT';
   const [all, products, { rates }, meta, insta] = await Promise.all([
