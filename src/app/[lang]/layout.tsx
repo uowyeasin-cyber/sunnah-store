@@ -6,6 +6,7 @@ import { isLang, LANGS, makeT, type Lang } from '@/lib/i18n';
 import Html from '@/components/Html';
 import StoreProvider from '@/components/StoreProvider';
 import Header from '@/components/Header';
+import NewsletterForm from '@/components/NewsletterForm';
 import ChatWidget from '@/components/ChatWidget';
 import Drawer from '@/components/Drawer';
 import Motion from '@/components/Motion';
@@ -39,7 +40,7 @@ export default async function StoreLayout({ children, params }: LayoutProps<'/[l
         <main>{children}</main>
         <footer><div className="wrap">
           <div className="foot-top">
-            <div className="foot-brand"><div className="logo"><span>{s.store.name}</span></div><p>{s.store.tagline}</p></div>
+            <div className="foot-brand"><div className="logo"><span>{s.store.name}</span></div><p>{s.store.tagline}</p><div className="label" style={{ marginTop: 18 }}>{t('News and offers')}</div><NewsletterForm /></div>
             <div className="foot-cols">
               <div><div className="label">{t('Shop')}</div>{cats.map(c => <Link key={c.id} href={`/c/${c.slug}`}>{c.name}</Link>)}</div>
               <div><div className="label">{t('Help')}</div><Link href="/track">{t('Track order')}</Link><Link href="/track">{t('Returns')}</Link><Link href="/track">{t('Store credit')}</Link></div>

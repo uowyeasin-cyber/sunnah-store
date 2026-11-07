@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
   url       = env("DATABASE_URL")
   // Migrations need a direct connection; Neon on Vercel sets this one too.
   directUrl = env("DATABASE_URL_UNPOOLED")
@@ -27,44 +27,44 @@ model Category {
 }
 
 model Product {
-  id         String      @id @default(cuid())
-  slug       String      @unique
+  id         String        @id @default(cuid())
+  slug       String        @unique
   name       String
-  sub        String      @default("")
-  details    String      @default("")
+  sub        String        @default("")
+  details    String        @default("")
   priceCents Int
   // What one unit costs the store (buying, making, packing), US cents. Used for profit in Reports.
-  costCents  Int         @default(0)
+  costCents  Int           @default(0)
   // Built-in drawing used when no photo is uploaded: pen, sticks, oil, attar, sleeve, gift.
-  kind       String      @default("gift")
+  kind       String        @default("gift")
   // Pen finish for the built-in drawing: alu, alug, brassb.
-  finish     String      @default("")
-  swatch     String      @default("")
+  finish     String        @default("")
+  swatch     String        @default("")
   images     String[]
-  video      String      @default("")
-  active     Boolean     @default(true)
-  sort       Int         @default(0)
+  video      String        @default("")
+  active     Boolean       @default(true)
+  sort       Int           @default(0)
   // Stock per warehouse: { "US": 10, "MY": 4, "BD": 30 }
-  stock      Json        @default("{}")
-  category   Category    @relation(fields: [categoryId], references: [id])
+  stock      Json          @default("{}")
+  category   Category      @relation(fields: [categoryId], references: [id])
   categoryId String
   offer      Offer?
   reviews    Review[]
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
   orderLines OrderLine[]
   views      ProductView[]
 }
 
 model Offer {
-  id        String   @id @default(cuid())
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productId String   @unique
-  on        Boolean  @default(true)
+  id        String    @id @default(cuid())
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String    @unique
+  on        Boolean   @default(true)
   label     String
-  pct       Int      @default(0)
+  pct       Int       @default(0)
   // ribbon, stamp, pill, glow, timer
-  style     String   @default("pill")
+  style     String    @default("pill")
   endsAt    DateTime?
 }
 
@@ -107,19 +107,19 @@ model Review {
 }
 
 model Customer {
-  id        String         @id @default(cuid())
-  email     String?        @unique
-  phone     String?        @unique
-  name      String         @default("")
-  country   String         @default("")
-  address   Json           @default("{}")
+  id        String        @id @default(cuid())
+  email     String?       @unique
+  phone     String?       @unique
+  name      String        @default("")
+  country   String        @default("")
+  address   Json          @default("{}")
   // Store credit, held in the customer's own currency (1 unit = 1 credit).
-  currency  String         @default("USD")
-  credit    Decimal        @default(0) @db.Decimal(12, 2)
+  currency  String        @default("USD")
+  credit    Decimal       @default(0) @db.Decimal(12, 2)
   ledger    CreditEntry[]
   orders    Order[]
   sessions  Session[]
-  createdAt DateTime       @default(now())
+  createdAt DateTime      @default(now())
 }
 
 model CreditEntry {
@@ -152,66 +152,66 @@ model Session {
 }
 
 model Order {
-  id          String      @id @default(cuid())
-  no          String      @unique
-  customer    Customer?   @relation(fields: [customerId], references: [id])
-  customerId  String?
-  name        String
-  email       String
-  phone       String
-  country     String
-  address     Json
-  currency    String
+  id           String          @id @default(cuid())
+  no           String          @unique
+  customer     Customer?       @relation(fields: [customerId], references: [id])
+  customerId   String?
+  name         String
+  email        String
+  phone        String
+  country      String
+  address      Json
+  currency     String
   // Totals in the order's currency, two decimals.
-  subtotal    Decimal     @db.Decimal(12, 2)
-  saved       Decimal     @db.Decimal(12, 2)
-  shipping    Decimal     @db.Decimal(12, 2)
-  creditUsed  Decimal     @db.Decimal(12, 2)
-  total       Decimal     @db.Decimal(12, 2)
-  rewardEarned Decimal    @db.Decimal(12, 2)
-  payMethod   String
+  subtotal     Decimal         @db.Decimal(12, 2)
+  saved        Decimal         @db.Decimal(12, 2)
+  shipping     Decimal         @db.Decimal(12, 2)
+  creditUsed   Decimal         @db.Decimal(12, 2)
+  total        Decimal         @db.Decimal(12, 2)
+  rewardEarned Decimal         @db.Decimal(12, 2)
+  payMethod    String
   // Where the buyer first came from: utm_source, the referring site, or Direct (set by the proxy).
-  source      String      @default("")
+  source       String          @default("")
   // Social media post or ad the buyer came through (Campaign.code), from a /go link.
-  campaign    String      @default("")
+  campaign     String          @default("")
   // Pre-order shipping note at the time of the order, e.g. "Ships in 4–6 weeks". Empty for in-stock orders.
-  preorder    String      @default("")
+  preorder     String          @default("")
   // True when placing the order took units out of warehouse stock (not in pre-order mode).
-  stockHeld   Boolean     @default(false)
+  stockHeld    Boolean         @default(false)
   // pending, paid, cod, failed, refunded
-  payStatus   String      @default("pending")
-  payRef      String      @default("")
-  warehouse   String      @default("")
-  courier     String      @default("")
-  trackingNo  String      @default("")
+  payStatus    String          @default("pending")
+  payRef       String          @default("")
+  warehouse    String          @default("")
+  courier      String          @default("")
+  trackingNo   String          @default("")
   // Shipping label from the courier booking, when it gives one.
-  labelUrl    String      @default("")
+  labelUrl     String          @default("")
   // 0 placed … 6 delivered, see lib/tracking
-  status      Int         @default(0)
-  manual      Boolean     @default(false)
-  riderName   String      @default("")
-  riderPhone  String      @default("")
-  etaFrom     DateTime?
-  etaTo       DateTime?
-  events      Json        @default("[]")
-  lines       OrderLine[]
-  returns     ReturnRequest[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  status       Int             @default(0)
+  manual       Boolean         @default(false)
+  riderName    String          @default("")
+  riderPhone   String          @default("")
+  etaFrom      DateTime?
+  etaTo        DateTime?
+  events       Json            @default("[]")
+  lines        OrderLine[]
+  returns      ReturnRequest[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 }
 
 model OrderLine {
-  id        String  @id @default(cuid())
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId   String
   product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
   productId String?
   name      String
   qty       Int
-  unit      Decimal @db.Decimal(12, 2)
-  full      Decimal @db.Decimal(12, 2)
+  unit      Decimal  @db.Decimal(12, 2)
+  full      Decimal  @db.Decimal(12, 2)
   // Unit cost in the order's currency when the order was placed.
-  cost      Decimal @default(0) @db.Decimal(12, 2)
+  cost      Decimal  @default(0) @db.Decimal(12, 2)
 }
 
 // Money spent running the store (ads, rent, salaries, courier bills…), for profit and loss in Reports.
@@ -391,4 +391,37 @@ model PurchaseLine {
   name      String
   qty       Int
   unitCost  Decimal       @db.Decimal(12, 2)
+}
+
+// Newsletter list. Double opt-in: only confirmed, not-unsubscribed emails get campaigns.
+model Subscriber {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  lang         String    @default("en")
+  source       String    @default("")
+  token        String    @unique
+  confirmedAt  DateTime?
+  unsubscribed Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+}
+
+// An email typed at checkout with what was in the bag, for the abandoned-bag reminder.
+model CartLead {
+  id         String    @id @default(cuid())
+  email      String    @unique
+  lines      Json // [{ slug, qty }]
+  lang       String    @default("en")
+  updatedAt  DateTime  @updatedAt
+  remindedAt DateTime?
+}
+
+// One newsletter send, for the history list.
+model MailCampaign {
+  id      String   @id @default(cuid())
+  subject String
+  body    String
+  sent    Int      @default(0)
+  failed  Int      @default(0)
+  by      String   @default("")
+  at      DateTime @default(now())
 }
