@@ -299,3 +299,31 @@ model AdminLog {
 
   @@index([at])
 }
+
+// One row each time an automation job runs (on schedule, on an event or by hand).
+model AutomationRun {
+  id      String   @id @default(cuid())
+  job     String
+  at      DateTime @default(now())
+  trigger String   @default("schedule")
+  status  String   @default("ok") // ok, failed, skipped
+  summary String   @default("")
+  ms      Int      @default(0)
+
+  @@index([job, at])
+}
+
+// Work an automation in "approve first" mode wants to do, waiting for an admin.
+model AutomationTask {
+  id        String    @id @default(cuid())
+  job       String
+  ref       String
+  label     String
+  status    String    @default("pending") // pending, done, rejected, failed
+  result    String    @default("")
+  decidedBy String    @default("")
+  createdAt DateTime  @default(now())
+  decidedAt DateTime?
+
+  @@index([status, createdAt])
+}

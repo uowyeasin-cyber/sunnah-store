@@ -13,7 +13,7 @@ async function rawSettings(): Promise<Settings> {
   cacheLife('days');
   const rows = await db.setting.findMany();
   const s = structuredClone(DEFAULT_SETTINGS) as Record<string, unknown>;
-  for (const r of rows) if (r.key !== SECRETS) s[r.key] = r.value; // service keys never join public settings
+  for (const r of rows) if (r.key !== SECRETS && r.key !== 'automation') s[r.key] = r.value; // service keys and automation state never join public settings
   return s as Settings;
 }
 

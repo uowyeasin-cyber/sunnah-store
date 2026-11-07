@@ -6,9 +6,9 @@ import { convert, formatAmount, unitCents, type Currency } from './money';
 import { getSettings } from './catalog';
 import { shippingFor } from './shipping';
 import { readyMethods } from './pay';
-import { sendToCourierSafe } from './fulfil';
 import { STEPS } from './tracking';
 import { sendMail } from './mail';
+import { onOrderReadySafe } from './automation';
 import { currentCustomer } from './auth';
 import { OutOfStock, takeStock } from './stock';
 
@@ -95,7 +95,7 @@ export async function placeOrder(input: CheckoutInput, source = '', campaign = '
   if (order instanceof OutOfStock) return { error: order.message };
   if (!order) return { error: 'Your store credit changed. Please review your total and try again.' };
   await sendReceipt(order.id).catch(e => console.error('receipt mail failed', e));
-  if (order.payStatus === 'cod') await sendToCourierSafe(order.id);
+  if (order.payStatus === 'cod') await onOrderReadySafe(order.id);
   return { id: order.id, pay: order.payStatus === 'pending' && !manual };
 }
 
