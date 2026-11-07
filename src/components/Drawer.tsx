@@ -58,7 +58,7 @@ function Account({ email }: { email: string | null }) {
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const path = usePathname();
-  if (email) return <div className="items"><p>{t('Signed in as {x}', { x: email })}</p><Link className="btn ghost" href="/track" onClick={() => open(null)}>{t('Your orders and credit')}</Link>
+  if (email) return <div className="items"><p>{t('Signed in as {x}', { x: email })}</p><Link className="btn" href="/account" onClick={() => open(null)}>{t('Your account')}</Link><Link className="btn ghost" href="/track" onClick={() => open(null)}>{t('Track an order')}</Link>
     <button className="btn ghost" onClick={async () => { await logout(); refreshMe(); router.refresh(); }}>{t('Sign out')}</button></div>;
   return (
     <form className="items" onSubmit={async e => {

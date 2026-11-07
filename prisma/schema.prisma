@@ -195,6 +195,7 @@ model Order {
   etaTo       DateTime?
   events      Json        @default("[]")
   lines       OrderLine[]
+  returns     ReturnRequest[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 }
@@ -268,4 +269,21 @@ model Campaign {
   startAt    DateTime  @default(now())
   endAt      DateTime?
   createdAt  DateTime  @default(now())
+}
+
+// A customer's request to return an order. The admin approves (refund as store credit) or declines.
+model ReturnRequest {
+  id        String   @id @default(cuid())
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String
+  reason    String
+  note      String   @default("")
+  // pending, approved, declined
+  status    String   @default("pending")
+  refund    Decimal  @default(0) @db.Decimal(12, 2)
+  adminNote String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
 }

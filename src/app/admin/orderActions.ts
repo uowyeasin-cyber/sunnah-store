@@ -127,3 +127,33 @@ export async function bulkCreate(fd: FormData) {
   if (failed.length) redirect(`/admin/orders/new?${new URLSearchParams({ made: String(made.length), failed: failed.join('\n').slice(0, 1500) })}`);
   redirect(`/admin/orders?${new URLSearchParams({ note: `${made.length} orders created.` })}`);
 }
+
+// Approve (refund as store credit, optional restock) or decline a customer's return request. Each request is decided once.
+export async function decideReturn(fd: FormData) {
+  await requireAdmin();
+  const to = str(fd, 'to') === 'approved' ? 'approved' : 'declined';
+  const r = await db.returnRequest.findUniqueOrThrow({ where: { id: str(fd, 'id') }, include: { order: { include: { lines: true } } } });
+  const o = r.order;
+  const amount = to === 'approved' ? Math.min(Number(o.total) + Number(o.creditUsed), Math.max(0, Number(fd.get('amount')) || 0)) : 0;
+  const adminNote = str(fd, 'adminNote').slice(0, 200);
+  const { returnStock } = await import('@/lib/stock');
+  const done = await db.$transaction(async tx => {
+    const claimed = await tx.returnRequest.updateMany({ where: { id: r.id, status: 'pending' }, data: { status: to, refund: D(amount), adminNote } });
+    if (!claimed.count) return false;
+    if (amount > 0 && o.customerId) {
+      await addCredit(tx, o.customerId, amount, o.currency, `Refund for order ${o.no} · return`, o.no);
+      await tx.order.update({ where: { id: o.id }, data: { payStatus: 'refunded' } });
+    }
+    if (to === 'approved' && fd.get('restock')) await returnStock(tx, o.warehouse, o.lines.flatMap(l => (l.productId ? [{ productId: l.productId, qty: l.qty }] : [])));
+    return true;
+  });
+  if (!done) return;
+  const { sendMail } = await import('@/lib/mail');
+  const { formatAmount } = await import('@/lib/money');
+  const msg = to === 'approved'
+    ? `Your return for order ${o.no} is approved.${amount > 0 ? ` ${formatAmount(amount, o.currency as Currency)} was added to your store credit.` : ''}${adminNote ? `\n\n${adminNote}` : ''}`
+    : `We could not accept the return for order ${o.no}.${adminNote ? `\n\n${adminNote}` : ''}`;
+  await sendMail(o.email, `Return for order ${o.no}`, msg).catch(e => console.error('return mail failed', e));
+  const { revalidatePath } = await import('next/cache');
+  revalidatePath('/admin/returns');
+}

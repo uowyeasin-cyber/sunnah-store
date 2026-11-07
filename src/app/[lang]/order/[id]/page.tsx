@@ -7,6 +7,9 @@ import { barcodeSvg, qrSvg } from '@/lib/codes';
 import ReceiptActions from '@/components/ReceiptActions';
 import RememberOrder from '@/components/RememberOrder';
 import Timeline from '@/components/Timeline';
+import ReturnForm from '@/components/ReturnForm';
+import { RETURN_REASONS, returnWindowOpen } from '@/lib/returns';
+import { DELIVERED } from '@/lib/tracking';
 import { getDict } from '@/lib/catalog';
 import { isLang, makeT, type Lang } from '@/lib/i18n';
 
@@ -17,7 +20,7 @@ export const metadata = { title: 'Your receipt', robots: { index: false } };
 async function Receipt({ params }: { params: Promise<{ id: string; lang: string }> }) {
   const { id, lang: l } = await params;
   const lang: Lang = isLang(l) ? l : 'en';
-  const [o, s, dict] = await Promise.all([db.order.findUnique({ where: { id }, include: { lines: true } }), getSettings(lang), getDict(lang)]);
+  const [o, s, dict] = await Promise.all([db.order.findUnique({ where: { id }, include: { lines: true, returns: { orderBy: { createdAt: 'desc' } } } }), getSettings(lang), getDict(lang)]);
   const t = makeT(dict);
   if (!o) notFound();
   const cur = o.currency as Currency;
@@ -53,6 +56,11 @@ async function Receipt({ params }: { params: Promise<{ id: string; lang: string 
         <div className="tear" />
         <h3>{t('Tracking')}</h3>
         <Timeline status={o.status} events={o.events as { at: string; step: number; note: string }[]} rider={o.status >= 5 && o.riderPhone ? { name: o.riderName, phone: o.riderPhone } : null} t={t} />
+        {(() => {
+          const r = o.returns[0];
+          if (r) return <p className="muted" style={{ fontSize: '.9rem' }}>{t('Return request')}: {t(r.reason)} · <b>{t(r.status === 'pending' ? 'Waiting for review' : r.status === 'approved' ? 'Approved' : 'Declined')}</b>{r.adminNote && ` · ${r.adminNote}`}</p>;
+          return o.status === DELIVERED && returnWindowOpen(o.events as { at: string; step: number }[], DELIVERED) ? <ReturnForm orderId={o.id} reasons={RETURN_REASONS} /> : null;
+        })()}
         <p className="muted" style={{ fontSize: '.85rem' }}>{t('A copy was emailed to {x}. Keep this page; it updates as the courier moves your order.', { x: o.email })}</p>
       </div>
     </div>
