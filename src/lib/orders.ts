@@ -9,6 +9,7 @@ import { readyMethods } from './pay';
 import { sendToCourierSafe } from './fulfil';
 import { STEPS } from './tracking';
 import { sendMail } from './mail';
+import { currentCustomer } from './auth';
 
 export type CheckoutInput = {
   lines: { slug: string; qty: number }[];
@@ -56,12 +57,16 @@ export async function placeOrder(input: CheckoutInput, source = '', campaign = '
   const trx = (input.trx || '').trim().slice(0, 60);
   if (manual && trx.length < 4) return { error: 'Enter the transaction ID from your payment.' };
   // The account is created at checkout from the email; nothing to register first.
-  const customer = await db.customer.upsert({ where: { email }, update: { name: input.name, country: input.country, address: { address: input.address, city: input.city, zip: input.zip, state: input.state || '' } }, create: { email, name: input.name, country: input.country, address: { address: input.address, city: input.city, zip: input.zip, state: input.state || '' } } });
+  // Typing an email proves nothing, so only a shopper signed in as that email may update the saved profile or spend its credit.
+  const me = await currentCustomer();
+  const owner = me?.email === email;
+  const profile = { name: input.name, country: input.country, address: { address: input.address, city: input.city, zip: input.zip, state: input.state || '' } };
+  const customer = await db.customer.upsert({ where: { email }, update: owner ? profile : {}, create: { email, ...profile } });
   const q0 = await quote(input);
   // Credit is held in one currency; a customer's first order sets it.
   if (Number(customer.credit) === 0 && customer.currency !== q0.cur) customer.currency = (await db.customer.update({ where: { id: customer.id }, data: { currency: q0.cur } })).currency;
   const sameCur = customer.currency === q0.cur;
-  const q = await quote(input, sameCur ? Number(customer.credit) : 0, input.useCredit && sameCur);
+  const q = await quote(input, sameCur && owner ? Number(customer.credit) : 0, input.useCredit && sameCur && owner);
   if (!q.lines.length) return { error: 'These items are no longer available.' };
   const now = new Date();
   const no = `PM-${String(now.getFullYear()).slice(2)}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${randomInt(10000, 99999)}`;
@@ -77,11 +82,14 @@ export async function placeOrder(input: CheckoutInput, source = '', campaign = '
       lines: { create: q.lines.map(l => ({ productId: l.p.id, name: `${l.p.name}${l.p.kind === 'pen' ? ' · ' + l.p.sub : ''}`, qty: l.qty, unit: D(l.unit), full: D(l.full), cost: D(l.cost) })) },
     } });
     if (q.credit > 0) {
-      await tx.customer.update({ where: { id: customer.id }, data: { credit: { decrement: D(q.credit) } } });
+      // Conditional decrement: two orders placed at once cannot spend the same credit twice.
+      const took = await tx.customer.updateMany({ where: { id: customer.id, credit: { gte: D(q.credit) } }, data: { credit: { decrement: D(q.credit) } } });
+      if (!took.count) throw new Error('CREDIT_CHANGED');
       await tx.creditEntry.create({ data: { customerId: customer.id, amount: D(-q.credit), note: `Used on order ${no}`, orderNo: no } });
     }
     return o;
-  });
+  }).catch(e => { if ((e as Error).message === 'CREDIT_CHANGED') return null; throw e; });
+  if (!order) return { error: 'Your store credit changed. Please review your total and try again.' };
   await sendReceipt(order.id).catch(e => console.error('receipt mail failed', e));
   if (order.payStatus === 'cod') await sendToCourierSafe(order.id);
   return { id: order.id, pay: order.payStatus === 'pending' && !manual };
