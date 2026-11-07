@@ -26,13 +26,15 @@ export async function submitReview(fd: FormData) {
   return { message: s.holdReviews ? 'Thank you. Your review shows after a quick check.' : 'Thank you. Your review is live.' };
 }
 
-export async function checkoutQuote(input: { lines: { slug: string; qty: number }[]; country: string; useCredit: boolean }) {
+export async function checkoutQuote(input: { lines: { slug: string; qty: number }[]; country: string; useCredit: boolean; email?: string }) {
   const { quote } = await import('@/lib/orders');
   const { currentCustomer } = await import('@/lib/auth');
   const { readyMethods, soonMethods } = await import('@/lib/pay');
   const me = await currentCustomer();
   const q0 = await quote(input);
-  const credit = me && me.currency === q0.cur ? Number(me.credit) : 0;
+  // Same rule as placeOrder: credit only counts when the checkout email is the signed-in one.
+  const email = (input.email ?? me?.email ?? '').trim().toLowerCase();
+  const credit = me && me.email === email && me.currency === q0.cur ? Number(me.credit) : 0;
   const q = await quote(input, credit, input.useCredit);
   return {
     cur: q.cur, subtotal: q.subtotal, saved: q.saved, shipping: q.shipping, credit: q.credit, total: q.total, reward: q.reward, available: credit,
