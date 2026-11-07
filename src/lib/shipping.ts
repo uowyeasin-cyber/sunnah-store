@@ -25,12 +25,15 @@ export function shippingFor(country: string, subtotalUsdCents: number, regions?:
   const pick = regions?.[regionOf(country)]?.courier;
   return pick ? { ...s, courier: pick } : s;
 }
+// Order value (US cents) from which delivery is free, per destination.
+export const FREE_OVER = { Bangladesh: 2500, Malaysia: 4000, 'United States': 7500, other: 15000 } as const;
+export const freeOver = (country: string) => FREE_OVER[country as keyof typeof FREE_OVER] ?? FREE_OVER.other;
 function shipBase(country: string, subtotalUsdCents: number): Ship {
-  if (country === 'Bangladesh') return { warehouse: 'BD', courier: 'Steadfast Courier', costCents: subtotalUsdCents >= 2500 ? 0 : 100, days: [1, 3], currency: 'BDT' };
-  if (country === 'Malaysia') return { warehouse: 'MY', courier: 'J&T Express', costCents: subtotalUsdCents >= 4000 ? 0 : 200, days: [2, 4], currency: 'MYR' };
-  if (country === 'United States') return { warehouse: 'US', courier: 'USPS', costCents: subtotalUsdCents >= 7500 ? 0 : 600, days: [2, 5], currency: 'USD' };
+  if (country === 'Bangladesh') return { warehouse: 'BD', courier: 'Steadfast Courier', costCents: subtotalUsdCents >= FREE_OVER.Bangladesh ? 0 : 100, days: [1, 3], currency: 'BDT' };
+  if (country === 'Malaysia') return { warehouse: 'MY', courier: 'J&T Express', costCents: subtotalUsdCents >= FREE_OVER.Malaysia ? 0 : 200, days: [2, 4], currency: 'MYR' };
+  if (country === 'United States') return { warehouse: 'US', courier: 'USPS', costCents: subtotalUsdCents >= FREE_OVER['United States'] ? 0 : 600, days: [2, 5], currency: 'USD' };
   const near = ['Singapore', 'Brunei', 'Indonesia', 'Australia'].includes(country);
-  return { warehouse: near ? 'MY' : country === 'Canada' ? 'US' : 'MY', courier: 'DHL Express', costCents: subtotalUsdCents >= 15000 ? 0 : 1800, days: [4, 8], currency: 'USD' };
+  return { warehouse: near ? 'MY' : country === 'Canada' ? 'US' : 'MY', courier: 'DHL Express', costCents: subtotalUsdCents >= FREE_OVER.other ? 0 : 1800, days: [4, 8], currency: 'USD' };
 }
 
 // Pay-at-door and online methods shown at checkout, by country. Each shows once its gateway is connected.

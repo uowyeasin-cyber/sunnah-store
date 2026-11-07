@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { getAds, getCategories, getDict, getProducts, getSettings } from '@/lib/catalog';
 import { isLang, makeT, type Lang } from '@/lib/i18n';
 
-import ProductCard from '@/components/ProductCard';
+import ShopBrowser from '@/components/ShopBrowser';
 import { AdSlot } from '@/components/Ads';
 
 // New products and categories added in admin render on first visit, then stay cached.
@@ -27,9 +27,9 @@ export default async function CategoryPage({ params }: PageProps<'/[lang]/c/[slu
   const list = products.filter(p => p.category.slug === slug);
   return (
     <div className="view"><section className="wrap">
-      <div className="sec-head"><div><div className="kicker">{t('Collection')}</div><h2>{cat.name}</h2><p className="muted" style={{ marginTop: 8 }}>{t(list.length === 1 ? '{n} product' : '{n} products', { n: list.length })}</p></div></div>
+      <div className="sec-head"><div><div className="kicker">{t('Collection')}</div><h2>{cat.name}</h2></div></div>
       <AdSlot ads={ads} place="category" products={products} brand={s.store.name} wrap={false} />
-      {list.length ? <div className="grid">{list.map(p => <ProductCard key={p.id} p={p} brand={s.store.name} />)}</div> : <p className="empty">{t('New pieces are coming to this collection soon.')}</p>}
+      <ShopBrowser products={list} brand={s.store.name} empty="New pieces are coming to this collection soon." />
     </section></div>
   );
 }
