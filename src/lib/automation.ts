@@ -141,6 +141,20 @@ const WORK: Record<JobId, (mode: Mode) => Promise<Result>> = {
     await tellOwners(`Low stock: ${low.length} items`, `${low.join('\n')}\n\nUpdate stock in ${site()}/admin/products`);
     return { status: 'ok', summary: `${low.length} low: emailed owners` };
   },
+  async releaseUnpaid() {
+    const { returnStock } = await import('./stock');
+    const old = await db.order.findMany({ where: { stockHeld: true, payStatus: { in: ['pending', 'failed'] }, NOT: [{ payMethod: { startsWith: 'm-' } }, { payMethod: 'cod' }], createdAt: { lt: new Date(Date.now() - 48 * 3600e3) } }, include: { lines: true }, take: 100 });
+    let freed = 0;
+    for (const o of old) {
+      const ok = await db.$transaction(async tx => {
+        const c = await tx.order.updateMany({ where: { id: o.id, stockHeld: true, payStatus: { in: ['pending', 'failed'] } }, data: { stockHeld: false, payStatus: 'cancelled', events: [...(o.events as object[]), { at: new Date().toISOString(), step: -1, note: 'Cancelled by automation: not paid within 48 hours, stock released' }] } });
+        if (c.count) await returnStock(tx, o.warehouse, o.lines.flatMap(l => (l.productId ? [{ productId: l.productId, qty: l.qty }] : [])));
+        return c.count > 0;
+      });
+      if (ok) freed++;
+    }
+    return { status: 'ok', summary: `${old.length} unpaid orders found · ${freed} cancelled and restocked` };
+  },
   async abandonedBag() {
     const { remindBags } = await import('./newsletter');
     const r = await remindBags();

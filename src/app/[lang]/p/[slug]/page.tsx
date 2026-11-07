@@ -60,7 +60,7 @@ export default async function ProductPage({ params }: PageProps<'/[lang]/p/[slug
         <div style={{ position: 'relative' }}><Heart slug={p.slug} /><div className={`stage ${p.offer?.style === 'glow' ? 'glow' : ''}`}><OfferBadge p={p} /><Gallery images={p.images} video={p.video} poster={p.video.startsWith('/media/') ? p.video.replace(/loop\.mp4$/, 'poster.jpg') : ''} alt={`${p.name}, ${p.sub}`}><Art p={p} open brand={s.store.name} /></Gallery></div></div>
         <div className="buy">
           <div><div className="kicker"><Link href={`/c/${p.category.slug}`} style={{ textDecoration: 'none' }}>{p.category.name}</Link></div><h1 style={{ marginTop: 8 }}>{p.name}</h1><p className="muted" style={{ marginTop: 6 }}>{p.sub}</p></div>
-          <BuyBox p={p} finishes={finishes} />
+          <BuyBox p={p} finishes={finishes} soldOut={!s.preorder?.on && !inStock} />
           {p.details && <p className="muted">{p.details}</p>}
         </div>
       </div>
