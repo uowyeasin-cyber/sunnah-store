@@ -9,6 +9,7 @@ import { readyMethods } from './pay';
 import { STEPS } from './tracking';
 import { sendMail } from './mail';
 import { onOrderReadySafe } from './automation';
+import { record } from './ledger';
 import { currentCustomer } from './auth';
 import { OutOfStock, takeStock } from './stock';
 
@@ -136,6 +137,7 @@ export async function createAdminOrder(input: AdminOrderInput) {
     warehouse: q.ship.warehouse, courier: q.ship.courier, etaFrom: day(q.ship.days[0]), etaTo: day(q.ship.days[1]), events: notes,
     lines: { create: q.lines.map(l => ({ productId: l.p.id, name: `${l.p.name}${l.p.kind === 'pen' ? ' · ' + l.p.sub : ''}`, qty: l.qty, unit: D(l.unit), full: D(l.full), cost: D(l.cost) })) },
   } });
+  if (input.paid) await record(db, { dir: 'in', kind: 'manual', method: 'paid-admin', amount: q.total, currency: q.cur, orderId: o.id, orderNo: no, note: 'Admin order marked paid' });
   if (email) await sendReceipt(o.id).catch(e => console.error('receipt mail failed', e));
   return { id: o.id, no };
 }
