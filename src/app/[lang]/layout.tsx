@@ -43,7 +43,7 @@ export default async function StoreLayout({ children, params }: LayoutProps<'/[l
             <div className="foot-brand"><div className="logo"><span>{s.store.name}</span></div><p>{s.store.tagline}</p><div className="label" style={{ marginTop: 18 }}>{t('News and offers')}</div><NewsletterForm /></div>
             <div className="foot-cols">
               <div><div className="label">{t('Shop')}</div>{cats.map(c => <Link key={c.id} href={`/c/${c.slug}`}>{c.name}</Link>)}</div>
-              <div><div className="label">{t('Help')}</div><Link href="/track">{t('Track order')}</Link><Link href="/track">{t('Returns')}</Link><Link href="/track">{t('Store credit')}</Link></div>
+              <div><div className="label">{t('Help')}</div><Link href="/track">{t('Track order')}</Link><Link href="/help#shipping">{t('Shipping')}</Link><Link href="/help#returns">{t('Returns')}</Link><Link href="/account">{t('Store credit')}</Link><Link href="/help">{t('Help')}</Link></div>
             </div>
           </div>
           <div className="foot-bottom"><div className="paylogos">{['Visa', 'Mastercard', 'Amex', 'Apple Pay', 'Google Pay', 'PayPal', 'bKash', 'Nagad', "Touch 'n Go", t('Cash on delivery')].map(x => <span key={x}>{x}</span>)}</div><p>© {s.store.name}</p></div>

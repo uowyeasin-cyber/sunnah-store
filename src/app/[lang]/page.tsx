@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getAds, getCategories, getDict, getLiveReviews, getProducts, getSettings } from '@/lib/catalog';
+import { getAds, getBestSellers, getCategories, getDict, getLiveReviews, getProducts, getSettings } from '@/lib/catalog';
 import { isLang, makeT, type Lang } from '@/lib/i18n';
 
 import Hero, { type HeroSlide } from '@/components/Hero';
@@ -11,11 +11,15 @@ import Art from '@/components/Art';
 import Reviews from '@/components/Reviews';
 import AdSeen from '@/components/AdSeen';
 import { adLive, AdSlot } from '@/components/Ads';
+import Trust from '@/components/Trust';
+import RecentlyViewed from '@/components/RecentlyViewed';
+import NewsletterForm from '@/components/NewsletterForm';
 
 export default async function Home({ params }: PageProps<'/[lang]'>) {
   const { lang: l } = await params;
   const lang: Lang = isLang(l) ? l : 'en';
-  const [s, products, cats, ads, reviews, dict] = await Promise.all([getSettings(lang), getProducts(lang), getCategories(lang), getAds(lang), getLiveReviews(), getDict(lang)]);
+  const [s, products, cats, ads, reviews, dict, best] = await Promise.all([getSettings(lang), getProducts(lang), getCategories(lang), getAds(lang), getLiveReviews(), getDict(lang), getBestSellers()]);
+  const sellers = best.map(id => products.find(p => p.id === id)).filter(p => !!p);
   const t = makeT(dict);
   // A newly uploaded wide film replaces the built-in phone version too, unless a tall one was uploaded as well.
   const df = DEFAULT_SETTINGS.film, ownWide = s.film.wide !== df.wide;
@@ -38,6 +42,7 @@ export default async function Home({ params }: PageProps<'/[lang]'>) {
         <div><span>{t('Closed')}</span><b>152<small>mm</small></b></div><div><span>{t('Across')}</span><b>16<small>mm</small></b></div>
         <div><span>{t('Takes a stick')}</span><b>6–12<small>mm</small></b></div><div><span>{t('Perfume oil')}</span><b>2<small>ml</small></b></div>
       </div></div>}
+      <Trust s={s} t={t} />
       <section className="wrap" id="cats">
         <div className="sec-head"><div><div className="kicker">{t('The house')}</div><h2>{t('Shop by')} <em>{t('collection')}</em></h2></div><p className="muted" style={{ maxWidth: '26em' }}>{t('{n} pieces across {c} collections, each made to be carried every day.', { n: products.length, c: tiles.length })}</p></div>
         <div className="cats">{tiles.map(({ c, items }) => (
@@ -46,12 +51,15 @@ export default async function Home({ params }: PageProps<'/[lang]'>) {
         </div>
       </section>
       <AdSlot ads={ads} place="home-mid" products={products} brand={brand} />
+      {sellers.length >= 2 && <Rail kicker={t('Most loved')} title={t('Best')} italic={t('sellers')}>{sellers.map(p => <ProductCard key={p.id} p={p} brand={brand} />)}</Rail>}
       <Rail kicker={t('New creations')} title={t('The')} italic={t('collection')}>{products.slice(0, 8).map(p => <ProductCard key={p.id} p={p} brand={brand} />)}</Rail>
       <section className="wrap" id="allgrid">
         <div className="sec-head"><div><div className="kicker">{t('{n} pieces', { n: products.length })}</div><h2>{t('All')} <em>{t('products')}</em></h2></div></div>
         <div className="grid">{products.map(p => <ProductCard key={p.id} p={p} brand={brand} />)}</div>
       </section>
+      <RecentlyViewed brand={brand} />
       <div className="wrap"><Reviews reviews={reviews} t={t} /></div>
+      <section className="wrap"><div className="news-band"><div><div className="kicker">{t('News and offers')}</div><h2>{t('Hear about new')} <em>{t('pieces first')}</em></h2><p className="muted">{t('A few emails a year. Unsubscribe with one tap.')}</p></div><NewsletterForm /></div></section>
       <AdSeen ids={homeAds} />
     </div>
   );

@@ -90,3 +90,24 @@ function toCard(p: Row, t: (s: string) => string = s => s) {
     offer: o ? { label: t(o.label), pct: o.pct, style: o.style, endsAt: o.endsAt?.toISOString() || null } : null,
   };
 }
+
+// Units sold per product, from real orders (refunded, failed and cancelled ones left out). Product ids, most sold first.
+const SOLD = { order: { payStatus: { notIn: ['refunded', 'failed', 'cancelled'] } }, productId: { not: null } };
+export async function getBestSellers(limit = 8) {
+  'use cache';
+  cacheTag('catalog');
+  cacheLife('hours');
+  const rows = await db.orderLine.groupBy({ by: ['productId'], where: SOLD, _sum: { qty: true }, orderBy: { _sum: { qty: 'desc' } }, take: limit });
+  return rows.map(r => r.productId as string);
+}
+
+// Products most often in the same order as this one. Product ids, most common first.
+export async function getBoughtTogether(productId: string, limit = 3) {
+  'use cache';
+  cacheTag('catalog');
+  cacheLife('hours');
+  const orders = await db.orderLine.findMany({ where: { ...SOLD, productId }, select: { orderId: true }, distinct: ['orderId'], take: 500 });
+  if (!orders.length) return [];
+  const rows = await db.orderLine.groupBy({ by: ['productId'], where: { orderId: { in: orders.map(o => o.orderId) }, productId: { not: productId }, AND: [SOLD] }, _count: { orderId: true }, orderBy: { _count: { orderId: 'desc' } }, take: limit });
+  return rows.map(r => r.productId as string);
+}

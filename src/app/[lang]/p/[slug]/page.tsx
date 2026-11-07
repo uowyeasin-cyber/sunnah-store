@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getAds, getDict, getLiveReviews, getProduct, getProducts, getSettings } from '@/lib/catalog';
+import { getAds, getBoughtTogether, getDict, getLiveReviews, getProduct, getProducts, getSettings } from '@/lib/catalog';
 import { isLang, makeT, type Lang } from '@/lib/i18n';
 import { unitCents } from '@/lib/money';
 
@@ -12,6 +12,11 @@ import Reviews from '@/components/Reviews';
 import ReviewForm from '@/components/ReviewForm';
 import { AdSlot } from '@/components/Ads';
 import ProductSeen from '@/components/ProductSeen';
+import Delivery from '@/components/Delivery';
+import Faq from '@/components/Faq';
+import RecentlyViewed from '@/components/RecentlyViewed';
+import { deliveryRows } from '@/lib/deliveryRows';
+import { RETURN_DAYS } from '@/lib/returns';
 
 // New products and categories added in admin render on first visit, then stay cached.
 export const instant = false;
@@ -38,10 +43,11 @@ export default async function ProductPage({ params }: PageProps<'/[lang]/p/[slug
   const [p, all, ads, s, dict] = await Promise.all([getProduct(slug, lang), getProducts(lang), getAds(lang), getSettings(lang), getDict(lang)]);
   const t = makeT(dict);
   if (!p) notFound();
-  const reviews = await getLiveReviews(p.id);
+  const [reviews, together] = await Promise.all([getLiveReviews(p.id), getBoughtTogether(p.id)]);
   const finishes = p.kind === 'pen' ? all.filter(x => x.kind === 'pen' && x.category.slug === p.category.slug) : [];
   // Suggestions: refills follow a pen, a pen follows refills.
-  const sugg = all.filter(x => x.slug !== p.slug && (p.kind === 'pen' ? x.kind !== 'pen' : x.kind === 'pen' || x.category.slug === p.category.slug)).slice(0, 3);
+  const bought = together.map(id => all.find(x => x.id === id)).filter(x => !!x);
+  const sugg = bought.length ? bought : all.filter(x => x.slug !== p.slug && (p.kind === 'pen' ? x.kind !== 'pen' : x.kind === 'pen' || x.category.slug === p.category.slug)).slice(0, 3);
   // Product facts for search engines, from the real price, stock and live reviews only.
   const site = process.env.SITE_URL || '';
   const inStock = Object.values(p.stock || {}).some(n => Number(n) > 0);
@@ -55,18 +61,26 @@ export default async function ProductPage({ params }: PageProps<'/[lang]/p/[slug
   return (
     <div className="wrap view">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, '\\u003c') }} />
-      <ProductSeen id={p.id} />
+      <ProductSeen id={p.id} slug={p.slug} />
       <div className="pdp">
         <div style={{ position: 'relative' }}><Heart slug={p.slug} /><div className={`stage ${p.offer?.style === 'glow' ? 'glow' : ''}`}><OfferBadge p={p} /><Gallery images={p.images} video={p.video} poster={p.video.startsWith('/media/') ? p.video.replace(/loop\.mp4$/, 'poster.jpg') : ''} alt={`${p.name}, ${p.sub}`}><Art p={p} open brand={s.store.name} /></Gallery></div></div>
         <div className="buy">
           <div><div className="kicker"><Link href={`/c/${p.category.slug}`} style={{ textDecoration: 'none' }}>{p.category.name}</Link></div><h1 style={{ marginTop: 8 }}>{p.name}</h1><p className="muted" style={{ marginTop: 6 }}>{p.sub}</p></div>
           <BuyBox p={p} finishes={finishes} soldOut={!s.preorder?.on && !inStock} />
+          <p className={`avail ${s.preorder?.on ? 'pre' : inStock ? 'in' : 'out'}`}><i aria-hidden="true" />{s.preorder?.on ? t('Available to pre-order') : inStock ? t('In stock, ready to ship') : t('Sold out for now')}</p>
           {p.details && <p className="muted">{p.details}</p>}
+          <Delivery rows={deliveryRows(s).map(r => ({ label: r.label, days: r.days }))} pre={s.preorder?.on ? s.preorder.ships : ''} />
         </div>
       </div>
       <AdSlot ads={ads.filter(a => a.link !== p.slug)} place="product" products={all} brand={s.store.name} wrap={false} />
-      {sugg.length > 0 && <section><div className="sec-head"><div><div className="kicker">{t('Complete the kit')}</div><h2>{t('Goes well with')}</h2></div></div><div className="grid">{sugg.map(x => <ProductCard key={x.id} p={x} brand={s.store.name} />)}</div></section>}
+      {sugg.length > 0 && <section><div className="sec-head"><div><div className="kicker">{t('Complete the kit')}</div><h2>{t(bought.length ? 'Frequently bought together' : 'Goes well with')}</h2></div></div><div className="grid">{sugg.map(x => <ProductCard key={x.id} p={x} brand={s.store.name} />)}</div></section>}
       <Reviews reviews={reviews} t={t}><ReviewForm productId={p.id} /></Reviews>
+      <Faq title={t('Questions')} items={[
+        { q: t('When will it arrive?'), a: <>{s.preorder?.on ? t(s.preorder.ships) : t('It ships from the warehouse nearest to you. The courier and cost for your address are shown at checkout.')} <Link href="/help#shipping">{t('Shipping details')}</Link></> },
+        { q: t('How can I pay?'), a: <>{t('Every payment method available for your country is listed at checkout, including cash on delivery where the courier offers it.')} <Link href="/help#payment">{t('Payment options')}</Link></> },
+        { q: t('Can I return it?'), a: <>{t('Yes, within {n} days of delivery, from your order page.', { n: RETURN_DAYS })} <Link href="/help#returns">{t('Returns')}</Link></> },
+      ]} />
+      <RecentlyViewed skip={p.slug} brand={s.store.name} />
     </div>
   );
 }
