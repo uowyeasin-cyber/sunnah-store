@@ -5,7 +5,7 @@ import { db } from './db';
 // A key left blank there falls back to the Vercel environment variable of the same name.
 export const SECRETS = 'secrets';
 type Field = [env: string, label: string, kind: 'secret' | 'text' | string[]];
-export type Service = { id: string; name: string; group: 'Payments' | 'Couriers' | 'Social media'; does: string; signup: string; fields: Field[]; need: string[] };
+export type Service = { id: string; name: string; group: 'Payments' | 'Couriers' | 'Social media' | 'AI'; does: string; signup: string; fields: Field[]; need: string[] };
 
 export const SERVICES: Service[] = [
   { id: 'stripe', name: 'Stripe', group: 'Payments', does: 'Cards (Visa, Mastercard, Amex), Apple Pay, Google Pay, and FPX online banking in Malaysia. Works for the USA, Malaysia and worldwide.',
@@ -41,8 +41,11 @@ export const SERVICES: Service[] = [
   { id: 'youtube', name: 'YouTube', group: 'Social media', does: 'Brings back views, likes and comments for each YouTube video you add in Admin → Social media. Uploading stays in YouTube Studio.',
     signup: 'https://console.cloud.google.com/apis/library/youtube.googleapis.com', need: ['YOUTUBE_API_KEY'],
     fields: [['YOUTUBE_API_KEY', 'YouTube Data API key', 'secret']] },
+  { id: 'anthropic', name: 'AI shopping assistant (Claude)', group: 'AI', does: 'A chat button on the shop that answers product, shipping, order-status and returns questions from your real catalog and orders, in the customer’s language, and passes anything it cannot answer to your email. Pay-as-you-go with Anthropic; it stops itself after 400 replies a day.',
+    signup: 'https://console.anthropic.com/settings/keys', need: ['ANTHROPIC_API_KEY'],
+    fields: [['ANTHROPIC_API_KEY', 'API key (sk-ant-…)', 'secret'], ['ASSISTANT_MODEL', 'Model', ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5']], ['ASSISTANT_ON', 'Chat button', ['', 'off']]] },
 ];
-export const MODE_LABEL: Record<string, string> = { live: 'Live', sandbox: 'Test (sandbox)', '': 'Live', '1': 'Test (sandbox)' };
+export const MODE_LABEL: Record<string, string> = { live: 'Live', sandbox: 'Test (sandbox)', '': 'Live', '1': 'Test (sandbox)', off: 'Hidden', 'claude-opus-5-5': 'Claude Opus 5.5 (best answers)', 'claude-sonnet-5-5': 'Claude Sonnet 5.5 (cheaper)', 'claude-haiku-5-5': 'Claude Haiku 5.5 (cheapest)' };
 
 let cache: { at: number; v: Record<string, string> } | null = null;
 // Call before key(): refreshes at most every 30 seconds per server instance.

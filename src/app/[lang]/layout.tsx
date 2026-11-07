@@ -6,6 +6,7 @@ import { isLang, LANGS, makeT, type Lang } from '@/lib/i18n';
 import Html from '@/components/Html';
 import StoreProvider from '@/components/StoreProvider';
 import Header from '@/components/Header';
+import ChatWidget from '@/components/ChatWidget';
 import Drawer from '@/components/Drawer';
 import Motion from '@/components/Motion';
 import AdPopup from '@/components/AdPopup';
@@ -47,6 +48,7 @@ export default async function StoreLayout({ children, params }: LayoutProps<'/[l
           <div className="foot-bottom"><div className="paylogos">{['Visa', 'Mastercard', 'Amex', 'Apple Pay', 'Google Pay', 'PayPal', 'bKash', 'Nagad', "Touch 'n Go", t('Cash on delivery')].map(x => <span key={x}>{x}</span>)}</div><p>© {s.store.name}</p></div>
         </div></footer>
         <Drawer />
+        <ChatWidget />
         {pop && <AdPopup id={pop.id} delay={s.popupDelay} style={pop.style}>
           <div className="pop-art"><div className="ad-float"><AdVisual ad={pop} products={products} brand={s.store.name} /></div></div>
           <div className="pop-copy">{pop.kicker && <div className="kicker">{pop.kicker}</div>}<h2>{pop.title}</h2>{pop.text && <p>{pop.text}</p>}
