@@ -910,3 +910,16 @@ html:not([lang=en]) *{letter-spacing:0 !important}
 .cats{grid-auto-rows:350px}
 .cat-tile .ca img{object-position:center 68%}
 @media (max-width:900px){.cats{grid-auto-rows:240px}.cat-tile:first-child{grid-row:span 2}}
+
+/* Shop assistant chat */
+.chat-fab{position:fixed;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:65;background:var(--solid);color:var(--solid-ink);border:0;border-radius:999px;padding:12px 20px;font:inherit;font-size:.85rem;letter-spacing:.06em;box-shadow:0 6px 24px rgba(0,0,0,.18);cursor:pointer}
+.chat-box{position:fixed;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:66;width:min(380px,calc(100% - 32px));height:min(560px,calc(100dvh - 120px));display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--line);border-radius:calc(var(--radius) * 2 + 6px);box-shadow:0 12px 40px rgba(0,0,0,.2);overflow:hidden}
+.chat-head{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.chat-log{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px}
+.chat-msg{margin:0;padding:9px 12px;border-radius:12px;max-width:88%;font-size:.9rem;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.chat-msg.bot{background:var(--cloth);align-self:flex-start}
+.chat-msg.me{background:var(--solid);color:var(--solid-ink);align-self:flex-end}
+.chat-form{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}
+.chat-form input{flex:1;min-width:0}
+.chat-note{font-size:.72rem;margin:0;padding:0 12px 10px}
+@media print{.chat-fab,.chat-box{display:none!important}}
