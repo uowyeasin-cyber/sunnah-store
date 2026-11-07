@@ -71,7 +71,7 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
   }
   if (name === 'store_policies') {
     return JSON.stringify({ returns: `Within ${RETURN_DAYS} days of delivery, from the order page (Request a return). Reasons: ${RETURN_REASONS.join(', ')}. Approved refunds go to store credit.`,
-      storeCredit: `Every delivered order earns ${s.rewardRate}% back as store credit, usable at checkout when signed in with the same email.`,
+      storeCredit: `Every delivered order earns some store credit back (do not quote a percentage), usable at checkout when signed in with the same email. Approved refunds also go to store credit.`,
       preorder: s.preorder?.on ? `Everything currently sells as pre-order: ${s.preorder.ships}.` : 'Items ship from stock.',
       account: 'Sign in with a six-digit email code (no password) to see orders, tracking, returns and store credit.', track: `${site()}/track`, contact: 'Ask me to pass a message to the team.' });
   }

@@ -6,11 +6,11 @@ import { RETURN_DAYS } from '@/lib/returns';
 export default function Trust({ s, t }: { s: Settings; t: T }) {
   const cod = Object.values(s.regions || {}).some(r => r.cod);
   const items = [
-    { k: 'ship', h: t('Ships worldwide'), p: t('From our stock in Bangladesh, Malaysia and the USA') },
+    { k: 'ship', h: t('Ships worldwide'), p: t('From our stock in the USA, Malaysia and Bangladesh') },
     s.preorder?.on ? { k: 'pre', h: t('Pre-order'), p: t(s.preorder.ships) } : { k: 'stock', h: t('Ready to ship'), p: t('Dispatched from the nearest warehouse') },
     ...(cod ? [{ k: 'cod', h: t('Cash on delivery'), p: t('Pay the courier when it arrives') }] : []),
     { k: 'ret', h: t('{n}-day returns', { n: RETURN_DAYS }), p: t('Request a return from your order page') },
-    ...(s.rewardRate > 0 ? [{ k: 'credit', h: t('{n}% back', { n: s.rewardRate }), p: t('As store credit on every delivered order') }] : []),
+    ...(s.rewardRate > 0 ? [{ k: 'credit', h: t('Store credit back'), p: t('Earned on every delivered order') }] : []),
   ];
   return <section className="wrap"><ul className="trust">{items.map(i => <li key={i.k}><Icon k={i.k} /><div><b>{i.h}</b><span>{i.p}</span></div></li>)}</ul></section>;
 }

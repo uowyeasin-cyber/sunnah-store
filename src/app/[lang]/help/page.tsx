@@ -39,7 +39,7 @@ export default async function Help({ params }: PageProps<'/[lang]/help'>) {
     </section>
 
     <section id="credit" className="panel"><h2>{t('Store credit')}</h2>
-      <p>{t('Every delivered order earns {n}% back as store credit, kept in your local currency.', { n: s.rewardRate })}</p>
+      <p>{t(s.rewardRate > 0 ? 'Every delivered order earns store credit back, kept in your local currency.' : 'Refunds are given as store credit, kept in your local currency.')}</p>
       <p className="muted">{t('Sign in with the same email at checkout to use it.')} <Link href="/account">{t('My account')}</Link></p>
     </section>
 
