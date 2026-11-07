@@ -5,20 +5,22 @@ import { requireAdmin } from '@/lib/auth';
 import { addCredit } from '@/lib/credit';
 import { advance, sendToCourier } from '@/lib/fulfil';
 import { DELIVERED } from '@/lib/tracking';
+import { record, setPayStatus } from '@/lib/ledger';
 import type { Currency } from '@/lib/money';
 
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim();
 const D = (n: number) => new Prisma.Decimal(n.toFixed(2));
 
 export async function saveOrder(fd: FormData) {
-  await requireAdmin('orders', 'saveOrder');
+  const me = await requireAdmin('orders', 'saveOrder');
   const o = await db.order.findUniqueOrThrow({ where: { id: str(fd, 'id') } });
   const status = Math.min(DELIVERED, Math.max(0, Number(fd.get('status')) || 0));
   const date = (k: string) => (str(fd, k) ? new Date(str(fd, k)) : null);
   await advance(o.id, status, {
     manual: true, courier: str(fd, 'courier'), trackingNo: str(fd, 'trackingNo'), riderName: str(fd, 'riderName'), riderPhone: str(fd, 'riderPhone'),
-    payStatus: str(fd, 'payStatus') || o.payStatus, etaFrom: date('etaFrom') ?? o.etaFrom, etaTo: date('etaTo') ?? o.etaTo,
+    etaFrom: date('etaFrom') ?? o.etaFrom, etaTo: date('etaTo') ?? o.etaTo,
   });
+  if (str(fd, 'payStatus')) await setPayStatus(o.id, str(fd, 'payStatus'), me.email || '');
 }
 
 export async function bookCourier(fd: FormData) {
@@ -27,13 +29,14 @@ export async function bookCourier(fd: FormData) {
 }
 
 export async function refundOrder(fd: FormData) {
-  await requireAdmin('orders', 'refundOrder');
+  const me = await requireAdmin('orders', 'refundOrder');
   const o = await db.order.findUniqueOrThrow({ where: { id: str(fd, 'id') } });
   const amount = Math.min(Number(o.total) + Number(o.creditUsed), Math.max(0, Number(fd.get('amount')) || 0));
   if (!o.customerId || !amount) return;
   await db.$transaction(async tx => {
     await addCredit(tx, o.customerId!, amount, o.currency, `Refund for order ${o.no}${str(fd, 'reason') ? ` · ${str(fd, 'reason')}` : ''}`, o.no);
     await tx.order.update({ where: { id: o.id }, data: { payStatus: 'refunded' } });
+    await record(tx, { dir: 'credit', kind: 'refund', method: 'store credit', amount, currency: o.currency, orderId: o.id, orderNo: o.no, note: str(fd, 'reason') || 'Refund as store credit', by: me.email || '' });
   });
 }
 
@@ -84,11 +87,11 @@ export async function deleteOrder(fd: FormData) {
 
 // Ticked orders on the Orders page: mark paid, move to a step, or send to the courier.
 export async function bulkOrders(fd: FormData) {
-  await requireAdmin('orders', 'bulkOrders');
+  const me = await requireAdmin('orders', 'bulkOrders');
   const ids = fd.getAll('ids').map(String).filter(Boolean).slice(0, 300), act = str(fd, 'act');
   let done = 0;
   for (const id of ids) {
-    if (act === 'paid') { await db.order.update({ where: { id }, data: { payStatus: 'paid' } }); done++; }
+    if (act === 'paid') { await setPayStatus(id, 'paid', me.email || ''); done++; }
     else if (act.startsWith('step-')) { await advance(id, Math.min(DELIVERED, Math.max(0, Number(act.slice(5)) || 0)), { manual: true }); done++; }
     else if (act === 'book') { if (await sendToCourier(id).then(() => true, () => false)) done++; }
   }
@@ -130,7 +133,7 @@ export async function bulkCreate(fd: FormData) {
 
 // Approve (refund as store credit, optional restock) or decline a customer's return request. Each request is decided once.
 export async function decideReturn(fd: FormData) {
-  await requireAdmin('returns', 'decideReturn');
+  const me = await requireAdmin('returns', 'decideReturn');
   const to = str(fd, 'to') === 'approved' ? 'approved' : 'declined';
   const r = await db.returnRequest.findUniqueOrThrow({ where: { id: str(fd, 'id') }, include: { order: { include: { lines: true } } } });
   const o = r.order;
@@ -143,6 +146,7 @@ export async function decideReturn(fd: FormData) {
     if (amount > 0 && o.customerId) {
       await addCredit(tx, o.customerId, amount, o.currency, `Refund for order ${o.no} · return`, o.no);
       await tx.order.update({ where: { id: o.id }, data: { payStatus: 'refunded' } });
+      await record(tx, { dir: 'credit', kind: 'refund', method: 'store credit', amount, currency: o.currency, orderId: o.id, orderNo: o.no, note: 'Return approved', by: me.email || '' });
     }
     if (to === 'approved' && fd.get('restock')) await returnStock(tx, o.warehouse, o.lines.flatMap(l => (l.productId ? [{ productId: l.productId, qty: l.qty }] : [])));
     return true;

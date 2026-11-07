@@ -76,7 +76,14 @@ export async function markPaid(id: string, ref: string, amount: number, currency
   if (!o || o.payStatus === 'paid') return;
   if (Math.abs(amount - Number(o.total)) > 0.01 || currency.toUpperCase() !== o.currency) { console.error('payment mismatch', o.no, amount, currency); return; }
   const events = [...(o.events as object[]), { at: new Date().toISOString(), step: o.status, note: `Payment received (${o.payMethod.toUpperCase()})` }];
-  await db.order.update({ where: { id }, data: { payStatus: 'paid', payRef: ref, events } });
+  // Gateways can call back twice at once; only the first one to flip the status books the money.
+  const { record } = await import('@/lib/ledger');
+  const first = await db.$transaction(async tx => {
+    const c = await tx.order.updateMany({ where: { id, payStatus: { not: 'paid' } }, data: { payStatus: 'paid', payRef: ref, events } });
+    if (c.count) await record(tx, { dir: 'in', kind: 'gateway', method: o.payMethod, amount, currency: o.currency, orderId: o.id, orderNo: o.no, ref, note: 'Online payment' });
+    return c.count > 0;
+  });
+  if (!first) return;
   const { onOrderReadySafe } = await import('@/lib/automation');
   await onOrderReadySafe(id);
 }

@@ -327,3 +327,23 @@ model AutomationTask {
 
   @@index([status, createdAt])
 }
+
+// Money ledger: one row per movement. "in" is money received, "out" is money paid back or reversed,
+// "credit" is a refund given as store credit (no cash moves). Expenses stay in their own table.
+model LedgerEntry {
+  id       String   @id @default(cuid())
+  at       DateTime @default(now())
+  dir      String // in, out, credit
+  kind     String // gateway, manual, cod, reversal, refund, other
+  method   String   @default("")
+  amount   Decimal  @db.Decimal(12, 2)
+  currency String
+  orderId  String?
+  orderNo  String   @default("")
+  ref      String   @default("")
+  note     String   @default("")
+  by       String   @default("")
+
+  @@index([at])
+  @@index([orderId])
+}
