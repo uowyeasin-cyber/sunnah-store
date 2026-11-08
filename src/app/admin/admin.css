@@ -168,3 +168,8 @@ body:has(.adm)::before{display:none}
 .adm .sw-row{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #eef2f7}
 .adm .sw-row:last-child{border-bottom:0}
 .adm .sched-ai input{padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px}
+/* Today's decisions: items with their own buttons */
+.adm .dec-group{border-top:1px solid #eef2f7;padding:14px 0 6px}.adm .dec-group:first-of-type{border-top:0}
+.adm .dec-head{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.adm .dec-head .grow{flex:1;min-width:200px}
+.adm .dec-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 0 36px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:12px;background:#fbfcfe}
+.adm .dec-row .grow{flex:1;min-width:200px}
