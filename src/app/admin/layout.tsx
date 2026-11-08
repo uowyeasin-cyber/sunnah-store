@@ -3,6 +3,7 @@ import { currentCustomer, isAdminEmail } from '@/lib/auth';
 import { ROLES, roleOf } from '@/lib/roles';
 import { getSettings } from '@/lib/catalog';
 import { todos } from '@/lib/decisions';
+import { db } from '@/lib/db';
 import AdminSignIn from './AdminSignIn';
 import AdminShell from './AdminNav';
 import BlobUploads from '@/components/BlobUploads';
@@ -25,7 +26,8 @@ async function Gate({ children }: { children: React.ReactNode }) {
   );
   const areas = [...ROLES[roleOf(me.email, s.roles)].areas];
   const waiting = areas.includes('decisions') ? (await todos().catch(() => [])).reduce((a, t) => a + t.n, 0) : 0;
-  return <AdminShell areas={areas} store={{ name: s.store.name, mono: s.store.mono, logo: s.store.logo }} email={me.email} badges={{ decisions: waiting }}>
+  const chats = areas.includes('chats') ? await db.chatThread.count({ where: { closed: false, OR: [{ needsHuman: true }, { unread: { gt: 0 }, aiPaused: true }] } }).catch(() => 0) : 0;
+  return <AdminShell areas={areas} store={{ name: s.store.name, mono: s.store.mono, logo: s.store.logo }} email={me.email} badges={{ decisions: waiting, chats }}>
     <BlobUploads />{children}
   </AdminShell>;
 }

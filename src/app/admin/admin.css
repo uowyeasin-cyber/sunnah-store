@@ -135,3 +135,15 @@ body:has(.adm)::before{display:none}
 .adm .sm{font-size:.8rem}
 .adm .kicker::before{display:none}
 .adm .ord-tabs a.bad{color:var(--err);border-color:#fecaca;background:#fef2f2}.adm .ord-tabs a.bad.on{background:var(--err);color:#fff}
+/* Customer chats */
+.adm .chat-admin{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
+.adm .chat-list{display:flex;flex-direction:column;gap:2px;padding:8px;max-height:70vh;overflow:auto}
+.adm .chat-list a{display:flex;flex-direction:column;gap:2px;padding:10px;border-radius:10px;text-decoration:none;color:inherit}
+.adm .chat-list a:hover{background:#f4f6fa}.adm .chat-list a.on{background:#fff1e6}
+.adm .chat-msgs{display:flex;flex-direction:column;gap:8px;max-height:55vh;overflow:auto;margin:12px 0;padding:10px;background:#f8fafc;border-radius:12px}
+.adm .cm{max-width:80%;padding:8px 12px;border-radius:12px;background:#fff;border:1px solid #e2e8f0}
+.adm .cm p{margin:2px 0 0;white-space:pre-wrap}.adm .cm small{color:#64748b;font-size:.7rem}
+.adm .cm.user{align-self:flex-start}.adm .cm.ai{align-self:flex-end;background:#eef2ff;border-color:#c7d2fe}
+.adm .cm.admin{align-self:flex-end;background:#fff1e6;border-color:#fed7aa}.adm .cm.system{align-self:center;background:transparent;border:0;text-align:center;font-size:.8rem;color:#64748b}
+.adm .chat-reply{display:flex;flex-direction:column;gap:8px}.adm .chat-reply textarea{width:100%}
+@media (max-width:900px){.adm .chat-admin{grid-template-columns:1fr}.adm .chat-list{max-height:260px}}
