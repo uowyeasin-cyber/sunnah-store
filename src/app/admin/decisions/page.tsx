@@ -9,6 +9,7 @@ import { aiReady } from '@/lib/ai';
 import Tips from '../dashboard/Tips';
 import { fullAccess, toggleJob, toggleSetting } from '../automationActions';
 import { decideItem } from '../decideActions';
+import { connected, loadKeys, SERVICES } from '@/lib/keys';
 import { db } from '@/lib/db';
 import { lowStock } from '@/lib/decisions';
 import { formatAmount, type Currency } from '@/lib/money';
@@ -52,6 +53,13 @@ export default async function Decisions() {
   if (!(await adminOrNull('decisions'))) return null;
   const [list, ideas, a, cw, bot, ai, items] = await Promise.all([todos(), tips(), getAutomation(), getCowork(), getBot(), aiReady(), decisionItems()]);
   const live = a.master && !a.stopped;
+  await loadKeys();
+  const courierOn = SERVICES.filter(x => x.group === 'Couriers' && x.id !== 'ship24').some(connected);
+  // Why an item is still here although its Auto switch is on.
+  const why: Record<string, string> = {
+    ship: courierOn ? 'Auto is on: these will be booked on the next run (now, daily and on each new order). Any the courier refused show the reason on the order.' : 'Auto is on, but no courier is connected, so nothing can be booked by itself. Add Steadfast, Pathao, RedX, EasyParcel or Shippo keys in Connections, or press Book courier / mark them shipped by hand.',
+    reviews: ai ? 'Auto is on: the AI reads them on the next run.' : 'Auto is on, but no AI is connected. Connect a free AI in AI tools & chatbot.',
+  };
   return <>
     <div className="page-head"><div><h2>Today&apos;s decisions</h2><p>Everything that needs you, in one place. Switch a job on and the AI and automation do it by themselves. Switch it off and it waits here for your decision.</p></div></div>
 
@@ -70,6 +78,7 @@ export default async function Decisions() {
           <div className="dec-head"><span className="tag orange">{t.n}</span><div className="grow"><b>{t.title}</b><p className="muted sm" style={{ margin: 0 }}>{t.text}</p></div>
             {j && <form action={toggleJob}><input type="hidden" name="job" value={j.id} /><Switch on={live && a.jobs[j.id].mode === 'auto'}><span className="muted sm">Auto</span></Switch></form>}
             <Link className="link sm" href={t.href}>Open all →</Link></div>
+          {j && live && a.jobs[j.id].mode === 'auto' && why[t.id] && <p className="dec-why">⚠ {why[t.id]}</p>}
           {rows.map(r => <form key={r.id} action={decideItem} className="dec-row"><input type="hidden" name="kind" value={r.kind} /><input type="hidden" name="id" value={r.id} />
             <div className="grow"><b className="sm">{r.title}</b><div className="muted sm">{r.sub}</div></div>
             {r.buttons.map(([to, label, cls]) => <button key={to} className={`btn sm ${cls}`} name="to" value={to}>{label}</button>)}

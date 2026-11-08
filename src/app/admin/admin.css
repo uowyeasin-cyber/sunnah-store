@@ -173,3 +173,4 @@ body:has(.adm)::before{display:none}
 .adm .dec-head{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.adm .dec-head .grow{flex:1;min-width:200px}
 .adm .dec-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 0 36px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:12px;background:#fbfcfe}
 .adm .dec-row .grow{flex:1;min-width:200px}
+.adm .dec-why{margin:8px 0 0 36px;padding:8px 12px;border-radius:10px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:.82rem}
