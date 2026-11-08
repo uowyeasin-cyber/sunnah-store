@@ -12,7 +12,7 @@ export default async function Connections() {
   await loadKeys(true);
   const st = await getSettings();
   return <>
-    <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Connections</h2></div>
+    <div><h2 style={{ fontSize: '2rem' }}>Connections</h2></div>
     <p className="muted" style={{ maxWidth: 680 }}>Paste the keys from each merchant account here. A service turns on by itself as soon as its keys are saved: payment methods appear at checkout, couriers book and track parcels. Saved keys are never shown again; leave a box empty to keep what is saved.</p>
     <form action={saveConnections} style={{ display: 'grid', gap: 18 }}>
       <h3>By country</h3>

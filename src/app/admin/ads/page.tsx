@@ -31,7 +31,7 @@ export default async function Ads() {
   const [ads, cats, products] = await Promise.all([db.ad.findMany({ orderBy: [{ place: 'asc' }, { sort: 'asc' }] }), db.category.findMany({ orderBy: { sort: 'asc' } }), db.product.findMany({ orderBy: { sort: 'asc' } })]);
   const links = [['', 'No link'], ...cats.map(c => [`cat:${c.slug}`, `Category: ${c.name}`]), ...products.map(p => [p.slug, `Product: ${p.name} · ${p.sub}`])];
   return <>
-    <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Advertisements</h2><p className="muted" style={{ marginTop: 8 }}>Banners, a moving strip and a pop-up, with photos or video and start and end dates. The pop-up delay is in Design & settings.</p></div>
+    <div><h2 style={{ fontSize: '2rem' }}>Advertisements</h2><p className="muted" style={{ marginTop: 8 }}>Banners, a moving strip and a pop-up, with photos or video and start and end dates. The pop-up delay is in Design & settings.</p></div>
     <AdForm ad={null} links={links} />
     {ads.map(a => <AdForm key={a.id} ad={a} links={links} />)}
   </>;

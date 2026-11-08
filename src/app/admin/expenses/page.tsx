@@ -9,7 +9,7 @@ export default async function Expenses() {
   if (!(await adminOrNull('expenses'))) return null;
   const list = await db.expense.findMany({ orderBy: { date: 'desc' }, take: 300 });
   return <>
-    <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Expenses</h2></div>
+    <div><h2 style={{ fontSize: '2rem' }}>Expenses</h2></div>
     <form className="panel" action={saveExpense}>
       <h3>Add an expense</h3>
       <p className="muted" style={{ fontSize: '.88rem' }}>Money spent running the store. Reports take it off sales to show profit or loss. Product costs go on each product (“Cost to you”), not here.</p>

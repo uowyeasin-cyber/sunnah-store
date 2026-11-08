@@ -21,7 +21,7 @@ export default async function Languages() {
       {OTHER.map(l => <td key={l}><textarea name={`${l}${n}`} defaultValue={dicts[l][k] || ''} rows={k.length > 60 ? 3 : 1} dir={LANGS[l].dir} style={{ width: '100%', minWidth: 160, maxWidth: 'none' }} /></td>)}</tr>); });
   const head = <thead><tr><th>English</th>{OTHER.map(l => <th key={l}>{LANGS[l].label}</th>)}</tr></thead>;
   return <>
-    <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Languages</h2><p className="muted">The shop shows in English, Bangla, Arabic and Hindi. Leave a box empty to show English. Shop text is pre-translated; your own products, slides and menu need your wording.</p></div>
+    <div><h2 style={{ fontSize: '2rem' }}>Languages</h2><p className="muted">The shop shows in English, Bangla, Arabic and Hindi. Leave a box empty to show English. Shop text is pre-translated; your own products, slides and menu need your wording.</p></div>
     <form action={saveTranslations} style={{ display: 'grid', gap: 18 }}>
       <div className="panel"><div className="kicker">Your products, menu, slides and ads</div><div className="tbl-wrap"><table>{head}<tbody>{rows(content)}</tbody></table></div></div>
       <details className="panel"><summary className="kicker" style={{ cursor: 'pointer' }}>Shop buttons and labels ({UI_KEYS.length})</summary><div className="tbl-wrap"><table>{head}<tbody>{rows(UI_KEYS)}</tbody></table></div></details>

@@ -50,7 +50,7 @@ export default async function Social({ searchParams }: PageProps<'/admin/social'
 
   return <div className="rep">
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', gap: 12, flexWrap: 'wrap' }}>
-      <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Social media</h2>
+      <div><h2 style={{ fontSize: '2rem' }}>Social media</h2>
         <p className="muted" style={{ fontSize: '.9rem', maxWidth: '44em' }}>Every post or ad gets its own short link. Clicks, orders and income are counted by the store; views, reach and shares come from Facebook, Instagram and YouTube, or you type them in.</p></div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <form action={syncAll}><button className="btn ghost sm">↻ Sync all numbers</button></form>

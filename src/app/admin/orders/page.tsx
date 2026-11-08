@@ -31,7 +31,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<R
   ]);
   const link = (o: Record<string, string>) => '/admin/orders?' + new URLSearchParams({ tab: tab.id, ...(q ? { q } : {}), sort, ...o });
   return <>
-    <div className="row2" style={{ alignItems: 'end' }}><div style={{ flex: 1 }}><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Orders</h2></div>
+    <div className="row2" style={{ alignItems: 'end' }}><div style={{ flex: 1 }}><h2 style={{ fontSize: '2rem' }}>Orders</h2></div>
       <Link className="btn" href="/admin/orders/new">+ Bulk create order</Link></div>
     {sp.note && <p className="ord-note">{sp.note}</p>}
     <nav className="ord-tabs" aria-label="Order status">{TABS.map((t, i) =>

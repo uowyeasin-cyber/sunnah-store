@@ -7,7 +7,7 @@ export default async function Homepage() {
   if (!(await adminOrNull('homepage'))) return null;
   const [s, products] = await Promise.all([getSettings(), db.product.findMany({ orderBy: { sort: 'asc' } })]);
   return <>
-    <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Launch film</h2></div>
+    <div><h2 style={{ fontSize: '2rem' }}>Launch film</h2></div>
     <form className="panel" action={saveFilm}>
       <p className="muted" style={{ fontSize: '.88rem' }}>The video ad at the very top of the home page. It plays on its own without sound. Upload your own video to replace it, or tick Use original to go back.</p>
       {s.film.wide && <video src={s.film.wide} poster={s.film.poster} controls muted playsInline style={{ width: '100%', maxWidth: 560, borderRadius: 'var(--r)', background: '#000' }} />}

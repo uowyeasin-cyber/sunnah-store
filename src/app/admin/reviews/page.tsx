@@ -6,7 +6,7 @@ export default async function Reviews() {
   if (!(await adminOrNull('reviews'))) return null;
   const list = await db.review.findMany({ orderBy: [{ status: 'asc' }, { createdAt: 'desc' }], include: { product: true }, take: 200 });
   return <>
-    <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Reviews</h2></div>
+    <div><h2 style={{ fontSize: '2rem' }}>Reviews</h2></div>
     <p className="muted" style={{ fontSize: '.88rem' }}>Every product page has a “Write a review” form. New reviews wait here for approval when “Hold new reviews until approved” is on in Design &amp; settings. {list.filter(r => r.status === 'pending').length} waiting · {list.filter(r => r.stars >= 4).length} good · {list.filter(r => r.stars <= 2).length} bad.</p>
     <div className="panel"><div className="tbl-wrap"><table><thead><tr><th>Review</th><th>Product</th><th>Status</th><th></th></tr></thead><tbody>
       {list.map(r => <tr key={r.id}>

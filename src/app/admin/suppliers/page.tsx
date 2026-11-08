@@ -23,7 +23,7 @@ export default async function Suppliers({ searchParams }: { searchParams: Promis
   for (const o of orders) if (o.status === 'ordered') for (const l of o.lines) incoming[`${l.productId}:${o.warehouse}`] = (incoming[`${l.productId}:${o.warehouse}`] || 0) + l.qty;
   const low = auto.lowStockAt;
   return <>
-    <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Suppliers &amp; stock</h2></div>
+    <div><h2 style={{ fontSize: '2rem' }}>Suppliers &amp; stock</h2></div>
     <p className="muted" style={{ fontSize: '.88rem' }}>Keep your makers and wholesalers here, write purchase orders, and receive them into a warehouse. Nothing is sent to a supplier unless you press Email to supplier. Receiving adds the units to stock once.</p>
 
     <div className="panel"><h3 style={{ marginTop: 0 }}>Stock by warehouse</h3>

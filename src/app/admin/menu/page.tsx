@@ -8,7 +8,7 @@ export default async function Menu() {
   const [s, cats] = await Promise.all([getSettings(), db.category.findMany({ orderBy: { sort: 'asc' } })]);
   const targets = [['all', 'Shop all products'], ...cats.map(c => [`cat:${c.slug}`, `Category: ${c.name}`]), ['track', 'Track order page']];
   return <>
-    <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Menu bar</h2></div>
+    <div><h2 style={{ fontSize: '2rem' }}>Menu bar</h2></div>
     <form className="panel" action={saveMenu}>
       <p className="muted" style={{ fontSize: '.88rem' }}>These links show under the logo, in this order.</p>
       <div className="tbl-wrap"><table><thead><tr><th>Label</th><th>Opens</th><th>Show</th><th></th><th>Delete</th></tr></thead><tbody>
