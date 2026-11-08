@@ -1,0 +1,17 @@
+SOFTWARE LICENSE (Single Store)
+
+Copyright (c) 2026 [SELLER NAME]. All rights reserved.
+
+1. Grant. On full payment, the buyer gets a non-exclusive, non-transferable licence to install,
+   use and change this software for ONE online store (one live domain), plus any number of
+   private test copies.
+2. Not allowed without written permission from the seller: reselling, sub-licensing, sharing or
+   giving away this software or a changed copy of it, or using it to run stores for others
+   (agency or SaaS use needs an Extended licence).
+3. Third-party services. Hosting, database, email, payment gateways, couriers and AI providers
+   are separate services with their own terms and fees, paid by the buyer.
+4. Support. [SUPPORT TERMS, e.g. 6 months of email/WhatsApp support for install problems and bugs.]
+5. No warranty. The software is provided "as is". The seller is not liable for lost sales, data
+   or any damage from its use. The buyer is responsible for their own products, prices, taxes,
+   customer data and legal pages.
+6. Termination. This licence ends if its terms are broken; the buyer must then delete all copies.
