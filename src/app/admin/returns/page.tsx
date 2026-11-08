@@ -9,7 +9,7 @@ export default async function Returns() {
   const list = await db.returnRequest.findMany({ orderBy: [{ status: 'desc' }, { createdAt: 'desc' }], take: 200, include: { order: { include: { lines: true } } } });
   const open = list.filter(r => r.status === 'pending').length;
   return <>
-    <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Returns</h2></div>
+    <div><h2 style={{ fontSize: '2rem' }}>Returns</h2></div>
     <p className="muted" style={{ fontSize: '.88rem' }}>Customers ask for a return from their receipt page within 14 days of delivery. Approving adds the refund to their store credit and emails them; nothing is sent back to a card or wallet automatically. {open} waiting.</p>
     <div className="panel"><div className="tbl-wrap"><table><thead><tr><th>Order</th><th>Reason</th><th>Status</th><th></th></tr></thead><tbody>
       {list.map(r => { const o = r.order, cur = o.currency as Currency, max = Number(o.total) + Number(o.creditUsed); return <tr key={r.id}>

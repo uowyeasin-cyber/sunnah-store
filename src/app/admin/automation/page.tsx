@@ -20,7 +20,7 @@ export default async function Automation() {
   const last = (id: string) => runs.find(r => r.job === id);
   const live = a.master && !a.stopped;
   return <>
-    <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Automation</h2></div>
+    <div><h2 style={{ fontSize: '2rem' }}>Automation</h2></div>
     <p className="muted" style={{ fontSize: '.88rem' }}>Jobs that run by themselves once a day (06:00 UTC) and when orders come in. Each one is Off, Ask me first (it lists what it wants to do below and waits for you) or Automatic. A job that fails 3 runs in a row pauses itself and emails the owners.</p>
 
     <div className="panel" style={{ borderColor: a.stopped ? '#b3261e' : undefined }}>

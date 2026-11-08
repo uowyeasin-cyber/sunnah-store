@@ -23,7 +23,7 @@ export default async function Ledger({ searchParams }: { searchParams: Promise<R
   const have = new Set(booked.map(b => b.orderId)), missing = paid.filter(o => !have.has(o.id)).length;
   const f = (n: number, c: string) => formatAmount(n, c as Currency);
   return <>
-    <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Money ledger</h2></div>
+    <div><h2 style={{ fontSize: '2rem' }}>Money ledger</h2></div>
     <p className="muted" style={{ fontSize: '.88rem' }}>Every payment that comes in, every reversal, and every refund given as store credit, written down automatically when it happens. Expenses come from the Expenses page. Amounts stay in their own currency.</p>
     <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
       <Link className="btn ghost sm" href={`/admin/ledger?m=${prev.toISOString().slice(0, 7)}`}>← Earlier</Link>

@@ -18,7 +18,7 @@ export default async function Marketing({ searchParams }: { searchParams: Promis
     db.subscriber.findMany({ where: { confirmedAt: { not: null }, unsubscribed: false }, orderBy: { createdAt: 'desc' }, take: 30, select: { email: true, lang: true, createdAt: true } }),
   ]);
   return <>
-    <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Email marketing</h2></div>
+    <div><h2 style={{ fontSize: '2rem' }}>Email marketing</h2></div>
     {note && <p className="panel" role="status" style={{ margin: 0 }}>{note}</p>}
     <div className="panel" style={{ display: 'flex', gap: 28, flexWrap: 'wrap' }}>
       <div><div className="kicker">Subscribers</div><b style={{ fontSize: '1.6rem' }}>{confirmed}</b></div>

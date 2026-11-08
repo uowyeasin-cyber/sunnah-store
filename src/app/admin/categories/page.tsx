@@ -6,7 +6,7 @@ export default async function Categories() {
   if (!(await adminOrNull('categories'))) return null;
   const cats = await db.category.findMany({ orderBy: { sort: 'asc' }, include: { _count: { select: { products: true } } } });
   return <>
-    <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Categories</h2></div>
+    <div><h2 style={{ fontSize: '2rem' }}>Categories</h2></div>
     <form className="panel" action={saveCategories}>
       <p className="muted" style={{ fontSize: '.88rem' }}>A new category is added to the menu bar automatically. A category can be deleted once it has no products.</p>
       <div className="tbl-wrap"><table><thead><tr><th>Name</th><th>Order</th><th>Products</th><th>Delete</th></tr></thead><tbody>

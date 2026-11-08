@@ -12,7 +12,7 @@ export default async function Payments() {
   const s = await getSettings();
   await loadKeys(true);
   return <>
-    <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Payments</h2></div>
+    <div><h2 style={{ fontSize: '2rem' }}>Payments</h2></div>
     <form className="panel" action={savePayments}>
       <h3>Pay by hand</h3>
       <p className="muted" style={{ fontSize: '.88rem' }}>Works today, no merchant account needed. Tick a method and write your number or bank details. The customer sends the money, types the transaction ID, and you mark the order paid in Orders. Cash on delivery is always on.</p>

@@ -7,7 +7,7 @@ export default async function SettingsPage() {
   if (!(await adminOrNull('settings'))) return null;
   const s = await getSettings();
   return <>
-    <div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Design & settings</h2></div>
+    <div><h2 style={{ fontSize: '2rem' }}>Design & settings</h2></div>
     <form className="panel" action={saveStore}>
       <h3>Store</h3>
       <div className="two"><div className="field"><label>Store name</label><input name="name" defaultValue={s.store.name} /></div><div className="field"><label>Monogram</label><input name="mono" maxLength={3} defaultValue={s.store.mono} /></div></div>

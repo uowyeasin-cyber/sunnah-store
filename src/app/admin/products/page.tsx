@@ -6,7 +6,7 @@ export default async function Products() {
   if (!(await adminOrNull('products'))) return null;
   const list = await db.product.findMany({ orderBy: [{ sort: 'asc' }, { createdAt: 'asc' }], include: { category: true, offer: true } });
   return <>
-    <div className="row2" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', gap: 12 }}><div><div className="kicker">Admin</div><h2 style={{ fontSize: '2rem' }}>Products & offers</h2></div><Link className="btn" href="/admin/products/new">Add a product</Link></div>
+    <div className="row2" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', gap: 12 }}><div><h2 style={{ fontSize: '2rem' }}>Products & offers</h2></div><Link className="btn" href="/admin/products/new">Add a product</Link></div>
     <div className="panel"><div className="tbl-wrap"><table>
       <thead><tr><th>Product</th><th>Collection</th><th>Price</th><th>Offer</th><th>Stock US / MY / BD</th><th>Shown</th></tr></thead>
       <tbody>{list.map(p => { const st = p.stock as Record<string, number>; return (
