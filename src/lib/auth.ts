@@ -40,6 +40,7 @@ export async function startSession(email: string, name = '', phone = '') {
   const customer = found
     ? ((name && !found.name) || (phone && !found.phone) ? await db.customer.update({ where: { id: found.id }, data: { name: found.name || name, phone: found.phone || phone } }) : found)
     : await db.customer.create({ data: { email: to, name, phone } });
+  if (!found) await import('./coupons').then(c => c.sendWelcomeGift(to)).catch(e => console.error('welcome gift failed', e));
   const id = randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + 60 * 864e5);
   await db.session.create({ data: { id: hash(id), customerId: customer.id, expiresAt } });

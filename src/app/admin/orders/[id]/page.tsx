@@ -26,6 +26,7 @@ export default async function OrderAdmin({ params }: PageProps<'/admin/orders/[i
       {o.lines.map(l => <div className="sum-row" key={l.id}><span>{l.qty} × {l.name}</span><span>{f(Number(l.unit) * l.qty)}</span></div>)}
       <div className="sum-row"><span>Delivery</span><span>{f(o.shipping)}</span></div>
       {Number(o.creditUsed) > 0 && <div className="sum-row"><span>Credit used</span><span>−{f(o.creditUsed)}</span></div>}
+      {o.coupon && <div className="sum-row"><span>Code {o.coupon}</span><span>−{f(o.discount)}</span></div>}
       <div className="sum-row total"><span>Total</span><span>{f(o.total)}</span></div>
       <p className="muted" style={{ fontSize: '.85rem' }}>Reward credit on delivery: {f(o.rewardEarned)} · Payment: {o.payMethod.replace(/^m-/, '').toUpperCase()} ({o.payStatus}){o.payRef && o.payMethod.startsWith('m-') ? ` · Transaction ID: ${o.payRef}` : ''}{o.source ? ` · Came from: ${o.source}` : ''}</p>
     </div>

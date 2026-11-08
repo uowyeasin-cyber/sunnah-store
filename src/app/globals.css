@@ -361,6 +361,7 @@ body.menu-open .m-links a{opacity:1;transform:none}
 .pay small{display:block;color:var(--muted);font-size:.74rem}
 .pay:has(input:checked){border-color:var(--accent)}
 .sum-row{display:flex;justify-content:space-between;gap:10px;font-variant-numeric:tabular-nums}
+.coupon-row{display:flex;gap:8px;margin:4px 0}.coupon-row input{flex:1;min-width:0;background:transparent;border:1px solid var(--line);border-radius:calc(var(--radius) * .25);padding:9px 12px;text-transform:uppercase;letter-spacing:.06em}
 .sum-row.total{font-family:var(--display);font-weight:400;font-size:1.5rem;border-top:1px solid var(--line);padding-top:16px}
 .line-item{display:flex;gap:14px;align-items:center}
 .thumb{width:62px;height:62px;border-radius:calc(var(--radius) * .3);background:radial-gradient(ellipse at 30% 20%,var(--surface),var(--cloth));display:grid;place-items:center;overflow:hidden;flex:none}

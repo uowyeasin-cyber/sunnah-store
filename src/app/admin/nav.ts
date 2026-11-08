@@ -12,6 +12,7 @@ export const NAV: { title: string; items: Item[] }[] = [
     { area: 'returns', label: 'Returns', icon: 'undo' },
     { area: 'products', label: 'Products', icon: 'box' },
     { area: 'categories', label: 'Categories', icon: 'folder' },
+    { area: 'offers', label: 'Offers & coupons', icon: 'tag' },
     { area: 'loyalty', label: 'Loyalty points', icon: 'star' },
     { area: 'reviews', label: 'Reviews', icon: 'chat' },
   ] },
