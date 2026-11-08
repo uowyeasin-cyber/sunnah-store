@@ -5,7 +5,8 @@ import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 import { getSettings } from '@/lib/catalog';
 import { keepUpload, isVideoUrl } from '@/lib/upload';
-import { DEFAULT_SETTINGS, type NavItem, type Settings, type Slide } from '@/lib/settings';
+import { CAT_STYLES, DEFAULT_SETTINGS, MOTIONS, type Motion, type NavItem, type Settings, type Slide } from '@/lib/settings';
+const motionOf = (v: string): Motion => (MOTIONS.find(([k]) => k === v)?.[0] || 'fade');
 import { badgeFrom } from '@/lib/badges';
 
 // Every admin change: check the signer is an admin, write, then refresh the storefront cache.
@@ -38,13 +39,24 @@ export async function saveSlides(fd: FormData) {
     if (fd.get(`clear-${i}`)) image = video = '';
     const url = await keepUpload(fd.get(`media-${i}`), 'slides');
     if (url) { if (isVideoUrl(url)) { video = url; image = ''; } else { image = url; video = ''; } }
-    slides.push({ id, eyebrow: str(fd, `eyebrow-${i}`), title: str(fd, `title-${i}`), italic: str(fd, `italic-${i}`), text: str(fd, `text-${i}`), product: str(fd, `product-${i}`), cta: str(fd, `cta-${i}`), look: str(fd, `look-${i}`) === 'dark' ? 'dark' : 'light', image, video });
+    slides.push({ id, eyebrow: str(fd, `eyebrow-${i}`), title: str(fd, `title-${i}`), italic: str(fd, `italic-${i}`), text: str(fd, `text-${i}`), product: str(fd, `product-${i}`), cta: str(fd, `cta-${i}`), look: str(fd, `look-${i}`) === 'dark' ? 'dark' : 'light', image, video, motion: motionOf(str(fd, `motion-${i}`)) });
   }
-  if (fd.get('add')) slides.push({ id: 's' + Date.now(), eyebrow: 'New', title: 'Your headline', italic: '', text: '', product: '', cta: 'Discover', look: 'light', image: '', video: '' });
+  // Many photos and videos at once: each one becomes its own slide, ready for a heading and a description.
+  const motion = motionOf(str(fd, 'newMotion'));
+  for (const [n, v] of fd.getAll('newMedia').entries()) {
+    const url = await keepUpload(v, 'slides');
+    if (!url) continue;
+    const vid = isVideoUrl(url);
+    slides.push({ id: 's' + Date.now().toString(36) + n, eyebrow: '', title: '', italic: '', text: '', product: '', cta: '', look: 'dark', image: vid ? '' : url, video: vid ? url : '', motion });
+  }
+  if (fd.get('add')) slides.push({ id: 's' + Date.now(), eyebrow: 'New', title: 'Your headline', italic: '', text: '', product: '', cta: 'Discover', look: 'light', image: '', video: '', motion: 'fade' });
   const up = Number(fd.get('up'));
   if (up > 0 && up < slides.length) [slides[up - 1], slides[up]] = [slides[up], slides[up - 1]];
   await setSetting('slides', slides);
   await setSetting('slideSecs', Math.min(20, Math.max(3, num(fd, 'slideSecs') || 6.5)));
+  const cs = str(fd, 'catStyle');
+  const csOk = CAT_STYLES.find(([k]) => k === cs)?.[0];
+  if (csOk) await setSetting('catStyle', csOk);
   done();
 }
 
@@ -173,7 +185,8 @@ export async function saveCategories(fd: FormData) {
   const ids = fd.getAll('id').map(String);
   for (const [i, id] of ids.entries()) {
     if (fd.get(`del-${i}`)) { if (!(await db.product.count({ where: { categoryId: id } }))) await db.category.delete({ where: { id } }); continue; }
-    await db.category.update({ where: { id }, data: { name: str(fd, `name-${i}`), sort: num(fd, `sort-${i}`) } });
+    const icon = fd.get(`clearIcon-${i}`) ? '' : await keepUpload(fd.get(`icon-${i}`), 'categories');
+    await db.category.update({ where: { id }, data: { name: str(fd, `name-${i}`), sort: num(fd, `sort-${i}`), ...(icon || fd.get(`clearIcon-${i}`) ? { image: icon } : {}) } });
   }
   const name = str(fd, 'newName');
   if (name) {

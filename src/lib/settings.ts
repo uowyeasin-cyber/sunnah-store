@@ -2,7 +2,13 @@ import type { Rates } from './money';
 
 // Everything an admin can change without touching code. Stored in the Setting table, one row per key.
 export type NavItem = { label: string; to: string; show: boolean }; // to: "all", "cat:<slug>", "track" or a path
-export type Slide = { id: string; eyebrow: string; title: string; italic: string; text: string; product: string; cta: string; look: 'light' | 'dark'; image: string; video: string };
+export type Slide = { id: string; eyebrow: string; title: string; italic: string; text: string; product: string; cta: string; look: 'light' | 'dark'; image: string; video: string; motion?: Motion };
+// How a showcase slide moves in: fade, slide in from the side, slow zoom, slow pan across, or rise up.
+export type Motion = 'fade' | 'slide' | 'zoom' | 'pan' | 'rise';
+export const MOTIONS: [Motion, string][] = [['fade', 'Fade'], ['slide', 'Slide in from the side'], ['zoom', 'Slow zoom'], ['pan', 'Slow pan across'], ['rise', 'Rise up']];
+// How the collection icons move: gently float, scroll by on their own, pop in, or stay still.
+export type CatStyle = 'float' | 'marquee' | 'pop' | 'still';
+export const CAT_STYLES: [CatStyle, string][] = [['float', 'Gently float'], ['marquee', 'Scroll by on their own'], ['pop', 'Pop in one by one'], ['still', 'Stay still']];
 
 // Pay-by-hand methods: the customer sends money to these details and types the transaction ID.
 export type Sender = { name: string; phone: string; email: string; street: string; city: string; state: string; zip: string };
@@ -15,6 +21,7 @@ export type Settings = {
   nav: NavItem[];
   slides: Slide[];
   slideSecs: number;
+  catStyle: CatStyle;
   popupDelay: number;
   rewardRate: number; // percent of order total given back as store credit
   rates: Rates; // 1 USD in each currency
@@ -49,6 +56,7 @@ export const DEFAULT_SETTINGS: Settings = {
     { id: 's3', eyebrow: 'Attar & oils', title: 'Amber oud attar', italic: '', text: 'Alcohol free, 6 ml. Rolls on like the oil in the pen cap.', product: 'amber-oud-attar', cta: 'Discover', look: 'light', image: '', video: '' },
   ],
   slideSecs: 6.5,
+  catStyle: 'float',
   popupDelay: 5,
   rewardRate: 0.5,
   rates: { USD: 1, MYR: 4.7, BDT: 120 },

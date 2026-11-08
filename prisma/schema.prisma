@@ -22,6 +22,7 @@ model Category {
   slug      String    @unique
   name      String
   sort      Int       @default(0)
+  image     String    @default("")
   products  Product[]
   createdAt DateTime  @default(now())
 }
