@@ -110,6 +110,8 @@ export default function Checkout() {
           {q.available > 0 && <label className="toggle"><span>{s.t('Use store credit ({x} available)', { x: money(q.available) })}</span><input type="checkbox" checked={useCredit} onChange={e => setUseCredit(e.target.checked)} /></label>}
           {q.credit > 0 && <div className="sum-row"><span>{s.t('Store credit')}</span><span>−{money(q.credit)}</span></div>}
           <div className="sum-row total"><span>{s.t('Total')}</span><span>{money(q.total)}</span></div>
+          {/* The shop shows prices in the visitor's chosen currency; checkout charges the delivery country's currency. Show both so they match. */}
+          {q.cur !== s.cur && s.rates[q.cur as Currency] > 0 && s.rates[s.cur] > 0 && <p className="cur-note">{s.t('≈ {x} in {c}. You pay in {p}, the currency of your delivery country.', { x: formatAmount(q.total / s.rates[q.cur as Currency] * s.rates[s.cur], s.cur), c: s.cur, p: q.cur })}</p>}
           {q.saved > 0 && <div className="saved"><span>{s.t('You save')}</span><b>{money(q.saved)}</b></div>}
           {q.reward > 0 && <p className="earn">{s.t('You earn {x} in store credit when this order is delivered.', { x: money(q.reward) })}</p>}
           {s.pre ? <p className="pre-line">{s.t('Pre-order')} · {s.t(s.pre)}. {s.t('Delivery takes {a}–{b} days after it ships.', { a: q.days[0], b: q.days[1] })}</p>

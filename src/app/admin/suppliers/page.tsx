@@ -24,7 +24,7 @@ export default async function Suppliers({ searchParams }: { searchParams: Promis
   const low = auto.lowStockAt;
   return <>
     <div><h2 style={{ fontSize: '2rem' }}>Suppliers &amp; stock</h2></div>
-    <p className="muted" style={{ fontSize: '.88rem' }}>Keep your makers and wholesalers here, write purchase orders, and receive them into a warehouse. Nothing is sent to a supplier unless you press Email to supplier. Receiving adds the units to stock once.</p>
+    <p className="muted" style={{ fontSize: '.88rem' }}>Suppliers you find in <Link className="link" href="/admin/sourcing">Global sourcing</Link> are added here by themselves, with website, product links, address, phone and email where found. Keep your makers and wholesalers here, write purchase orders, and receive them into a warehouse. Nothing is sent to a supplier unless you press Email to supplier. Receiving adds the units to stock once.</p>
 
     <div className="panel"><h3 style={{ marginTop: 0 }}>Stock by warehouse</h3>
       <div className="tbl-wrap"><table><thead><tr><th>Product</th>{WH.map(w => <th key={w} className="num">{w}</th>)}</tr></thead><tbody>
@@ -68,7 +68,8 @@ export default async function Suppliers({ searchParams }: { searchParams: Promis
 
     <div className="panel"><h3 style={{ marginTop: 0 }}>Suppliers</h3>
       <div className="tbl-wrap"><table><tbody>
-        {suppliers.map(s => <tr key={s.id}><td><b>{s.name}</b>{!s.active && <span className="muted"> (inactive)</span>}<div className="muted" style={{ fontSize: '.78rem' }}>{[s.contact, s.email, s.phone, s.country, `${s.currency}`, `${s.leadDays} days`].filter(Boolean).join(' · ')}</div>{s.notes && <div style={{ fontSize: '.82rem' }}>{s.notes}</div>}</td>
+        {suppliers.map(s => <tr key={s.id}><td><b>{s.name}</b>{!s.active && <span className="muted"> (inactive)</span>}{s.source && <span className="tag" style={{ marginLeft: 6 }}>{s.source}</span>}
+          {(s.website || s.address || s.links.length > 0) && <div style={{ fontSize: '.78rem', display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 2 }}>{s.website && <a className="link" href={s.website} target="_blank" rel="noopener noreferrer">{s.website.replace(/^https?:\/\/(www\.)?/, '')} ↗</a>}{s.address && <span className="muted">📍 {s.address}</span>}{s.links.slice(0, 4).map((l, k) => <a key={l} className="link" href={l} target="_blank" rel="noopener noreferrer">Product link {k + 1} ↗</a>)}{s.links.length > 4 && <span className="muted">+{s.links.length - 4} more</span>}</div>}<div className="muted" style={{ fontSize: '.78rem' }}>{[s.contact, s.email, s.phone, s.country, `${s.currency}`, `${s.leadDays} days`].filter(Boolean).join(' · ')}</div>{s.notes && <div style={{ fontSize: '.82rem' }}>{s.notes}</div>}</td>
           <td><Link className="btn ghost sm" href={`/admin/suppliers?edit=${s.id}#supplier-form`}>Edit</Link></td></tr>)}
         {!suppliers.length && <tr><td className="muted">No suppliers yet.</td></tr>}
       </tbody></table></div>
@@ -84,6 +85,9 @@ export default async function Suppliers({ searchParams }: { searchParams: Promis
         <div className="field"><label htmlFor="currency">Currency you pay in</label><select id="currency" name="currency" defaultValue={edit?.currency || 'USD'}>{CUR.map(c => <option key={c}>{c}</option>)}</select></div></div>
       <div className="two"><div className="field"><label htmlFor="leadDays">Days from order to delivery</label><input id="leadDays" name="leadDays" type="number" min="0" max="365" defaultValue={edit?.leadDays ?? 14} /></div>
         <div className="field"><label htmlFor="active">Status</label><select id="active" name="active" defaultValue={edit?.active === false ? 'off' : 'on'}><option value="on">Active</option><option value="off">Inactive</option></select></div></div>
+      <div className="two"><div className="field"><label htmlFor="website">Website</label><input id="website" name="website" type="url" placeholder="https://" defaultValue={edit?.website} /></div>
+        <div className="field"><label htmlFor="address">Address / location</label><input id="address" name="address" defaultValue={edit?.address} /></div></div>
+      <div className="field"><label htmlFor="links">Product links (one per line)</label><textarea id="links" name="links" rows={3} defaultValue={edit?.links.join('\n')} /></div>
       <div className="field"><label htmlFor="notes">Notes</label><textarea id="notes" name="notes" rows={3} maxLength={1000} defaultValue={edit?.notes} /></div>
       <button className="btn">{edit ? 'Save supplier' : 'Add supplier'}</button>
     </form>

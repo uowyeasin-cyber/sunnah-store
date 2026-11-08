@@ -26,6 +26,7 @@ export default async function Chats({ searchParams }: PageProps<'/admin/chats'>)
   return <>
     <Refresh />
     <div className="page-head"><div><h2>Customer chats</h2><p>The AI answers customers by itself, day and night, from your real products, offers and orders. When a customer presses “Contact the seller”, or the AI cannot help, the chat comes to the top here and you get an email. Reply here and the customer sees it in the chat.</p></div></div>
+    {sp.note && <p className="ord-note" style={{ background: '#fef2f2', borderColor: '#fecaca', color: '#991b1b' }}>{sp.note}</p>}
     {!ai && <p className="ord-note">The AI is off, so every message waits for you. Connect a free AI in <Link href="/admin/aitools#connect">AI tools & chatbot</Link>.</p>}
     <div className="stats">
       <div className="stat"><small>Need you</small><b className={nHuman ? 'warn' : 'ok'}>{nHuman}</b></div>

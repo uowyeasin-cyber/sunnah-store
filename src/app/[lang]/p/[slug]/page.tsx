@@ -1,5 +1,6 @@
 import { getSeo } from '@/lib/seo';
 import Link from 'next/link';
+import Share from '@/components/Share';
 import { notFound } from 'next/navigation';
 import { getAds, getBoughtTogether, getDict, getLiveReviews, getProduct, getProducts, getSettings } from '@/lib/catalog';
 import { isLang, makeT, type Lang } from '@/lib/i18n';
@@ -65,11 +66,12 @@ export default async function ProductPage({ params }: PageProps<'/[lang]/p/[slug
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, '\\u003c') }} />
       <ProductSeen id={p.id} slug={p.slug} />
       <div className="pdp">
-        <div style={{ position: 'relative' }}><Heart slug={p.slug} /><div className={`stage ${p.offer?.style === 'glow' ? 'glow' : ''}`}><OfferBadge p={p} /><Gallery images={p.images} video={p.video} poster={p.video.startsWith('/media/') ? p.video.replace(/loop\.mp4$/, 'poster.jpg') : ''} alt={`${p.name}, ${p.sub}`}><Art p={p} open brand={s.store.name} /></Gallery></div></div>
+        <div className="pdp-media"><Heart slug={p.slug} /><div className={`stage ${p.offer?.style.startsWith('glow') ? 'glow' : ''}`}><OfferBadge p={p} /><Gallery images={p.images} video={p.video} poster={p.video.startsWith('/media/') ? p.video.replace(/loop\.mp4$/, 'poster.jpg') : ''} alt={`${p.name}, ${p.sub}`}><Art p={p} open brand={s.store.name} /></Gallery></div></div>
         <div className="buy">
           <div><div className="kicker"><Link href={`/c/${p.category.slug}`} style={{ textDecoration: 'none' }}>{p.category.name}</Link></div><h1 style={{ marginTop: 8 }}>{p.name}</h1><p className="muted" style={{ marginTop: 6 }}>{p.sub}</p></div>
           <BuyBox p={p} finishes={finishes} soldOut={!s.preorder?.on && !inStock} />
           <p className={`avail ${s.preorder?.on ? 'pre' : inStock ? 'in' : 'out'}`}><i aria-hidden="true" />{s.preorder?.on ? t('Available to pre-order') : inStock ? t('In stock, ready to ship') : t('Sold out for now')}</p>
+          <Share title={`${p.name}${p.sub ? ' · ' + p.sub : ''} | ${s.store.name}`} />
           {p.details && <p className="muted">{p.details}</p>}
           <Delivery rows={deliveryRows(s).map(r => ({ label: r.label, days: r.days }))} pre={s.preorder?.on ? s.preorder.ships : ''} />
         </div>

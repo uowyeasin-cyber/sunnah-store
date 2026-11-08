@@ -10,6 +10,7 @@ import BlobUploads from '@/components/BlobUploads';
 import Html from '@/components/Html';
 import '../globals.css';
 import './admin.css';
+import '@/components/badges.css';
 
 export const metadata = { title: 'Admin', robots: { index: false } };
 const FONT = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap';

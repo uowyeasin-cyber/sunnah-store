@@ -1162,3 +1162,17 @@ footer{flex:none}
 .card.reveal .art svg,.card.reveal .art img{transition:scale 1s var(--ease),transform .9s var(--ease)}
 .sec-head.reveal h2{transition:clip-path .8s var(--ease),transform .8s var(--ease)}
 @media (max-width:540px){.trust li:last-child:nth-child(odd){flex-direction:row;align-items:center;justify-content:center;gap:12px;border-left:0}}
+.cur-note{margin:-6px 0 0;text-align:right;font-size:.82rem;color:var(--muted)}
+/* Share: product page and footer */
+.share{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.share-main{display:inline-flex;align-items:center;gap:8px;border:0;background:none;padding:0;color:var(--ink);font:inherit;font-size:.68rem;letter-spacing:.24em;text-transform:uppercase;cursor:pointer}
+.share-row{display:flex;gap:8px;flex-wrap:wrap}
+.share-ic{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;transition:transform .3s var(--ease),border-color .3s,color .3s,background .3s;padding:0}
+.share-ic:hover{transform:translateY(-2px);border-color:var(--accent);color:var(--accent)}
+.share-ic.whatsapp:hover{color:#1fa855;border-color:#1fa855}.share-ic.facebook:hover{color:#1877f2;border-color:#1877f2}.share-ic.pinterest:hover{color:#e60023;border-color:#e60023}.share-ic.telegram:hover{color:#229ed9;border-color:#229ed9}
+footer .share{border:0;padding:16px 0 0}
+footer .share-main{color:var(--night-ink)}
+footer .share-ic{background:transparent;border-color:color-mix(in srgb,var(--night-ink) 22%,transparent);color:var(--night-ink)}
+footer .share-ic:hover{border-color:var(--gold-b);color:var(--gold-b)}
+.pdp-media{position:relative}
+@media (min-width:901px){.pdp>.pdp-media{position:sticky;top:130px;align-self:start}}

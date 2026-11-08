@@ -5,14 +5,15 @@ import Art from './Art';
 import Price from './Price';
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from './StoreProvider';
+import { parseBadge } from '@/lib/badges';
 
 export function OfferBadge({ p }: { p: CardProduct }) {
   const o = p.offer;
-  if (!o || o.style === 'glow') return null;
-  if (o.style === 'timer') {
-    return <div className="offer timer"><span>{o.label}</span><DaysLeft endsAt={o.endsAt} /></div>;
-  }
-  return <div className={`offer ${o.style}`}>{o.label}</div>;
+  if (!o) return null;
+  const b = parseBadge(o.style);
+  if (b.look === 'glow') return null;
+  if (b.look === 'timer') return <div className="offer timer" style={b.colors}><span>{o.label}</span><DaysLeft endsAt={o.endsAt} /></div>;
+  return <div className={`offer ${b.cls}`} style={b.colors}>{b.look === 'corner' ? <span>{o.label}</span> : o.label}</div>;
 }
 
 function DaysLeft({ endsAt }: { endsAt: string | null }) {
@@ -52,7 +53,7 @@ export default function ProductCard({ p, brand }: { p: CardProduct; brand?: stri
     <article className="card">
       <div className="frame">
         <Heart slug={p.slug} />
-        <Link className={`art ${p.offer?.style === 'glow' ? 'glow' : ''}`} href={`/p/${p.slug}`} aria-label={`${p.name}, ${p.sub}`}>
+        <Link className={`art ${p.offer?.style.startsWith('glow') ? 'glow' : ''}`} href={`/p/${p.slug}`} aria-label={`${p.name}, ${p.sub}`}>
           <OfferBadge p={p} /><Art p={p} brand={brand} />{p.video && <CardVideo src={p.video} poster={p.image} />}
         </Link>
         <button className="quick" onClick={e => { flyToBag(e.currentTarget); add(p.slug); toast(t('{x} added to your bag', { x: p.name })); }}>{t('Add to bag')}</button>
