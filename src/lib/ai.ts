@@ -9,7 +9,7 @@ export type ProviderId = 'gemini' | 'groq' | 'openrouter' | 'claude';
 export type Provider = { id: ProviderId; name: string; env: string; modelEnv: string; model: string; free: boolean; signup: string; prefix: string; steps: string[]; note: string };
 export const PROVIDERS: Provider[] = [
   { id: 'gemini', name: 'Google Gemini', env: 'GEMINI_API_KEY', modelEnv: 'GEMINI_MODEL', model: 'gemini-flash-latest', free: true, signup: 'https://aistudio.google.com/apikey', prefix: 'AIza',
-    steps: ['Open aistudio.google.com/apikey and sign in with your Google account.', 'Press Create API key and copy it (it starts with AIza).', 'Paste it below and press Connect. No card is needed.'],
+    steps: ['Open aistudio.google.com/apikey and sign in with your Google account.', 'Press Create API key and copy it (it starts with AIza or AQ.).', 'Paste it below and press Connect. No card is needed.'],
     note: 'Free, no card. Google sets a daily request limit per model. Free-plan messages may be used by Google to improve its products, so do not send private customer data you would not share.' },
   { id: 'groq', name: 'Groq', env: 'GROQ_API_KEY', modelEnv: 'GROQ_MODEL', model: 'llama-3.3-70b-versatile', free: true, signup: 'https://console.groq.com/keys', prefix: 'gsk_',
     steps: ['Open console.groq.com/keys and sign up.', 'Press Create API key and copy it (it starts with gsk_).', 'Paste it below and press Connect.'],

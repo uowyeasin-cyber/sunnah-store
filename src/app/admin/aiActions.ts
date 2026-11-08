@@ -15,7 +15,7 @@ export async function replyChat(fd: FormData) {
   const id = str(fd, 'id'), text = str(fd, 'text').slice(0, 3000), pause = !!fd.get('pause');
   await requireAdmin('chats', 'replyChat', id);
   // Customers see every reply, so a pasted API key is stopped here and the owner is sent to the right place.
-  if (/\b(AIza[0-9A-Za-z_-]{20,}|gsk_[0-9A-Za-z]{20,}|sk-(or-|ant-)?[0-9A-Za-z_-]{20,})/.test(text)) redirect(`/admin/chats?id=${id}&note=${encodeURIComponent('Not sent: that looks like an AI key, and customers would see it. Paste keys in AI tools & chatbot → Connect.')}`);
+  if (/(\bAIza[0-9A-Za-z_-]{20,}|\bAQ\.[0-9A-Za-z_-]{20,}|\bgsk_[0-9A-Za-z]{20,}|\bsk-(or-|ant-)?[0-9A-Za-z_-]{20,})/.test(text)) redirect(`/admin/chats?id=${id}&note=${encodeURIComponent('Not sent: that looks like an AI key, and customers would see it. Paste keys in AI tools & chatbot → Connect.')}`);
   if (text) await save(id, 'admin', text);
   await db.chatThread.update({ where: { id }, data: { unread: 0, ...(pause ? { aiPaused: true } : {}) } });
   redirect(`/admin/chats?id=${id}`);
