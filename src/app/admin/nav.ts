@@ -6,6 +6,7 @@ export const NAV: { title: string; items: Item[] }[] = [
   { title: 'Overview', items: [
     { area: 'dashboard', label: 'Dashboard', icon: 'grid' },
     { area: 'decisions', label: "Today's decisions", icon: 'inbox' },
+    { area: 'reminders', label: 'Reminders & schedule', icon: 'clock' },
     { area: 'ai', label: 'AI co-worker', icon: 'sparkle' },
   ] },
   { title: 'Sell', items: [
@@ -27,6 +28,7 @@ export const NAV: { title: string; items: Item[] }[] = [
   { title: 'Grow', items: [
     { area: 'reports', label: 'Profit & loss', icon: 'chart', also: [['ledger', 'Money ledger'], ['expenses', 'Expenses']] },
     { area: 'social', label: 'Marketing', icon: 'megaphone', also: [['marketing', 'Email marketing'], ['ads', 'Advertisements']] },
+    { area: 'seo', label: 'SEO & ads', icon: 'search' },
     { area: 'aitools', label: 'AI tools & chatbot', icon: 'bot' },
     { area: 'automation', label: 'Automation', icon: 'bolt' },
   ] },
@@ -66,5 +68,6 @@ export const ICONS: Record<string, string> = {
   search: 'M11 18a7 7 0 100-14 7 7 0 000 14zM21 21l-5-5',
   bot: 'M5 9h14v10H5zM12 5v4M9 13h.01M15 13h.01M3 13v3M21 13v3',
   store: 'M4 9l1-5h14l1 5M4 9v11h16V9M4 9h16M9 20v-6h6v6',
+  clock: 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 2',
   coins: 'M12 8c4.4 0 8-1.3 8-3s-3.6-3-8-3-8 1.3-8 3 3.6 3 8 3zM4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3',
 };

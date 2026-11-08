@@ -7,12 +7,16 @@ export const JOBS = [
   { id: 'abandonedBag', name: 'Abandoned bag reminder', does: 'One email, a day after someone typed their email at checkout and did not order, with a link that puts the same items back in their bag.', modes: ['off', 'auto'] as Mode[], def: 'off' as Mode },
   { id: 'releaseUnpaid', name: 'Release unpaid stock', does: 'Online-payment orders still unpaid after 48 hours are cancelled and their units go back on the shelf. Bank or wallet orders waiting for you to check the transaction ID are left alone.', modes: ['off', 'auto'] as Mode[], def: 'off' as Mode },
   { id: 'dailySummary', name: 'Daily summary email', does: "Emails the owners yesterday's orders and sales, and what is waiting for them.", modes: ['off', 'auto'] as Mode[], def: 'off' as Mode },
+  { id: 'reviews', name: 'AI review check', does: 'New customer reviews are read by the AI: real ones go live by themselves, spam and abuse are hidden. Off: they wait for you in Reviews.', modes: ['off', 'auto'] as Mode[], def: 'off' as Mode },
+  { id: 'aiDaily', name: 'AI co-worker daily check', does: 'Every day the AI looks at sales, stock and offers and fixes what it can: a flash sale on slow products, a coupon, hiding sold-out items, better product text. Ask me first shows its plan in AI co-worker.', modes: ['off', 'approve', 'auto'] as Mode[], def: 'off' as Mode },
+  { id: 'aiSeo', name: 'AI SEO', does: 'Writes Google titles and descriptions for new products that have none yet.', modes: ['off', 'auto'] as Mode[], def: 'off' as Mode },
+  { id: 'aiWeekly', name: 'Weekly AI business report', does: 'Every Monday the AI emails the owners what went well, what did not, and the 5 best next steps.', modes: ['off', 'auto'] as Mode[], def: 'off' as Mode },
 ] as const;
 export type JobId = (typeof JOBS)[number]['id'];
-export type Automation = { master: boolean; stopped: boolean; stoppedBy: string; stoppedAt: string; lowStockAt: number; jobs: Record<JobId, { mode: Mode; paused: boolean }> };
+export type Automation = { full: boolean; master: boolean; stopped: boolean; stoppedBy: string; stoppedAt: string; lowStockAt: number; jobs: Record<JobId, { mode: Mode; paused: boolean }> };
 export const MODE_LABEL: Record<Mode, string> = { off: 'Off', approve: 'Ask me first', auto: 'Automatic' };
 
 export const defaultAutomation = (): Automation => ({
-  master: true, stopped: false, stoppedBy: '', stoppedAt: '', lowStockAt: 5,
+  full: false, master: true, stopped: false, stoppedBy: '', stoppedAt: '', lowStockAt: 5,
   jobs: Object.fromEntries(JOBS.map(j => [j.id, { mode: j.def, paused: false }])) as Automation['jobs'],
 });

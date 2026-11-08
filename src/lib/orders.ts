@@ -1,3 +1,4 @@
+import { serverPurchaseSafe } from './track';
 import 'server-only';
 import { randomInt } from 'node:crypto';
 import { Prisma } from '@prisma/client';
@@ -110,6 +111,7 @@ export async function placeOrder(input: CheckoutInput, source = '', campaign = '
   if (order === 'coupon') return { error: 'That code has just been used up. Remove it and try again.' };
   if (!order) return { error: 'Your store credit changed. Please review your total and try again.' };
   await sendReceipt(order.id).catch(e => console.error('receipt mail failed', e));
+  await serverPurchaseSafe(order.id);
   await import('./newsletter').then(n => n.forgetBag(order.email)).catch(() => {});
   if (order.payStatus === 'cod') await onOrderReadySafe(order.id);
   return { id: order.id, pay: order.payStatus === 'pending' && !manual };

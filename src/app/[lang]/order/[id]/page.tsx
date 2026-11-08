@@ -8,6 +8,8 @@ import ReceiptActions from '@/components/ReceiptActions';
 import RememberOrder from '@/components/RememberOrder';
 import Timeline from '@/components/Timeline';
 import ReturnForm from '@/components/ReturnForm';
+import PurchaseEvent from '@/components/PurchaseEvent';
+import { getSeo } from '@/lib/seo';
 import { RETURN_REASONS, returnWindowOpen } from '@/lib/returns';
 import { DELIVERED } from '@/lib/tracking';
 import { getDict } from '@/lib/catalog';
@@ -20,7 +22,7 @@ export const metadata = { title: 'Your receipt', robots: { index: false } };
 async function Receipt({ params }: { params: Promise<{ id: string; lang: string }> }) {
   const { id, lang: l } = await params;
   const lang: Lang = isLang(l) ? l : 'en';
-  const [o, s, dict] = await Promise.all([db.order.findUnique({ where: { id }, include: { lines: true, returns: { orderBy: { createdAt: 'desc' } } } }), getSettings(lang), getDict(lang)]);
+  const [o, s, dict, seo] = await Promise.all([db.order.findUnique({ where: { id }, include: { lines: true, returns: { orderBy: { createdAt: 'desc' } } } }), getSettings(lang), getDict(lang), getSeo()]);
   const t = makeT(dict);
   if (!o) notFound();
   const cur = o.currency as Currency;
@@ -34,6 +36,7 @@ async function Receipt({ params }: { params: Promise<{ id: string; lang: string 
       <div className="top"><div><div className="kicker">{s.store.name} · {t('Receipt')}</div><h2>{t('Thank you, {x}.', { x: o.name.split(' ')[0] })}</h2></div><div className="num" style={{ textAlign: 'right' }}>{o.no}<br /><small>{o.createdAt.toLocaleString('en-US')}</small></div></div>
       <div className="body">
         <RememberOrder id={o.id} />
+        {!['failed', 'cancelled', 'refunded'].includes(o.payStatus) && <PurchaseEvent no={o.no} value={Number(o.total)} currency={o.currency} gadsSend={seo.pixels.gads && seo.pixels.gadsLabel ? `${seo.pixels.gads}/${seo.pixels.gadsLabel}` : ''} />}
         <ReceiptActions url={`/order/${o.id}`} title={`${s.store.name} · ${o.no}`} t={{ download: t('Download PDF'), share: t('Share'), copied: t('Link copied'), whatsapp: 'WhatsApp' }} />
         <div className="codes"><div className="qr" dangerouslySetInnerHTML={{ __html: qr }} /><div className="bar" dangerouslySetInnerHTML={{ __html: bar }} /></div>
         <div className="kv">

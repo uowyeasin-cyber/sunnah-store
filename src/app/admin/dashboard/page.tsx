@@ -6,6 +6,7 @@ import { formatAmount, type Currency } from '@/lib/money';
 import { STEPS } from '@/lib/tracking';
 import { lowStock, tips, todos } from '@/lib/decisions';
 import Tips from './Tips';
+import ScheduleBox from '../ScheduleBox';
 import { newJob } from '../aiActions';
 
 export default async function Dashboard() {
@@ -21,6 +22,7 @@ export default async function Dashboard() {
   const n = (id: string) => list.find(x => x.id === id)?.n || 0;
   return <>
     <div className="page-head"><div><h2>Dashboard</h2><p>Everything below updates by itself from orders, costs and expenses. Amounts are in USD, converted with your rates.</p></div></div>
+    <ScheduleBox />
     <Link href="/admin/decisions" className="panel" style={{ flexDirection: 'row', alignItems: 'center', gap: 14, textDecoration: 'none' }}>
       <span style={{ fontSize: 24 }}>⏰</span><div style={{ flex: 1 }}><b>Waiting for you ({list.reduce((a, x) => a + x.n, 0)})</b><div className="muted sm">{list.length ? list.map(x => `${x.n} ${x.title.toLowerCase()}`).join(' · ') : 'Nothing waiting. Everything else runs by itself.'}</div></div><span className="link">Open →</span>
     </Link>

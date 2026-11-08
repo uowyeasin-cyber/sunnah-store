@@ -147,3 +147,24 @@ body:has(.adm)::before{display:none}
 .adm .cm.admin{align-self:flex-end;background:#fff1e6;border-color:#fed7aa}.adm .cm.system{align-self:center;background:transparent;border:0;text-align:center;font-size:.8rem;color:#64748b}
 .adm .chat-reply{display:flex;flex-direction:column;gap:8px}.adm .chat-reply textarea{width:100%}
 @media (max-width:900px){.adm .chat-admin{grid-template-columns:1fr}.adm .chat-list{max-height:260px}}
+/* Reminders and timed jobs */
+.adm .sched{border:2px solid #e9d5ff;box-shadow:0 4px 18px rgba(124,58,237,.06)}
+.adm .sched summary{cursor:pointer;list-style:none}.adm .sched summary::-webkit-details-marker{display:none}
+.adm .sched-list{margin-top:10px;border-top:1px solid #e2e8f0}
+.adm .sched-row{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #e2e8f0}
+.adm .sched-row.due{background:#fff7ed}
+.adm .tick{width:22px;height:22px;border:2px solid #a78bfa;border-radius:6px;background:#fff;cursor:pointer;padding:0}
+.adm .tick:hover{background:#ede9fe}
+.adm .sched-add{margin-top:12px}
+.adm .access{display:flex;gap:14px;align-items:center;flex-wrap:wrap;border:2px solid #fed7aa;background:#fffaf5}
+.adm .access.on{border-color:#86efac;background:#f0fdf4}
+.adm .serp{border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px;margin:6px 0 12px;display:flex;flex-direction:column;gap:2px;max-width:620px}
+.adm .serp small{color:#475569}.adm .serp b{color:#1a0dab;font-weight:500;font-size:1.05rem}.adm .serp span{color:#4d5156;font-size:.86rem}
+/* On/off switches */
+.adm .sw-wrap{display:inline-flex;align-items:center;gap:8px}
+.adm .sw{width:46px;height:26px;border-radius:999px;border:0;background:#cbd5e1;position:relative;cursor:pointer;padding:0;flex:none;transition:background .15s}
+.adm .sw i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .15s}
+.adm .sw.on{background:#16a34a}.adm .sw.on i{left:23px}
+.adm .sw-row{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #eef2f7}
+.adm .sw-row:last-child{border-bottom:0}
+.adm .sched-ai input{padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px}
