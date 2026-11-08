@@ -35,6 +35,7 @@ export const NAV: { title: string; items: Item[] }[] = [
     { area: 'settings', label: 'Store & theme', icon: 'palette', also: [['homepage', 'Homepage slides'], ['menu', 'Menu bar']] },
     { area: 'payments', label: 'Payments & languages', icon: 'map', also: [['languages', 'Languages'], ['connections', 'Connections (keys)']] },
     { area: 'team', label: 'Admins', icon: 'key' },
+    { area: 'licenses', label: 'App licenses', icon: 'coins' },
     { area: 'activity', label: 'Activity history', icon: 'list' },
   ] },
 ];

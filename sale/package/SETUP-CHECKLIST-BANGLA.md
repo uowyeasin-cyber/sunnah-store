@@ -41,6 +41,7 @@ Sob account client er nijer email e khulun, jate pore client nije malik thake.
 | `GMAIL_USER` | Client er Gmail |
 | `GMAIL_APP_PASSWORD` | Gmail App Password (16 letter) |
 | `MAIL_NAME` | Store er naam |
+| `LICENSE_KEY` | Apnar Admin → App licenses theke banano key (payment er por) |
 
 - [ ] Sob gulo bosano hoyeche
 - [ ] **Deployments → Redeploy** korechi, build sobuj (Ready) hoyeche
@@ -79,6 +80,7 @@ Gmail App Password: Google Account → Security → 2-Step Verification on → A
 ## Somossa hole
 | Ki dekhchen | Ki korben |
 | --- | --- |
+| "License needed" page | Free demo shesh. Apnar admin e oi site ke "Allowed" korun, othoba key diye `LICENSE_KEY` bosiye Redeploy |
 | Build fail, database error | Storage e Neon connect kora ache kina dekhun, Redeploy |
 | Login code ase na | Gmail App Password thik ache kina; spam folder dekhun |
 | `/admin` e dhukte dey na | Email ta `SEED_ADMIN_EMAILS` e ache kina, thakle Redeploy |

@@ -25,6 +25,7 @@ Project → **Settings → Environment Variables**. Add these (see `.env.example
 | `SECRETS_KEY` | Another long random text. Set it once and never change it |
 | `GMAIL_USER` + `GMAIL_APP_PASSWORD` | So sign-in codes reach customers. App password: Google Account → Security → 2-Step Verification → App passwords |
 | `MAIL_NAME` | The shop's name, shown as the email sender |
+| `LICENSE_KEY` | The license key from the seller (without it the store runs as a short free demo, then locks) |
 
 Instead of Gmail you can use Resend: `RESEND_API_KEY` and `MAIL_FROM` after verifying your domain at resend.com.
 
@@ -78,6 +79,7 @@ Without email settings, the sign-in code is printed in the terminal.
 ## Problems
 | What you see | Fix |
 | --- | --- |
+| "License needed" page | The free demo ended. Get a license key from the seller, add it as `LICENSE_KEY`, redeploy |
 | Build fails with a database error | `DATABASE_URL` or `DATABASE_URL_UNPOOLED` is missing: connect Neon in Storage, then redeploy |
 | No sign-in code arrives | Check `GMAIL_USER`/`GMAIL_APP_PASSWORD` (app password, not the normal one); test with `/api/mail-test?k=<MAIL_TEST_KEY>` |
 | `/admin` says not allowed | The email is not in `SEED_ADMIN_EMAILS`; add it and redeploy |
