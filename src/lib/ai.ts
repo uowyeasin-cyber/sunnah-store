@@ -42,14 +42,25 @@ async function call(p: Provider, system: string, messages: Turn[], maxTokens: nu
   }
   const ctl = AbortSignal.timeout(45e3);
   if (p.id === 'gemini') {
-    const r = await fetch(`${process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta'}/models/${model}:generateContent`, {
-      method: 'POST', signal: ctl, headers: { 'Content-Type': 'application/json', 'x-goog-api-key': k },
-      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: messages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
-        generationConfig: { maxOutputTokens: maxTokens, ...(json ? { responseMimeType: 'application/json' } : {}) } }),
-    });
-    if (!r.ok) throw new AiError(p.name, r.status, (await r.text()).slice(0, 300));
-    const d = await r.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-    return (d.candidates?.[0]?.content?.parts || []).map(x => x.text || '').join('').trim();
+    // Google's free models get "high demand" (503) or limit (429) errors often. Try the picked model, then lighter ones.
+    const models = [...new Set([model, 'gemini-flash-latest', 'gemini-2.5-flash', 'gemini-flash-lite-latest', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'])];
+    let err: AiError | null = null;
+    for (const m of models) {
+      const r = await fetch(`${process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta'}/models/${m}:generateContent`, {
+        method: 'POST', signal: ctl, headers: { 'Content-Type': 'application/json', 'x-goog-api-key': k },
+        body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: messages.map(x => ({ role: x.role === 'assistant' ? 'model' : 'user', parts: [{ text: x.content }] })),
+          generationConfig: { maxOutputTokens: maxTokens, ...(json ? { responseMimeType: 'application/json' } : {}) } }),
+      });
+      if (r.ok) {
+        const d = await r.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+        const text = (d.candidates?.[0]?.content?.parts || []).map(x => x.text || '').join('').trim();
+        if (text) return text;
+        continue;
+      }
+      err = new AiError(p.name, r.status, (await r.text()).slice(0, 300));
+      if (![404, 429, 500, 503].includes(r.status)) throw err; // a bad key: no point trying other models
+    }
+    throw err || new AiError(p.name, 503, 'No model answered.');
   }
   const base = (p.id === 'groq' ? process.env.GROQ_BASE_URL : process.env.OPENROUTER_BASE_URL) || OPENAI_BASE[p.id];
   const r = await fetch(`${base}/chat/completions`, {
