@@ -23,9 +23,6 @@ export default async function Dashboard() {
   return <>
     <div className="page-head"><div><h2>Dashboard</h2><p>Everything below updates by itself from orders, costs and expenses. Amounts are in USD, converted with your rates.</p></div></div>
     <ScheduleBox />
-    <Link href="/admin/decisions" className="panel" style={{ flexDirection: 'row', alignItems: 'center', gap: 14, textDecoration: 'none' }}>
-      <span style={{ fontSize: 24 }}>⏰</span><div style={{ flex: 1 }}><b>Waiting for you ({list.reduce((a, x) => a + x.n, 0)})</b><div className="muted sm">{list.length ? list.map(x => `${x.n} ${x.title.toLowerCase()}`).join(' · ') : 'Nothing waiting. Everything else runs by itself.'}</div></div><span className="link">Open →</span>
-    </Link>
     <div className="stats">
       <div className="stat"><small>Today sales</small><b>{m(day.now.revenue)}</b><span>{day.now.orders} orders · profit {m(day.now.net)}</span></div>
       <div className="stat"><small>Sales ({month.title})</small><b>{m(t.revenue)}</b><span>{t.orders} orders</span></div>
