@@ -63,7 +63,9 @@ export async function fullAccess(fd: FormData) {
     const { getBot } = await import('@/lib/assistant');
     const b = { ...(await getBot()), on: true, handover: true };
     await db.setting.upsert({ where: { key: 'chatbot' }, update: { value: b }, create: { key: 'chatbot', value: b } });
+    for (const id of ['courier', 'reviews', 'releaseUnpaid', 'tracking'] as JobId[]) await runJob(id, 'manual').catch(() => {});
   }
+  revalidatePath('/admin/decisions');
   done();
 }
 
@@ -100,6 +102,8 @@ export async function toggleJob(fd: FormData) {
   if (on) { a.master = true; }
   a.full = JOBS.every(x => a.jobs[x.id].mode === 'auto');
   await saveAutomation(a);
+  // Switched on: do the waiting work now instead of at the next daily run.
+  if (on && ['courier', 'reviews', 'releaseUnpaid', 'tracking'].includes(j.id)) await runJob(j.id as JobId, 'manual').catch(() => {});
   revalidatePath('/admin/decisions'); done();
 }
 export async function toggleSetting(fd: FormData) {
