@@ -156,7 +156,7 @@ DATA:
 ${await facts(t, turns.map(x => `${x.role}: ${x.content}`).join('\n'), c)}`;
   let text: string;
   try { text = (await ask(system, turns, { maxTokens: 700 })).text; }
-  catch (e) { console.error('bot failed', e); await notifySeller(t.id, 'The AI could not answer (no key, or every free allowance is used up today).'); return save(t.id, 'system', 'Sorry, I cannot answer right now. The seller has been told and will reply here.'); }
+  catch (e) { console.error('bot failed', e); await notifySeller(t.id, `The AI could not answer: ${(e as Error)?.message?.slice(0, 200) || 'no key, or every free allowance is used up today'}. Check Admin → AI tools & chatbot → Test the chatbot.`); return save(t.id, 'system', 'Sorry, I cannot answer right now. The seller has been told and will reply here.'); }
   const wantsSeller = text.includes(SELLER);
   text = text.replaceAll(SELLER, '').trim() || 'Let me get the seller for you.';
   const out = await save(t.id, 'ai', text);

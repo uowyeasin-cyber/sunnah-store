@@ -32,7 +32,21 @@ export async function chatAction(fd: FormData) {
 // ---------- AI tools & chatbot ----------
 const back = (m: string, hash = ''): never => redirect('/admin/aitools?note=' + encodeURIComponent(m) + hash);
 
+// Which AI a key belongs to, from how it starts. Lets the owner paste any key into one box.
+function detect(k: string): ProviderId | '' {
+  if (/^(AIza|AQ\.)/.test(k)) return 'gemini';
+  if (k.startsWith('gsk_')) return 'groq';
+  if (k.startsWith('sk-or-')) return 'openrouter';
+  if (k.startsWith('sk-ant-')) return 'claude';
+  return '';
+}
+
 export async function connectAi(fd: FormData) {
+  if (str(fd, 'provider') === 'auto') {
+    const id = detect(str(fd, 'key'));
+    if (!id) back('That key was not recognised. Gemini keys start with AIza or AQ., Groq with gsk_, OpenRouter with sk-or-, Claude with sk-ant-.', '#connect');
+    fd.set('provider', id);
+  }
   const p = PROVIDERS.find(x => x.id === str(fd, 'provider'));
   if (!p) back('Pick an AI.');
   await requireAdmin('aitools', 'connectAi', p!.id);
@@ -128,4 +142,16 @@ export async function saveCowork(fd: FormData) {
   const v = { mode: str(fd, 'mode') === 'auto' ? 'auto' : 'ask' };
   await db.setting.upsert({ where: { key: 'cowork' }, update: { value: v }, create: { key: 'cowork', value: v } });
   redirect('/admin/ai?note=' + encodeURIComponent(v.mode === 'auto' ? 'Automatic: the AI does the jobs by itself and tells you what it did.' : 'Ask first: the AI shows its plan and waits for your Approve.'));
+}
+
+// Asks the shop chatbot's AI a real customer question and shows the answer or the exact error.
+export async function testBot() {
+  await requireAdmin('aitools', 'testBot');
+  try {
+    const r = await ask('You are a helpful shop assistant. Answer in one short sentence.', [{ role: 'user', content: 'Hello, do you ship to Malaysia?' }], { maxTokens: 80 });
+    back(`Chatbot test passed. ${r.provider} answered: “${r.text.slice(0, 160)}”`, '#connect');
+  } catch (e) {
+    if (e && typeof e === 'object' && 'digest' in e) throw e;
+    back(`Chatbot test failed: ${(e as Error).message.slice(0, 220)}`, '#connect');
+  }
 }

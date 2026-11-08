@@ -4,7 +4,7 @@ import { adminOrNull } from '@/lib/auth';
 import { PROVIDERS, connectedProviders } from '@/lib/ai';
 import { getBot } from '@/lib/assistant';
 import { keyHint, loadKeys } from '@/lib/keys';
-import { aiProvider, connectAi, fillKnowledge, runTool, saveBot } from '../aiActions';
+import { aiProvider, connectAi, fillKnowledge, runTool, saveBot, testBot } from '../aiActions';
 
 const FEATURES = [
   ['Shop chatbot', 'Answers customers 24/7: products, prices, offers, delivery, order tracking, returns. Hands over to you on "Contact the seller".', 'Customer chats'],
@@ -40,6 +40,14 @@ export default async function AiTools({ searchParams }: PageProps<'/admin/aitool
 
     <section className="panel" id="connect">
       <h3>Connect AI</h3>
+      <form action={connectAi} className="quick-key">
+        <input type="hidden" name="provider" value="auto" />
+        <label htmlFor="anykey"><b>Paste any AI key</b><span className="muted sm">Gemini, Groq, OpenRouter or Claude. We work out which one it is, test it and save it.</span></label>
+        <div className="row2" style={{ gap: 8 }}><input id="anykey" name="key" type="password" autoComplete="off" placeholder="Paste your key here" required style={{ flex: 1 }} /><button className="btn orange">Connect</button></div>
+        <p className="muted sm">No key yet? Get a free one in 1 minute: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">Google Gemini</a> or <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer">Groq</a>. Sign in, press Create key, copy it, paste it above. Connect both and one takes over when the other is busy.</p>
+      </form>
+      <form action={testBot} className="row2" style={{ gap: 10, margin: '6px 0 16px' }}><button className="btn ghost sm" disabled={!on.length}>Test the chatbot now</button><span className="muted sm">Sends “Do you ship to Malaysia?” and shows the answer or the exact problem.</span></form>
+      <details><summary className="muted">Step by step for each AI, replace or remove a key</summary>
       <p className="muted sm">Gemini, Groq and OpenRouter are free. Claude is paid and gives the best answers. Your key is saved encrypted and never shown again.</p>
       <div className="grid2">
         {PROVIDERS.map(p => { const hint = keyHint(p.env), live = on.some(x => x.id === p.id); return <div key={p.id} className="panel" style={{ margin: 0 }}>
@@ -55,6 +63,7 @@ export default async function AiTools({ searchParams }: PageProps<'/admin/aitool
             <span className="muted sm">{hint}</span></form>}
         </div>; })}
       </div>
+      </details>
     </section>
 
     <section className="panel">

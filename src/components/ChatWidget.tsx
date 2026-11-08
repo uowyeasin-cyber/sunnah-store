@@ -73,8 +73,8 @@ export default function ChatWidget() {
   const status = seller ? t('Seller · a person replies here') : info.ai ? t('Online · replies in seconds') : t('The seller replies here');
   return <>
     {!open && <button className="chat-fab" onClick={() => setOpen(true)} aria-label={t('Ask us anything')}>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="M4 5h16v11H9l-5 4z" /></svg>
-      <span>{t('Chat with us')}</span><i className="chat-dot" aria-hidden />
+      <span className="fab-orb" aria-hidden><svg width="31" height="31" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8.5A3.5 3.5 0 0 1 9.5 5h13A3.5 3.5 0 0 1 26 8.5v8a3.5 3.5 0 0 1-3.5 3.5H14l-6 5v-5.2A3.5 3.5 0 0 1 6 16.5z" /><path d="M16 9.2l1 2.6 2.6 1-2.6 1-1 2.6-1-2.6-2.6-1 2.6-1z" fill="currentColor" stroke="none" /></svg></span>
+      <span className="fab-lbl">{t('Ask us anything')}</span><i className="chat-dot" aria-hidden />
     </button>}
     {open && <section className="chat-box" aria-label={info.name} role="dialog">
       <div className="chat-head">

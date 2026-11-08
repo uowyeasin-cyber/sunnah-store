@@ -215,3 +215,7 @@ body:has(.adm)::before{display:none}
 .adm .src-plats{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;margin-top:10px}
 .adm .src-plat{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
 .adm .src-plat small{display:block;color:var(--muted);font-size:.75rem}
+.quick-key{display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:12px;background:linear-gradient(135deg,#fff7ed,#fff);border:1px solid #fed7aa;margin-bottom:6px}
+.quick-key label{display:flex;flex-direction:column;gap:2px}
+.quick-key input[type=password]{font-size:1rem;padding:12px 14px}
+details>summary{cursor:pointer;padding:8px 0}
