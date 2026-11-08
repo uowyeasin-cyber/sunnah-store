@@ -77,7 +77,7 @@ export default async function ProductPage({ params }: PageProps<'/[lang]/p/[slug
         </div>
       </div>
       <AdSlot ads={ads.filter(a => a.link !== p.slug)} place="product" products={all} brand={s.store.name} wrap={false} />
-      {sugg.length > 0 && <section><div className="sec-head"><div><div className="kicker">{t('Complete the kit')}</div><h2>{t(bought.length ? 'Frequently bought together' : 'Goes well with')}</h2></div></div><div className="grid">{sugg.map(x => <ProductCard key={x.id} p={x} brand={s.store.name} />)}</div></section>}
+      {sugg.length > 0 && <section><div className="sec-head"><div><div className="kicker">{t('Complete the kit')}</div><h2>{t(bought.length ? 'Frequently bought together' : 'Goes well with')}</h2></div></div><div className="grid" data-n={Math.min(sugg.length, 8)}>{sugg.map(x => <ProductCard key={x.id} p={x} brand={s.store.name} />)}</div></section>}
       <Reviews reviews={reviews} t={t}><ReviewForm productId={p.id} /></Reviews>
       <Faq title={t('Questions')} items={[
         { q: t('When will it arrive?'), a: <>{s.preorder?.on ? t(s.preorder.ships) : t('It ships from the warehouse nearest to you. The courier and cost for your address are shown at checkout.')} <Link href="/help#shipping">{t('Shipping details')}</Link></> },

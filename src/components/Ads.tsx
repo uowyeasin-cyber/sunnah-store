@@ -45,6 +45,8 @@ export function AdBanner({ ad, products, brand }: { ad: Ad; products: CardProduc
 }
 
 export function AdSlot({ ads, place, products, brand, wrap = true }: { ads: Ad[]; place: string; products: CardProduct[]; brand: string; wrap?: boolean }) {
-  const list = ads.filter(a => a.place === place && adLive(a));
+  // An ad for a product or collection that is hidden or gone would show an empty picture and lead nowhere: skip it.
+  const target = (a: Ad) => !a.link || /^https?:/.test(a.link) || (a.link.startsWith('cat:') ? products.some(x => x.category.slug === a.link.slice(4)) : products.some(x => x.slug === a.link));
+  const list = ads.filter(a => a.place === place && adLive(a) && target(a));
   return <>{list.map(a => <div key={a.id} className={`${wrap ? 'wrap ' : ''}ad-slot`}><AdBanner ad={a} products={products} brand={brand} /></div>)}</>;
 }

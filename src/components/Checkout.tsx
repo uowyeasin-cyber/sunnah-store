@@ -63,6 +63,8 @@ export default function Checkout() {
     return () => { live = false; };
   }, [key, f.country, useCredit, mail, code, retry]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Checkout charges the delivery country's currency; switch the whole shop (header, bag) to it so every price matches.
+  useEffect(() => { if (q?.cur && q.cur !== s.cur && s.rates[q.cur as Currency] > 0) s.setCur(q.cur as Currency); }, [q?.cur]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!lines.length) return <div className="empty page-empty"><h2>{s.t('Your bag is empty')}</h2><p>{s.t('Add something you love, then come back.')}</p><Link className="btn" href="/shop">{s.t('Continue shopping')}</Link></div>;
   const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
   const money = (n: number) => formatAmount(n, (q?.cur || 'USD') as Currency);

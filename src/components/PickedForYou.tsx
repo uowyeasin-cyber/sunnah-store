@@ -18,5 +18,5 @@ export default function PickedForYou({ brand }: { brand?: string }) {
   const list = Object.values(products).filter(p => cats.has(p.category.slug) && !known.has(p.slug)).slice(0, 4);
   if (!list.length) return null;
   return <section className="wrap recent"><div className="sec-head"><div><div className="kicker">{t('Based on what you liked')}</div><h2>{t('Picked')} <em>{t('for you')}</em></h2></div></div>
-    <div className="grid">{list.map(p => <ProductCard key={p.id} p={p} brand={brand} />)}</div></section>;
+    <div className="grid" data-n={Math.min(list.length, 8)}>{list.map(p => <ProductCard key={p.id} p={p} brand={brand} />)}</div></section>;
 }
