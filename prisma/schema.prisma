@@ -367,6 +367,11 @@ model Supplier {
   currency  String          @default("USD")
   leadDays  Int             @default(14)
   notes     String          @default("")
+  // Filled by Global sourcing: company website, street address, links to the products we source there, and where it came from.
+  website   String          @default("")
+  address   String          @default("")
+  links     String[]        @default([])
+  source    String          @default("")
   active    Boolean         @default(true)
   createdAt DateTime        @default(now())
   orders    PurchaseOrder[]

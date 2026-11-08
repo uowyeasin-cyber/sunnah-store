@@ -18,6 +18,7 @@ export const NAV: { title: string; items: Item[] }[] = [
     { area: 'reviews', label: 'Reviews & loyalty', icon: 'star', also: [['loyalty', 'Loyalty points']] },
   ] },
   { title: 'Source', items: [
+    { area: 'sourcing', label: 'Global sourcing', icon: 'globe' },
     { area: 'suppliers', label: 'Suppliers', icon: 'factory' },
   ] },
   { title: 'Customers', items: [
