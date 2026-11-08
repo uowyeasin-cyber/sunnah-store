@@ -450,3 +450,49 @@ model Coupon {
   endsAt    DateTime?
   createdAt DateTime  @default(now())
 }
+
+// Shop chat: the AI answers; a customer can ask for the seller, and the admin replies in Customer chats.
+model ChatThread {
+  id         String        @id @default(cuid())
+  email      String        @default("")
+  name       String        @default("")
+  country    String        @default("")
+  lang       String        @default("en")
+  // The customer pressed "Contact the seller" or the AI could not help.
+  needsHuman Boolean       @default(false)
+  // The admin took over; the AI stays quiet until resumed.
+  aiPaused   Boolean       @default(false)
+  closed     Boolean       @default(false)
+  unread     Int           @default(0)
+  lastAt     DateTime      @default(now())
+  createdAt  DateTime      @default(now())
+  messages   ChatMessage[]
+
+  @@index([lastAt])
+}
+
+model ChatMessage {
+  id       String     @id @default(cuid())
+  thread   ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  threadId String
+  // user, ai, admin, system
+  role     String
+  text     String
+  at       DateTime   @default(now())
+
+  @@index([threadId, at])
+}
+
+// Work given to the AI co-worker or the AI tools, with what it proposed and what was done.
+model AiJob {
+  id        String   @id @default(cuid())
+  kind      String   @default("cowork")
+  prompt    String
+  // thinking, proposed, done, rejected, failed
+  status    String   @default("thinking")
+  result    String   @default("")
+  actions   Json     @default("[]")
+  provider  String   @default("")
+  by        String   @default("")
+  createdAt DateTime @default(now())
+}

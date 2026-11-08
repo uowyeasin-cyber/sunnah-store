@@ -1,5 +1,4 @@
 import 'server-only';
-import Anthropic from '@anthropic-ai/sdk';
 import { db } from './db';
 import { key, loadKeys } from './keys';
 import { getProduct, getProducts, getSettings } from './catalog';
@@ -9,34 +8,13 @@ import { DELIVERED, STEPS } from './tracking';
 import { RETURN_DAYS, RETURN_REASONS } from './returns';
 import { sendMail } from './mail';
 import { roleOf } from './roles';
+import { aiReady, ask, type Turn } from './ai';
 
-// The shop's AI assistant. It answers only from the tools below, which read the real catalog,
-// shipping rules, policies and (with the order number and matching email) the customer's order.
-export const MODELS = ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5'];
-export const DAILY_LIMIT = 400; // assistant replies per day across the whole shop, to cap the bill
-export type ChatTurn = { role: 'user' | 'assistant'; content: string };
-
-export async function assistantReady() {
-  await loadKeys();
-  return !!key('ANTHROPIC_API_KEY') && key('ASSISTANT_ON') !== 'off';
-}
-
+// The shop's chat assistant. It works with any connected AI (free Gemini, Groq or OpenRouter, or Claude).
+// It answers only from facts read here from the real catalog, shipping rules, policies and orders,
+// and hands the chat to the seller when it cannot help or the customer asks.
+export const DAILY_LIMIT = 400; // assistant replies per day across the whole shop
 const site = () => process.env.SITE_URL || 'https://sunnahstore.vercel.app';
-
-const TOOLS: Anthropic.Beta.BetaTool[] = [
-  { name: 'search_products', description: 'Lists products in the shop with price (in the customer currency), offer, availability and link. Leave query empty to list everything.', strict: true,
-    input_schema: { type: 'object', properties: { query: { type: 'string', description: 'Words to match in name, finish, category or type; empty for all' } }, required: ['query'], additionalProperties: false } },
-  { name: 'get_product', description: 'Full details and specifications of one product, by its slug from search_products.', strict: true,
-    input_schema: { type: 'object', properties: { slug: { type: 'string' } }, required: ['slug'], additionalProperties: false } },
-  { name: 'shipping_info', description: 'Courier, delivery time, shipping cost and payment methods (including cash on delivery) for a destination country.', strict: true,
-    input_schema: { type: 'object', properties: { country: { type: 'string', description: 'Country name in English, e.g. Malaysia' }, order_value_usd: { type: 'number', description: 'Value of the items in US dollars, 0 if unknown' } }, required: ['country', 'order_value_usd'], additionalProperties: false } },
-  { name: 'order_status', description: 'Status, courier, tracking number and expected delivery of an order. Needs both the order number and the email used on the order.', strict: true,
-    input_schema: { type: 'object', properties: { order_no: { type: 'string', description: 'e.g. PM-261107-12345' }, email: { type: 'string' } }, required: ['order_no', 'email'], additionalProperties: false } },
-  { name: 'store_policies', description: 'Returns and refunds, store credit and rewards, pre-order, and how to contact the shop.', strict: true,
-    input_schema: { type: 'object', properties: {}, required: [], additionalProperties: false } },
-  { name: 'contact_human', description: 'Sends the conversation to the shop team by email so a person replies. Use when the customer asks for a person, has a complaint you cannot solve, or needs something the tools cannot answer.', strict: true,
-    input_schema: { type: 'object', properties: { name: { type: 'string' }, email: { type: 'string' }, summary: { type: 'string', description: 'What the customer needs, in a few sentences' } }, required: ['name', 'email', 'summary'], additionalProperties: false } },
-];
 
 type Ctx = { cur: Currency; transcript: string };
 
@@ -96,37 +74,98 @@ async function underDailyLimit() {
   return true;
 }
 
-export async function chat(history: ChatTurn[], lang: string, cur: string): Promise<{ text: string; error?: string }> {
-  if (!(await assistantReady())) return { text: '', error: 'off' };
-  if (!(await underDailyLimit())) return { text: '', error: 'busy' };
+// Chatbot settings, edited in Admin → AI tools & chatbot.
+export type Bot = { on: boolean; handover: boolean; name: string; greeting: string; rules: string; knowledge: string };
+export const BOT_DEFAULT: Bot = {
+  on: true, handover: true, name: 'Shop assistant', greeting: 'Assalamu alaikum! How can I help you today? I can answer in any language.',
+  rules: 'Be friendly and short. Reply in the customer\'s language. Recommend products from the catalog and mention active offers. Never invent prices, stock or delivery dates that are not in the data. If unsure, offer to connect the seller.',
+  knowledge: '',
+};
+export async function getBot(): Promise<Bot> {
+  const r = await db.setting.findUnique({ where: { key: 'chatbot' } });
+  return { ...BOT_DEFAULT, ...((r?.value as Partial<Bot>) || {}) };
+}
+export async function assistantReady() {
+  await loadKeys();
+  return (await getBot()).on && key('ASSISTANT_ON') !== 'off' && (await aiReady());
+}
+
+const SELLER = '[[SELLER]]';
+const CUR_COUNTRY: Record<string, string> = { BDT: 'Bangladesh', MYR: 'Malaysia', USD: 'United States' };
+
+// Everything the bot may say comes from here: catalog, policies, delivery, and the customer's own orders.
+async function facts(thread: { email: string; country: string }, transcript: string, cur: Currency) {
+  const ctx: Ctx = { cur, transcript };
+  const run = (n: string, i: Record<string, unknown>) => runTool(n, i, ctx).catch(() => 'not available');
+  const countries = [...new Set([thread.country, CUR_COUNTRY[cur], 'Bangladesh', 'Malaysia', 'United States', 'United Kingdom'].filter(Boolean))];
+  const nos = [...new Set((transcript.match(/PM-\d{6}-\d{5}/gi) || []).map(x => x.toUpperCase()))].slice(0, 3);
+  const emails = [...new Set([thread.email, ...(transcript.match(/[^\s@]+@[^\s@]+\.[a-z]{2,}/gi) || [])].filter(Boolean).map(e => e.toLowerCase()))];
+  const lookups = await Promise.all(nos.map(async no => {
+    for (const email of emails) { const r = await run('order_status', { order_no: no, email }); if (r.startsWith('{')) return r; }
+    return `${no}: ask for the email used on this order (it must match) before sharing anything.`;
+  }));
+  const mine = thread.email ? await db.order.findMany({ where: { email: thread.email }, orderBy: { createdAt: 'desc' }, take: 3, select: { no: true, status: true, courier: true, trackingNo: true, id: true, payStatus: true } }) : [];
+  return [
+    `CATALOG (prices already in the customer's currency): ${await run('search_products', { query: '' })}`,
+    `POLICIES: ${await run('store_policies', {})}`,
+    `DELIVERY: ${(await Promise.all(countries.map(c => run('shipping_info', { country: c, order_value_usd: 0 })))).join('\n')}`,
+    `TRACK PAGE: ${site()}/track (order number + email)`,
+    mine.length ? `SIGNED-IN CUSTOMER'S ORDERS: ${JSON.stringify(mine.map(o => ({ order: o.no, status: STEPS[o.status], payment: o.payStatus, courier: o.courier, tracking: o.trackingNo || 'not booked yet', page: `${site()}/order/${o.id}` })))}` : '',
+    lookups.length ? `ORDER LOOKUPS: ${lookups.join('\n')}` : '',
+  ].filter(Boolean).join('\n\n');
+}
+
+// Emails the owners once when a chat needs a person.
+export async function notifySeller(threadId: string, why: string) {
+  const t = await db.chatThread.findUnique({ where: { id: threadId }, include: { messages: { orderBy: { at: 'asc' }, take: 40 } } });
+  if (!t || t.needsHuman) return;
+  await db.chatThread.update({ where: { id: threadId }, data: { needsHuman: true, unread: { increment: 1 } } });
   const s = await getSettings();
-  const model = MODELS.includes(key('ASSISTANT_MODEL')) ? key('ASSISTANT_MODEL') : MODELS[0];
-  const client = new Anthropic({ apiKey: key('ANTHROPIC_API_KEY') });
-  const ctx: Ctx = { cur: isCurrency(cur) ? cur : 'USD', transcript: history.map(h => `${h.role === 'user' ? 'Customer' : 'Assistant'}: ${h.content}`).join('\n') };
-  const system = `You are the shopping assistant of ${s.store.name}, an online shop: ${s.store.tagline}
-Help customers choose products, and answer questions about products, prices, shipping, payment, orders, returns and store credit.
-Rules:
-- Facts come only from your tools. Never guess a price, stock level, delivery date, order status, policy or specification; if a tool does not say it, say you are not sure and offer to pass the question to the team (contact_human).
-- For an order, ask for the order number and the email used on it, then call order_status.
-- Prices are in the customer's currency as the tools give them. Share product links from the tools.
-- Reply in the customer's language (site language code: ${lang}). Keep replies short and warm, plain text, no tables.
-- You cannot place orders, change orders, issue refunds or take payment; send the customer to the right page or to the team.`;
-  const messages: Anthropic.Beta.BetaMessageParam[] = history.map(h => ({ role: h.role, content: h.content }));
-  for (let i = 0; i < 6; i++) {
-    const r = await client.beta.messages.create({
-      model, max_tokens: 4000, system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }], tools: TOOLS, messages,
-      output_config: { effort: 'low' },
-      ...(model === 'claude-haiku-5-5' ? {} : { betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' as const }),
-    });
-    if (r.stop_reason === 'refusal') return { text: 'Sorry, I can’t help with that here. I can pass your question to our team if you like.' };
-    if (r.stop_reason !== 'tool_use') return { text: r.content.flatMap(b => (b.type === 'text' ? [b.text] : [])).join('\n').trim() || 'Sorry, could you say that another way?' };
-    messages.push({ role: 'assistant', content: r.content });
-    const results: Anthropic.Beta.BetaToolResultBlockParam[] = [];
-    for (const b of r.content) if (b.type === 'tool_use') {
-      const out = await runTool(b.name, (b.input || {}) as Record<string, unknown>, ctx).catch(e => { console.error('assistant tool failed', b.name, e); return null; });
-      results.push(out === null ? { type: 'tool_result', tool_use_id: b.id, content: 'This tool failed. Tell the customer you could not check right now.', is_error: true } : { type: 'tool_result', tool_use_id: b.id, content: out });
-    }
-    messages.push({ role: 'user', content: results });
+  const owners = s.admins.filter(e => e && roleOf(e, s.roles) === 'owner');
+  const log = t.messages.map(m => `${m.role === 'user' ? 'Customer' : m.role === 'admin' ? 'You' : 'Bot'}: ${m.text}`).join('\n');
+  for (const to of owners) await sendMail(to, `Customer wants the seller${t.email ? ': ' + t.email : ''}`, `${why}\n\nReply in Admin → Customer chats: ${site()}/admin/chats?id=${t.id}\n\n${log}`.slice(0, 8000)).catch(e => console.error('seller mail failed', e));
+}
+
+// One AI reply to a chat, saved to the thread. The bot hands over to the seller when it cannot help.
+export async function botReply(threadId: string, cur: string): Promise<string> {
+  const t = await db.chatThread.findUniqueOrThrow({ where: { id: threadId }, include: { messages: { orderBy: { at: 'desc' }, take: 16 } } });
+  const msgs = t.messages.reverse();
+  const turns: Turn[] = [];
+  for (const m of msgs) {
+    const role = m.role === 'user' ? 'user' : 'assistant';
+    const text = m.role === 'admin' ? `(Seller) ${m.text}` : m.text;
+    if (turns.length && turns[turns.length - 1].role === role) turns[turns.length - 1].content += '\n' + text; else turns.push({ role, content: text });
   }
-  return { text: 'Sorry, that took too long. Please try again, or ask me to pass it to our team.' };
+  while (turns.length && turns[0].role !== 'user') turns.shift();
+  if (!turns.length || turns[turns.length - 1].role !== 'user') return '';
+  if (!(await underDailyLimit())) { await notifySeller(t.id, 'The bot reached its daily limit.'); return save(t.id, 'system', 'Our assistant is busy right now. The seller has been told and will reply here soon.'); }
+  const [s, bot] = await Promise.all([getSettings(), getBot()]);
+  const c: Currency = isCurrency(cur) ? cur : 'USD';
+  const system = `You are "${bot.name}", the chat assistant of ${s.store.name}, an online shop: ${s.store.tagline}
+You answer customers 24/7 about products, prices, offers, delivery, payment (including cash on delivery), order tracking, returns, refunds and store credit, and you keep them happy.
+SHOP OWNER'S INSTRUCTIONS: ${bot.rules}
+${bot.knowledge ? `SHOP KNOWLEDGE: ${bot.knowledge}\n` : ''}HARD RULES:
+- Facts come ONLY from the DATA below. Never guess a price, stock, delivery date, order status or policy. If it is not in the DATA, say you will check with the seller.
+- Order status: you need the order number (like PM-261108-12345) AND the email used on the order; only share an order shown under ORDER LOOKUPS or SIGNED-IN CUSTOMER'S ORDERS. Give the order page link.
+- If a parcel is late, lost or damaged, or the customer is upset: apologise sincerely, explain what the DATA says, offer the return/refund path from POLICIES (refunds go to store credit), and offer the seller.
+- Never promise discounts, refunds or changes yourself. Never show the store credit percentage.
+- Reply in the customer's language (site language: ${t.lang}). Short, warm, plain text, no tables. Share product links from the DATA.
+${bot.handover ? `- If the customer asks for a human, the seller, a phone call, or you cannot solve it, reply kindly and put ${SELLER} at the very end of your message.` : ''}
+
+DATA:
+${await facts(t, turns.map(x => `${x.role}: ${x.content}`).join('\n'), c)}`;
+  let text: string;
+  try { text = (await ask(system, turns, { maxTokens: 700 })).text; }
+  catch (e) { console.error('bot failed', e); await notifySeller(t.id, 'The AI could not answer (no key, or every free allowance is used up today).'); return save(t.id, 'system', 'Sorry, I cannot answer right now. The seller has been told and will reply here.'); }
+  const wantsSeller = text.includes(SELLER);
+  text = text.replaceAll(SELLER, '').trim() || 'Let me get the seller for you.';
+  const out = await save(t.id, 'ai', text);
+  if (wantsSeller && bot.handover) { await notifySeller(t.id, 'The bot handed this chat to you.'); await save(t.id, 'system', 'The seller has been notified and will reply here. You can keep writing.'); }
+  return out;
+}
+
+export async function save(threadId: string, role: 'user' | 'ai' | 'admin' | 'system', text: string) {
+  await db.chatMessage.create({ data: { threadId, role, text: text.slice(0, 4000) } });
+  await db.chatThread.update({ where: { id: threadId }, data: { lastAt: new Date(), ...(role === 'user' ? { unread: { increment: 1 }, closed: false } : {}) } });
+  return text;
 }

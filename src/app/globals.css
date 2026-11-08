@@ -920,6 +920,7 @@ html:not([lang=en]) *{letter-spacing:0 !important}
 .chat-msg{margin:0;padding:9px 12px;border-radius:12px;max-width:88%;font-size:.9rem;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
 .chat-msg.bot{background:var(--cloth);align-self:flex-start}
 .chat-msg.me{background:var(--solid);color:var(--solid-ink);align-self:flex-end}
+.chat-msg.seller{background:#e8f6ee;align-self:flex-start;border:1px solid #bfe5cf}.chat-msg small{display:block;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;opacity:.65;margin-bottom:2px}.chat-sys{margin:0;align-self:center;text-align:center;font-size:.76rem;color:var(--muted);max-width:90%}.chat-seller{margin:0 10px;border:1px dashed var(--line);background:transparent;border-radius:10px;padding:8px;font-size:.82rem;color:var(--ink)}.chat-seller:hover{border-color:var(--ink)}
 .chat-form{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}
 .chat-form input{flex:1;min-width:0}
 .chat-note{font-size:.72rem;margin:0;padding:0 12px 10px}

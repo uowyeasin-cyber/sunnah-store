@@ -1,7 +1,8 @@
 import 'server-only';
 import { db } from './db';
+import { aiReady } from './ai';
 import { getSettings } from './catalog';
-import { loadKeys, key } from './keys';
+import { loadKeys } from './keys';
 
 // Everything that waits for a person, and suggestions worked out from the store's own data.
 export type Todo = { id: string; n: number; title: string; text: string; href: string; cta: string };
@@ -17,19 +18,23 @@ export async function lowStock() {
 
 export async function todos(): Promise<Todo[]> {
   const s = await getSettings();
-  const [confirm, ship, returns, reviews, tasks, low] = await Promise.all([
+  const [confirm, ship, returns, reviews, tasks, low, chats, jobs] = await Promise.all([
     db.order.count({ where: { payStatus: 'pending', payRef: { not: '' } } }),
     db.order.count({ where: { status: { lte: 1 }, payStatus: { in: ['paid', 'cod'] } } }),
     db.returnRequest.count({ where: { status: 'pending' } }),
     db.review.count({ where: { status: 'pending' } }),
     db.automationTask.count({ where: { status: 'pending' } }),
     s.preorder.on ? Promise.resolve([]) : lowStock(),
+    db.chatThread.count({ where: { closed: false, needsHuman: true } }),
+    db.aiJob.count({ where: { status: 'proposed' } }),
   ]);
   const all: Todo[] = [
     { id: 'confirm', n: confirm, title: 'Payments to check', text: 'Customers sent money and typed a transaction ID. Check it in your bKash, bank or PayPal and mark the order paid.', href: '/admin/orders?tab=confirming', cta: 'Check payments' },
     { id: 'ship', n: ship, title: 'Orders to pack and ship', text: 'Paid or cash-on-delivery orders that are not with a courier yet.', href: '/admin/orders?tab=preparing', cta: 'Open orders' },
     { id: 'returns', n: returns, title: 'Return requests', text: 'Customers asked to send something back. Approve to refund as store credit, or decline with a note.', href: '/admin/returns', cta: 'Decide returns' },
     { id: 'reviews', n: reviews, title: 'Reviews waiting', text: 'New reviews are held until you publish them, so fake ones never show.', href: '/admin/reviews', cta: 'Check reviews' },
+    { id: 'chats', n: chats, title: 'Chats needing you', text: 'Customers pressed "Contact the seller" or the AI could not help. Reply in Customer chats.', href: '/admin/chats?tab=human', cta: 'Reply' },
+    { id: 'aijobs', n: jobs, title: 'AI co-worker plans to approve', text: 'The AI made a plan and waits for your Approve.', href: '/admin/ai', cta: 'Approve or reject' },
     { id: 'tasks', n: tasks, title: 'Automation waiting for your OK', text: 'Jobs set to "ask first" want to do something.', href: '/admin/automation', cta: 'Approve or reject' },
     { id: 'stock', n: low.length, title: 'Products running low', text: low.slice(0, 4).map(p => `${p.name}${p.sub ? ' · ' + p.sub : ''} (${p.all} left)`).join(', '), href: '/admin/suppliers', cta: 'Restock' },
   ];
@@ -49,7 +54,7 @@ export async function tips(): Promise<Tip[]> {
   if (!offers) out.push({ id: 'offers', level: 'medium', title: 'No active offers', text: "Start a 'Buy 2 get 1 free' or a 48-hour flash sale on a product to lift orders.", href: '/admin/products' });
   if (live < 12) out.push({ id: 'products', level: 'low', title: `Only ${live} products live`, text: 'Stores with more products convert better. Add more from your suppliers.', href: '/admin/products/new' });
   if (!orders30) out.push({ id: 'orders', level: 'medium', title: 'No orders in the last 30 days', text: 'Share a product on Facebook with a tracked link from Marketing, so you can see which post sells.', href: '/admin/social' });
-  if (!key('ANTHROPIC_API_KEY')) out.push({ id: 'ai', level: 'low', title: 'The AI shop assistant is off', text: 'Connect an AI key so customers get answers day and night.', href: '/admin/connections' });
+  if (!(await aiReady())) out.push({ id: 'ai', level: 'medium', title: 'No AI connected', text: 'Connect a free AI (Gemini, Groq or OpenRouter) so the chatbot answers customers day and night and the AI co-worker can work for you.', href: '/admin/aitools#connect' });
   if (!s.rewardRate) out.push({ id: 'loyalty', level: 'low', title: 'Loyalty points are off', text: 'A small reward on every order brings customers back.', href: '/admin/loyalty' });
   return out;
 }

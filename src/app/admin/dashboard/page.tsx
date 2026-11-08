@@ -6,6 +6,7 @@ import { formatAmount, type Currency } from '@/lib/money';
 import { STEPS } from '@/lib/tracking';
 import { lowStock, tips, todos } from '@/lib/decisions';
 import Tips from './Tips';
+import { newJob } from '../aiActions';
 
 export default async function Dashboard() {
   if (!(await adminOrNull('dashboard'))) return null;
@@ -34,7 +35,13 @@ export default async function Dashboard() {
       <Link className="stat" href="/admin/orders?tab=confirming"><small>Payments to check</small><b>{n('confirm')}</b></Link>
       <Link className="stat" href="/admin/returns"><small>Returns waiting</small><b>{n('returns')}</b></Link>
       <Link className="stat" href="/admin/automation"><small>Automation asks</small><b>{tasks}</b></Link>
+      <Link className="stat" href="/admin/chats?tab=human"><small>Chats needing a human</small><b className={n('chats') ? 'warn' : ''}>{n('chats')}</b></Link>
     </div>
+    <form className="panel row2" action={newJob} style={{ gap: 10, flexWrap: 'wrap' }}>
+      <span style={{ fontSize: 22 }}>✨</span><b>Give the AI a job</b>
+      <input name="prompt" required placeholder="e.g. Make a 15% Eid coupon for one week" style={{ flex: 1, minWidth: 220 }} />
+      <button className="btn orange">Start</button><Link className="link sm" href="/admin/ai">AI co-worker →</Link>
+    </form>
     <Tips list={ideas} />
     <div className="grid2">
       <div className="panel"><div style={{ display: 'flex', justifyContent: 'space-between' }}><h3>Recent orders</h3><Link className="link" href="/admin/orders">All →</Link></div>

@@ -6,6 +6,7 @@ export const NAV: { title: string; items: Item[] }[] = [
   { title: 'Overview', items: [
     { area: 'dashboard', label: 'Dashboard', icon: 'grid' },
     { area: 'decisions', label: "Today's decisions", icon: 'inbox' },
+    { area: 'ai', label: 'AI co-worker', icon: 'sparkle' },
   ] },
   { title: 'Sell', items: [
     { area: 'orders', label: 'Orders', icon: 'receipt' },
@@ -21,10 +22,12 @@ export const NAV: { title: string; items: Item[] }[] = [
   ] },
   { title: 'Customers', items: [
     { area: 'customers', label: 'Customers', icon: 'users' },
+    { area: 'chats', label: 'Customer chats', icon: 'chat' },
   ] },
   { title: 'Grow', items: [
     { area: 'reports', label: 'Profit & loss', icon: 'chart', also: [['ledger', 'Money ledger'], ['expenses', 'Expenses']] },
     { area: 'social', label: 'Marketing', icon: 'megaphone', also: [['marketing', 'Email marketing'], ['ads', 'Advertisements']] },
+    { area: 'aitools', label: 'AI tools & chatbot', icon: 'bot' },
     { area: 'automation', label: 'Automation', icon: 'bolt' },
   ] },
   { title: 'Settings', items: [
