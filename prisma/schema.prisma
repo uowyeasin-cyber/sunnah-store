@@ -496,3 +496,21 @@ model AiJob {
   by        String   @default("")
   createdAt DateTime @default(now())
 }
+
+// A reminder or a job set for a time: shown on the Dashboard and run by itself when due.
+model Scheduled {
+  id        String   @id @default(cuid())
+  // reminder, or an action: hide_product, show_product, set_offer, stop_offer, book_courier, ai_job
+  kind      String   @default("reminder")
+  title     String
+  note      String   @default("")
+  at        DateTime
+  data      Json     @default("{}")
+  // pending, due (a reminder whose time came), done, cancelled, failed
+  status    String   @default("pending")
+  result    String   @default("")
+  by        String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([status, at])
+}

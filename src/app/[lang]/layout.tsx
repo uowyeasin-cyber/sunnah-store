@@ -13,6 +13,8 @@ import Drawer from '@/components/Drawer';
 import Motion from '@/components/Motion';
 import AdPopup from '@/components/AdPopup';
 import { AdCta, adHref, adLive, AdVisual } from '@/components/Ads';
+import Pixels from '@/components/Pixels';
+import { getSeo } from '@/lib/seo';
 import '../globals.css';
 
 // Every shop page lives under /en, /bn, /ar or /hi. The proxy maps plain URLs to the visitor's language.
@@ -20,15 +22,24 @@ export const generateStaticParams = () => Object.keys(LANGS).map(lang => ({ lang
 
 export async function generateMetadata({ params }: LayoutProps<'/[lang]'>): Promise<Metadata> {
   const { lang } = await params;
-  const { store } = await getSettings(isLang(lang) ? lang : 'en');
-  return { title: { default: store.name, template: `%s · ${store.name}` }, description: store.tagline };
+  const [{ store }, seo] = await Promise.all([getSettings(isLang(lang) ? lang : 'en'), getSeo()]);
+  const v = seo.verify, other: Record<string, string> = {};
+  if (v.bing) other['msvalidate.01'] = v.bing;
+  if (v.pinterest) other['p:domain_verify'] = v.pinterest;
+  if (v.facebook) other['facebook-domain-verification'] = v.facebook;
+  return {
+    title: { default: seo.title || store.name, template: `%s · ${store.name}` }, description: seo.description || store.tagline,
+    keywords: seo.keywords ? seo.keywords.split(',').map(k => k.trim()).filter(Boolean) : undefined,
+    openGraph: { siteName: store.name, type: 'website', ...(seo.ogImage ? { images: [seo.ogImage] } : {}) },
+    verification: { google: v.google || undefined, yandex: v.yandex || undefined, other },
+  };
 }
 
 export default async function StoreLayout({ children, params }: LayoutProps<'/[lang]'>) {
   const { lang: l } = await params;
   if (!isLang(l)) notFound();
   const lang: Lang = l;
-  const [s, products, ads, cats, dict] = await Promise.all([getSettings(lang), getProducts(lang), getAds(lang), getCategories(lang), getDict(lang)]);
+  const [s, products, ads, cats, dict, seo] = await Promise.all([getSettings(lang), getProducts(lang), getAds(lang), getCategories(lang), getDict(lang), getSeo()]);
   const t = makeT(dict);
   const live = ads.filter(a => adLive(a));
   const ticker = live.filter(a => a.place === 'ticker').map(a => ({ id: a.id, title: a.title, href: adHref(a.link) }));
@@ -54,6 +65,7 @@ export default async function StoreLayout({ children, params }: LayoutProps<'/[l
         <Drawer />
         <CookieNote />
         <ChatWidget />
+        <Pixels p={seo.pixels} />
         {pop && <AdPopup id={pop.id} delay={s.popupDelay} style={pop.style}>
           <div className="pop-art"><div className="ad-float"><AdVisual ad={pop} products={products} brand={s.store.name} /></div></div>
           <div className="pop-copy">{pop.kicker && <div className="kicker">{pop.kicker}</div>}<h2>{pop.title}</h2>{pop.text && <p>{pop.text}</p>}

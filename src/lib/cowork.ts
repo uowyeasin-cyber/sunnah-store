@@ -16,7 +16,7 @@ export async function getCowork(): Promise<Cowork> {
   return { mode: v.mode === 'auto' ? 'auto' : 'ask' };
 }
 
-const refresh = () => { try { updateTag('catalog'); } catch { revalidateTag('catalog', 'max'); } };
+const refresh = () => { try { updateTag('catalog'); } catch { try { revalidateTag('catalog', 'max'); } catch (e) { console.error('catalog refresh failed', e); } } };
 const stockOf = (s: unknown) => Object.values((s as Record<string, number>) || {}).reduce((a, n) => a + (Number(n) || 0), 0);
 
 export async function snapshot() {
@@ -47,14 +47,14 @@ Allowed actions (use [] when the job needs none, e.g. a question or advice):
 {"type":"note","text":"a reminder for the owner","why":"..."}
 Never sell below cost, never more than 60% off, never change a price by more than half. Only use slugs from the DATA.`;
 
-export async function planJob(prompt: string, by: string, kind = 'cowork') {
+export async function planJob(prompt: string, by: string, kind = 'cowork', mode?: 'ask' | 'auto') {
   const job = await db.aiJob.create({ data: { kind, prompt: prompt.slice(0, 2000), by, status: 'thinking' } });
   try {
     const store = (await getSettings()).store.name;
     const r = await ask(`You are the AI co-worker of ${store}, an online shop. The owner gives you jobs. Be practical and brief.\n${RULES}\n\nDATA (today ${new Date().toISOString().slice(0, 10)}):\n${await snapshot()}`, [{ role: 'user', content: prompt }], { maxTokens: 1500, json: true });
     const out = parseJson<{ reply?: string; actions?: Act[] }>(r.text);
     const actions = (Array.isArray(out?.actions) ? out!.actions : []).filter(a => a && typeof a.type === 'string').slice(0, 20);
-    const auto = (await getCowork()).mode === 'auto';
+    const auto = (mode || (await getCowork()).mode) === 'auto';
     await db.aiJob.update({ where: { id: job.id }, data: { result: String(out?.reply || r.text).slice(0, 6000), actions: actions as object[], provider: r.provider, status: actions.length && !auto ? 'proposed' : 'done' } });
     if (actions.length && auto) await applyJob(job.id);
   } catch (e) {

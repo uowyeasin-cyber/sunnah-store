@@ -1,3 +1,4 @@
+import { getSeo } from '@/lib/seo';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getAds, getBoughtTogether, getDict, getLiveReviews, getProduct, getProducts, getSettings } from '@/lib/catalog';
@@ -33,8 +34,9 @@ const ogImage = (p: { images: string[]; video: string }) => {
 
 export async function generateMetadata({ params }: PageProps<'/[lang]/p/[slug]'>) {
   const { slug, lang } = await params;
-  const p = await getProduct(slug, isLang(lang) ? lang : 'en');
-  return p ? { title: `${p.name}, ${p.sub}`, description: p.details || p.sub, openGraph: ogImage(p) ? { images: [ogImage(p)] } : undefined } : {};
+  const [p, seo] = await Promise.all([getProduct(slug, isLang(lang) ? lang : 'en'), getSeo()]);
+  const own = seo.products[slug];
+  return p ? { title: own?.title || `${p.name}, ${p.sub}`, description: own?.description || (p.details || p.sub).slice(0, 300), openGraph: ogImage(p) ? { images: [ogImage(p)] } : undefined } : {};
 }
 
 export default async function ProductPage({ params }: PageProps<'/[lang]/p/[slug]'>) {

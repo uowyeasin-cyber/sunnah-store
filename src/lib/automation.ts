@@ -160,6 +160,40 @@ const WORK: Record<JobId, (mode: Mode) => Promise<Result>> = {
     const r = await remindBags();
     return { status: 'ok', summary: `${r.checked} bags checked · ${r.sent} reminders sent` };
   },
+  async aiDaily(mode) {
+    const { planJob } = await import('./cowork');
+    const id = await planJob('Daily check: look at sales, stock, offers and coupons. Make at most 3 small, safe improvements that bring more orders (for example a short flash sale on products that sold nothing in 30 days, hide live products with 0 stock, or a coupon). If nothing is needed, do nothing and say why.', 'automation', 'auto', mode === 'auto' ? 'auto' : 'ask');
+    const j = await db.aiJob.findUnique({ where: { id } });
+    if (j?.status === 'failed') return { status: 'failed', summary: j.result.slice(0, 200) };
+    return { status: 'ok', summary: j?.status === 'proposed' ? 'Plan waiting for your Approve in AI co-worker' : (j?.result || '').slice(0, 200) };
+  },
+  async reviews() {
+    const list = await db.review.findMany({ where: { status: 'pending' }, take: 40, orderBy: { createdAt: 'asc' } });
+    if (!list.length) return { status: 'ok', summary: 'No reviews waiting' };
+    const [{ ask, parseJson }] = await Promise.all([import('./ai')]);
+    const r = await ask('You moderate shop reviews. Publish genuine reviews (good or bad, honest criticism stays). Hide spam, ads, links, abuse, gibberish or off-topic text. Answer ONLY JSON {"publish":["id"],"hide":["id"]}.', [{ role: 'user', content: JSON.stringify(list.map(x => ({ id: x.id, stars: x.stars, text: x.text.slice(0, 500) }))) }], { maxTokens: 800, json: true });
+    const j = parseJson<{ publish?: string[]; hide?: string[] }>(r.text) || {};
+    const ids = new Set(list.map(x => x.id));
+    const pub = (j.publish || []).filter(i => ids.has(i)), hide = (j.hide || []).filter(i => ids.has(i) && !pub.includes(i));
+    if (pub.length) await db.review.updateMany({ where: { id: { in: pub } }, data: { status: 'live' } });
+    if (hide.length) await db.review.updateMany({ where: { id: { in: hide } }, data: { status: 'hidden' } });
+    if (pub.length) { try { const { revalidateTag } = await import('next/cache'); revalidateTag('catalog', 'max'); } catch {} }
+    return { status: 'ok', summary: `${list.length} reviews read · ${pub.length} published · ${hide.length} hidden` };
+  },
+  async aiSeo() {
+    const { aiProductSeo } = await import('./seoAi');
+    const n = await aiProductSeo(false, 15);
+    return { status: 'ok', summary: n ? `SEO written for ${n} products` : 'Every product already has SEO' };
+  },
+  async aiWeekly() {
+    if (new Date().getUTCDay() !== 1) return { status: 'skipped', summary: 'Runs on Mondays' };
+    const [{ ask }, { snapshot }] = await Promise.all([import('./ai'), import('./cowork')]);
+    const r = await ask('You are a sharp e-commerce advisor. Write a short weekly report for the shop owner: what went well, what did not, and the 5 best next steps. Plain text.', [{ role: 'user', content: await snapshot() }], { maxTokens: 1200 });
+    await tellOwners('Weekly AI business report', `${r.text}
+
+${site()}/admin/dashboard`);
+    return { status: 'ok', summary: 'Report emailed to the owners' };
+  },
   // A short morning email: yesterday's orders and money, and what needs a hand.
   async dailySummary() {
     const end = new Date(); end.setUTCHours(0, 0, 0, 0);

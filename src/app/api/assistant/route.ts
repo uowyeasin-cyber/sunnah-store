@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { assistantReady, botReply, getBot, notifySeller, save } from '@/lib/assistant';
 import { currentCustomer } from '@/lib/auth';
+import { runDueSoon } from '@/lib/schedule';
 
 // GET: is the chat on, plus new messages of this visitor's chat (the seller's replies arrive this way).
 // POST: a customer message (or "contact the seller"); the AI answers unless the seller has taken over.
@@ -12,6 +13,7 @@ async function thread(id: string | null) {
 }
 
 export async function GET(req: NextRequest) {
+  runDueSoon();
   const sp = req.nextUrl.searchParams;
   const [on, bot, t] = await Promise.all([assistantReady(), getBot(), thread(sp.get('t'))]);
   const after = sp.get('after') && !isNaN(Date.parse(sp.get('after')!)) ? new Date(sp.get('after')!) : new Date(0);
