@@ -483,16 +483,17 @@ html{scroll-behavior:auto}
 @keyframes inMono{from{opacity:0;transform:scale(.8)}}
 @keyframes inUp{to{transform:none}}
 @keyframes inLine{to{transform:scaleX(1)}}
-body:not(.ready) .slide.on .split .ln>span{transform:translateY(105%)}
-body:not(.ready) .slide.on .s-copy .kicker,body:not(.ready) .slide.on .s-copy .lead,body:not(.ready) .slide.on .s-copy .cta{opacity:0;transform:translateY(16px)}
-body:not(.ready) .slide.on .kb{transform:scale(1.12)}
+/* The first slide is visible in the server HTML and plays its intro with CSS alone, so it never waits for JavaScript. */
+.slide.on .split .ln>span{animation:lineUp .9s var(--ease) both}
+.slide.on .split .ln:nth-child(2)>span{animation-delay:.12s}
+@keyframes lineUp{from{transform:translateY(105%)}}
 body.ready .slide.on .split .ln>span{transition-delay:.15s}
 body.ready .slide.on .split .ln:nth-child(2)>span{transition-delay:.3s}
 
 /* page change */
 #app{transition:opacity .26s ease,transform .26s ease}
 body.leaving #app{opacity:0;transform:translateY(-10px)}
-.view{animation:viewIn 1s var(--ease) both}
+.view{animation:viewIn .45s var(--ease) both}
 #app.still .view{animation:none}
 @keyframes viewIn{from{opacity:0;transform:translateY(18px)}}
 
@@ -1143,3 +1144,21 @@ footer::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;back
 
 /* Thin, warm scrollbars and selection */
 *{scrollbar-color:color-mix(in srgb,var(--gold-a) 55%,transparent) transparent;scrollbar-width:thin}
+
+/* ── Layout pass (2026-11-08): full-height pages, full rows, calmer and quicker motion ── */
+body{min-height:100svh;display:flex;flex-direction:column}
+body>main{flex:1 0 auto}
+footer{flex:none}
+.page-empty{min-height:48vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.page-empty p{margin:0}
+.page-empty .btn{margin-top:10px}
+.more-row{display:flex;justify-content:center;margin-top:56px}
+#allgrid .sec-head{align-items:end}
+.big-price s{margin:0 14px 0 0;font-size:1rem}
+@media (min-width:901px){.pdp>:first-child{position:sticky;top:120px;align-self:start}}
+@media (max-width:900px){.trust li:last-child:nth-child(odd){grid-column:1/-1}}
+.reveal{transform:translateY(16px);transition:opacity .6s var(--ease),transform .7s var(--ease)}
+.card.reveal .art,.cat-tile.reveal,.pdp .stage.reveal,.ad.reveal .ad-art{transition:clip-path .8s cubic-bezier(.76,0,.24,1)}
+.card.reveal .art svg,.card.reveal .art img{transition:scale 1s var(--ease),transform .9s var(--ease)}
+.sec-head.reveal h2{transition:clip-path .8s var(--ease),transform .8s var(--ease)}
+@media (max-width:540px){.trust li:last-child:nth-child(odd){flex-direction:row;align-items:center;justify-content:center;gap:12px;border-left:0}}

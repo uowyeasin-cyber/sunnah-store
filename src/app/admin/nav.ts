@@ -15,8 +15,7 @@ export const NAV: { title: string; items: Item[] }[] = [
     { area: 'products', label: 'Products', icon: 'box' },
     { area: 'categories', label: 'Categories', icon: 'folder' },
     { area: 'offers', label: 'Offers & coupons', icon: 'tag' },
-    { area: 'loyalty', label: 'Loyalty points', icon: 'star' },
-    { area: 'reviews', label: 'Reviews', icon: 'chat' },
+    { area: 'reviews', label: 'Reviews & loyalty', icon: 'star', also: [['loyalty', 'Loyalty points']] },
   ] },
   { title: 'Source', items: [
     { area: 'suppliers', label: 'Suppliers', icon: 'factory' },
@@ -27,22 +26,20 @@ export const NAV: { title: string; items: Item[] }[] = [
   ] },
   { title: 'Grow', items: [
     { area: 'reports', label: 'Profit & loss', icon: 'chart', also: [['ledger', 'Money ledger'], ['expenses', 'Expenses']] },
-    { area: 'social', label: 'Marketing', icon: 'megaphone', also: [['marketing', 'Email marketing'], ['ads', 'Advertisements']] },
-    { area: 'seo', label: 'SEO & ads', icon: 'search' },
+    { area: 'social', label: 'Marketing & SEO', icon: 'megaphone', also: [['seo', 'SEO & ads'], ['marketing', 'Email marketing'], ['ads', 'Advertisements']] },
     { area: 'aitools', label: 'AI tools & chatbot', icon: 'bot' },
     { area: 'automation', label: 'Automation', icon: 'bolt' },
   ] },
   { title: 'Settings', items: [
     { area: 'settings', label: 'Store & theme', icon: 'palette', also: [['homepage', 'Homepage slides'], ['menu', 'Menu bar']] },
-    { area: 'payments', label: 'Countries & payments', icon: 'map', also: [['connections', 'Connections (keys)']] },
-    { area: 'languages', label: 'Languages', icon: 'globe' },
+    { area: 'payments', label: 'Payments & languages', icon: 'map', also: [['languages', 'Languages'], ['connections', 'Connections (keys)']] },
     { area: 'team', label: 'Admins', icon: 'key' },
     { area: 'activity', label: 'Activity history', icon: 'list' },
   ] },
 ];
 
 // First tab label of a grouped item (the item's own page).
-export const FIRST: Partial<Record<Area, string>> = { reports: 'Profit & loss', social: 'Social media', settings: 'Design & settings', payments: 'Payments' };
+export const FIRST: Partial<Record<Area, string>> = { reports: 'Profit & loss', social: 'Social media', settings: 'Design & settings', payments: 'Payments', reviews: 'Reviews' };
 
 export const ICONS: Record<string, string> = {
   grid: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',

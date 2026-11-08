@@ -53,10 +53,11 @@ export default async function Home({ params }: PageProps<'/[lang]'>) {
       </section>
       <AdSlot ads={ads} place="home-mid" products={products} brand={brand} />
       {sellers.length >= 2 && <Rail kicker={t('Most loved')} title={t('Best')} italic={t('sellers')}>{sellers.map(p => <ProductCard key={p.id} p={p} brand={brand} />)}</Rail>}
-      <Rail kicker={t('New creations')} title={t('The')} italic={t('collection')}>{products.slice(0, 8).map(p => <ProductCard key={p.id} p={p} brand={brand} />)}</Rail>
       <section className="wrap" id="allgrid">
-        <div className="sec-head"><div><div className="kicker">{t('{n} pieces', { n: products.length })}</div><h2>{t('All')} <em>{t('products')}</em></h2></div></div>
-        <div className="grid">{products.map(p => <ProductCard key={p.id} p={p} brand={brand} />)}</div>
+        <div className="sec-head"><div><div className="kicker">{t('New creations')}</div><h2>{t('The')} <em>{t('collection')}</em></h2></div><Link className="link-arrow" href="/shop">{t('Shop all {n}', { n: products.length })} <span aria-hidden="true">→</span></Link></div>
+        {/* Full rows only: 8 fills four columns on desktop and two on phones, the rest live in the shop. */}
+        <div className="grid">{products.slice(0, products.length > 8 ? 8 : products.length).map(p => <ProductCard key={p.id} p={p} brand={brand} />)}</div>
+        {products.length > 8 && <div className="more-row"><Link className="btn ghost" href="/shop">{t('View all {n} products', { n: products.length })}</Link></div>}
       </section>
       <RecentlyViewed brand={brand} />
       <PickedForYou brand={brand} />
