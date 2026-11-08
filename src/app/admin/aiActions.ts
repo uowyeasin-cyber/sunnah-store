@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 import { save, getBot, BOT_DEFAULT, type Bot } from '@/lib/assistant';
-import { PROVIDERS, ask, type ProviderId } from '@/lib/ai';
+import { PROVIDERS, AiError, ask, type ProviderId } from '@/lib/ai';
 import { saveKeys, storedKeys } from '@/lib/keys';
 import { applyJob, planJob } from '@/lib/cowork';
 import { getSettings } from '@/lib/catalog';
@@ -42,6 +42,8 @@ export async function connectAi(fd: FormData) {
   await saveKeys({ ...before, [p!.env]: k });
   try { await ask('Reply with the word OK.', [{ role: 'user', content: 'Test' }], { maxTokens: 10, only: p!.id }); }
   catch (e) {
+    // Busy or over the limit means the key itself is fine: keep it, the chat retries on its own.
+    if (e instanceof AiError && [429, 500, 503].includes(e.status)) back(`${p!.name} key saved. It is busy right now (${e.status}); the chat tries again by itself on every message.`, '#connect');
     await saveKeys(before);
     back(`${p!.name} did not accept the key: ${(e as Error).message.slice(0, 160)}`, '#connect');
   }
