@@ -30,7 +30,7 @@ export default async function Homepage() {
           <div className="field"><label>Seconds per photo</label><input name="slideSecs" type="number" min="3" max="20" step="0.5" defaultValue={s.slideSecs} /></div></div>
         <small className="muted">Pick several files at once. After saving, write a heading and description for each one below. Videos play to the end before the next slide.</small>
       </div>
-      <div className="field" style={{ maxWidth: 320 }}><label>Collection icons (under the showcase)</label><select name="catStyle" defaultValue={s.catStyle}>{CAT_STYLES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select><small className="muted">Each collection's icon picture is set in Categories.</small></div>
+      <div className="field" style={{ maxWidth: 320 }}><label>Collection icons (under the showcase)</label><select name="catStyle" defaultValue={s.catStyle}>{CAT_STYLES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select><small className="muted">Each collection&apos;s icon picture is set in Categories.</small></div>
       {s.slides.map((sl, i) => <fieldset key={sl.id} className="panel" style={{ background: 'var(--bg)' }}>
         <input type="hidden" name="id" value={sl.id} />
         <div className="row2"><h3 style={{ flex: 1 }}>Slide {String(i + 1).padStart(2, '0')}</h3>{i > 0 && <button className="btn ghost sm" name="up" value={i}>Move up</button>}<label><input type="checkbox" name={`del-${i}`} /> Delete</label></div>
