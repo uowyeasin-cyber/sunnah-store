@@ -3,9 +3,9 @@ import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { adminOrNull } from '@/lib/auth';
 import { deleteProduct, saveProduct } from '../../actions';
+import BadgePicker from '../../BadgePicker';
 
 const KINDS = [['pen', 'Pen'], ['sticks', 'Miswak sticks'], ['oil', 'Oil set'], ['attar', 'Attar bottle'], ['sleeve', 'Sleeve'], ['gift', 'Gift box']];
-const STYLES = [['ribbon', 'Gold ribbon'], ['stamp', 'Black and gold seal'], ['pill', 'Ivory label'], ['glow', 'Gold glow'], ['timer', 'Countdown']];
 
 export default async function EditProduct({ params, searchParams }: PageProps<'/admin/products/[id]'>) {
   if (!(await adminOrNull('products'))) return null;
@@ -39,7 +39,7 @@ export default async function EditProduct({ params, searchParams }: PageProps<'/
       <h3>Offer</h3>
       <p className="muted" style={{ fontSize: '.88rem' }}>Leave the label empty for no offer. Percent off is applied at checkout; 0 shows the label only.</p>
       <div className="two"><div className="field"><label>Label</label><input name="offerLabel" defaultValue={o?.label} placeholder="Launch −15%" /></div><div className="field"><label>Percent off</label><input name="offerPct" type="number" min="0" max="90" defaultValue={o?.pct ?? 0} /></div></div>
-      <div className="two"><div className="field"><label>Look</label><select name="offerStyle" defaultValue={o?.style || 'pill'}>{STYLES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div><div className="field"><label>Ends on</label><input name="offerEnds" type="date" defaultValue={o?.endsAt?.toISOString().slice(0, 10)} /></div></div>
+      <div className="two"><div className="field" style={{ gridColumn: '1/-1' }}><label>Badge look</label><BadgePicker name="offerStyle" value={o?.style || 'pill'} label={o?.label} /></div><div className="field"><label>Ends on</label><input name="offerEnds" type="date" defaultValue={o?.endsAt?.toISOString().slice(0, 10)} /></div></div>
       <label className="toggle"><span>Offer is on</span><input type="checkbox" name="offerOn" defaultChecked={o ? o.on : true} /></label>
       <div className="row2"><button className="btn">Save product</button>{p && <Link className="btn ghost" href={`/p/${p.slug}`} target="_blank">View in store</Link>}</div>
     </form>

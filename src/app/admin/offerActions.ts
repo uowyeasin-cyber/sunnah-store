@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 import { normCode, type Welcome } from '@/lib/coupons';
+import { badgeFrom } from '@/lib/badges';
 
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim();
 const num = (fd: FormData, k: string) => Number(fd.get(k)) || 0;
@@ -38,7 +39,7 @@ export async function createOffer(fd: FormData) {
   const ids = (await db.product.findMany({ where, select: { id: true } })).map(p => p.id);
   if (!ids.length) back('No products matched. Pick a category or product.');
   const label = str(fd, 'label') || await badgeFor(kind, kind === 'bxgy' ? buy : kind === 'usd' ? usd : pct, get);
-  const n = await applyOffer(ids, { kind, pct, buy, get, usd, label, style: str(fd, 'style') || 'pill', hours: HOURS[str(fd, 'hours')] ?? 0, on: !!fd.get('on') });
+  const n = await applyOffer(ids, { kind, pct, buy, get, usd, label, style: badgeFrom(fd, 'style'), hours: HOURS[str(fd, 'hours')] ?? 0, on: !!fd.get('on') });
   back(`Offer "${label}" set on ${n} product${n === 1 ? '' : 's'}. Offers never stack: each product keeps one.`);
 }
 

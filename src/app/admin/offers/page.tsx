@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { adminOrNull } from '@/lib/auth';
 import { couponText, getWelcome } from '@/lib/coupons';
 import { allowFlashSale, couponAction, createCoupon, createOffer, saveWelcome, stopOffer } from '../offerActions';
+import BadgePicker from '../BadgePicker';
 
 // Templates fill the new-offer form through the address, so picking one needs no script.
 const TEMPLATES: Record<string, { name: string; why: string; kind: string; buy?: number; get?: number; pct?: number; usd?: number; hours?: string; applies?: string; style?: string }> = {
@@ -19,7 +20,6 @@ const COUPONS = [
   { code: 'VIP15', kind: 'pct', value: 15, min: 50, days: 60, uses: 50, why: '15% off over $50. Send to your best customers. Valid 60 days, up to 50 uses.' },
   { code: 'COMEBACK', kind: 'pct', value: 12, min: 0, days: 7, uses: 100, why: '12% off for one week. Win back quiet customers. Valid 7 days, up to 100 uses.' },
 ];
-const STYLES = [['pill', 'Pill'], ['ribbon', 'Ribbon'], ['stamp', 'Stamp'], ['glow', 'Glow'], ['timer', 'Countdown']];
 const HOURS = [['none', 'No end'], ['24h', '24 hours'], ['3d', '3 days'], ['1w', '1 week'], ['2w', '2 weeks']];
 
 export default async function Offers({ searchParams }: PageProps<'/admin/offers'>) {
@@ -68,7 +68,7 @@ export default async function Offers({ searchParams }: PageProps<'/admin/offers'
           <div className="field"><label>Applies to</label><select name="applies" defaultValue={t.applies || 'all'}><option value="all">All products</option><option value="cat">One category</option><option value="product">One product</option></select></div>
           <div className="field"><label>Category or product (for &quot;one&quot;)</label><select name="target"><optgroup label="Categories">{cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</optgroup><optgroup label="Products">{products.map(p => <option key={p.id} value={p.id}>{p.name}{p.sub ? ` · ${p.sub}` : ''}</option>)}</optgroup></select></div>
           <div className="two"><div className="field"><label>How long</label><select name="hours" defaultValue={t.hours || 'none'}>{HOURS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
-            <div className="field"><label>Badge look</label><select name="style" defaultValue={t.style || 'pill'}>{STYLES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div></div>
+            <div className="field" style={{ gridColumn: '1/-1' }}><label>Badge look</label><BadgePicker name="style" value={t.style || 'pill'} /></div></div>
         </div>
       </div>
       <div className="field"><label>Badge customers see (empty = written automatically from the offer)</label><input name="label" placeholder={t.kind === 'bxgy' ? `Buy ${t.buy} Get ${t.get} FREE` : t.kind === 'usd' ? `$${t.usd} OFF` : `${t.pct}% OFF`} /></div>

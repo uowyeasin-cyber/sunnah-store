@@ -6,6 +6,7 @@ import { requireAdmin } from '@/lib/auth';
 import { getSettings } from '@/lib/catalog';
 import { keepUpload, isVideoUrl } from '@/lib/upload';
 import { DEFAULT_SETTINGS, type NavItem, type Settings, type Slide } from '@/lib/settings';
+import { badgeFrom } from '@/lib/badges';
 
 // Every admin change: check the signer is an admin, write, then refresh the storefront cache.
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim();
@@ -150,7 +151,7 @@ export async function saveProduct(fd: FormData) {
   const p = id ? await db.product.update({ where: { id }, data: { ...data, slug } }) : await db.product.create({ data: { ...data, slug } });
   const label = str(fd, 'offerLabel');
   if (label) {
-    const offer = { on: !!fd.get('offerOn'), label, pct: Math.min(90, Math.max(0, num(fd, 'offerPct'))), style: str(fd, 'offerStyle') || 'pill', endsAt: str(fd, 'offerEnds') ? new Date(str(fd, 'offerEnds') + 'T23:59:59') : null };
+    const offer = { on: !!fd.get('offerOn'), label, pct: Math.min(90, Math.max(0, num(fd, 'offerPct'))), style: badgeFrom(fd, 'offerStyle'), endsAt: str(fd, 'offerEnds') ? new Date(str(fd, 'offerEnds') + 'T23:59:59') : null };
     await db.offer.upsert({ where: { productId: p.id }, update: offer, create: { ...offer, productId: p.id } });
   } else await db.offer.deleteMany({ where: { productId: p.id } });
   done();

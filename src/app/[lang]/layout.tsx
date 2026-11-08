@@ -14,8 +14,10 @@ import Motion from '@/components/Motion';
 import AdPopup from '@/components/AdPopup';
 import { AdCta, adHref, adLive, AdVisual } from '@/components/Ads';
 import Pixels from '@/components/Pixels';
+import Share from '@/components/Share';
 import { getSeo } from '@/lib/seo';
 import '../globals.css';
+import '@/components/badges.css';
 
 // Every shop page lives under /en, /bn, /ar or /hi. The proxy maps plain URLs to the visitor's language.
 export const generateStaticParams = () => Object.keys(LANGS).map(lang => ({ lang }));
@@ -53,7 +55,7 @@ export default async function StoreLayout({ children, params }: LayoutProps<'/[l
         <main id="main">{children}</main>
         <footer><div className="wrap">
           <div className="foot-top">
-            <div className="foot-brand"><div className="logo"><span>{s.store.name}</span></div><p>{s.store.tagline}</p><div className="label" style={{ marginTop: 18 }}>{t('News and offers')}</div><NewsletterForm /></div>
+            <div className="foot-brand"><div className="logo"><span>{s.store.name}</span></div><p>{s.store.tagline}</p><div className="label" style={{ marginTop: 18 }}>{t('News and offers')}</div><NewsletterForm /><Share title={`${s.store.name}: ${s.store.tagline}`} path="/" label={t('Share the shop')} /></div>
             <div className="foot-cols">
               <div><div className="label">{t('Shop')}</div>{cats.map(c => <Link key={c.id} href={`/c/${c.slug}`}>{c.name}</Link>)}</div>
               <div><div className="label">{t('Help')}</div><Link href="/track">{t('Track order')}</Link><Link href="/help#shipping">{t('Shipping')}</Link><Link href="/help#returns">{t('Returns')}</Link><Link href="/account">{t('Store credit')}</Link><Link href="/help">{t('Help')}</Link></div>
