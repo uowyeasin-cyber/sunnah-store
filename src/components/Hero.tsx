@@ -8,9 +8,7 @@ export type HeroSlide = { id: string; eyebrow: string; title: string; italic: st
 export default function Hero({ slides, secs }: { slides: HeroSlide[]; secs: number }) {
   const { t } = useStore();
   const [i, setI] = useState(0);
-  const [ready, setReady] = useState(false);
   const box = useRef<HTMLElement>(null);
-  useEffect(() => { const t = setTimeout(() => setReady(true), 60); return () => clearTimeout(t); }, []);
   useEffect(() => {
     if (slides.length < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const t = setTimeout(() => setI(x => (x + 1) % slides.length), secs * 1000);
@@ -25,9 +23,9 @@ export default function Hero({ slides, secs }: { slides: HeroSlide[]; secs: numb
     return () => { removeEventListener('scroll', sc); el.removeEventListener('pointermove', mv); };
   }, []);
   return (
-    <section ref={box} className={`lux-hero ${ready ? '' : 'pre'}`} aria-roledescription="carousel" aria-label="Featured" style={{ ['--dur' as string]: `${secs}s` }}>
+    <section ref={box} className="lux-hero" aria-roledescription="carousel" aria-label="Featured" style={{ ['--dur' as string]: `${secs}s` }}>
       {slides.map((s, k) => (
-        <div key={s.id} className={`slide ${k === i && ready ? 'on' : ''} ${s.dark ? 'dark' : ''} ${s.full ? 'full' : ''}`} aria-hidden={k !== i}>
+        <div key={s.id} className={`slide ${k === i ? 'on' : ''} ${s.dark ? 'dark' : ''} ${s.full ? 'full' : ''}`} aria-hidden={k !== i}>
           <div className="s-art"><div className="kb">{s.art}</div></div>
           <div className="wrap s-copy">
             <div className="kicker">{s.eyebrow}</div>

@@ -47,15 +47,15 @@ export function flyToBag(from: Element | null) {
 }
 
 export default function ProductCard({ p, brand }: { p: CardProduct; brand?: string }) {
-  const { add, toast, t, pre } = useStore();
+  const { add, toast, t } = useStore();
   return (
     <article className="card">
       <div className="frame">
         <Heart slug={p.slug} />
         <Link className={`art ${p.offer?.style === 'glow' ? 'glow' : ''}`} href={`/p/${p.slug}`} aria-label={`${p.name}, ${p.sub}`}>
-          <OfferBadge p={p} /><Art p={p} brand={brand} />{p.video && <CardVideo src={p.video} poster={p.image} />}{pre && <span className="pre-pill">{t('Pre-order')}</span>}
+          <OfferBadge p={p} /><Art p={p} brand={brand} />{p.video && <CardVideo src={p.video} poster={p.image} />}
         </Link>
-        <button className="quick" onClick={e => { flyToBag(e.currentTarget); add(p.slug); toast(t('{x} added to your bag', { x: p.name })); }}>{t(pre ? 'Pre-order' : 'Add to bag')}</button>
+        <button className="quick" onClick={e => { flyToBag(e.currentTarget); add(p.slug); toast(t('{x} added to your bag', { x: p.name })); }}>{t('Add to bag')}</button>
       </div>
       <Link className="row" href={`/p/${p.slug}`}>
         <div><h3>{p.name}</h3><div className="sub">{p.sub}</div></div>

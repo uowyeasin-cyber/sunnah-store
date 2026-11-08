@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 import { checkout, checkoutQuote } from '@/app/actions';
@@ -62,7 +63,7 @@ export default function Checkout() {
     return () => { live = false; };
   }, [key, f.country, useCredit, mail, code, retry]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!lines.length) return <div className="empty"><h2>Your bag is empty</h2><p>Add something you love, then come back.</p></div>;
+  if (!lines.length) return <div className="empty page-empty"><h2>{s.t('Your bag is empty')}</h2><p>{s.t('Add something you love, then come back.')}</p><Link className="btn" href="/shop">{s.t('Continue shopping')}</Link></div>;
   const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
   const money = (n: number) => formatAmount(n, (q?.cur || 'USD') as Currency);
   return (

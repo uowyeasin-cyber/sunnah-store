@@ -39,7 +39,7 @@ export default function BuyBox({ p, finishes, soldOut = false }: { p: CardProduc
     {pre && <div className="pre-note"><span className="pre-tag">{t('Pre-order')}</span><span>{t(pre)}. {t('Reserve yours now, we ship in order of booking.')}</span></div>}
     {!soldOut && <div className="qty-pick"><div className="label">{t('Quantity')}</div><div className="qty"><button onClick={() => setQty(q => Math.max(1, q - 1))} aria-label={t('One less')}>−</button><span aria-live="polite">{qty}</span><button onClick={() => setQty(q => Math.min(20, q + 1))} aria-label={t('One more')}>+</button></div></div>}
     {soldOut ? <div className="add"><button className="btn" disabled>{t('Sold out')}</button><p className="muted" style={{ margin: 0, fontSize: '.85rem' }}>{t('Back soon. Join our news at the bottom of the page to hear first.')}</p></div> : <div className="add" ref={addRef}>
-      <button className="btn" onClick={e => addNow(e.currentTarget)}>{t(pre ? 'Pre-order' : 'Add to bag')}</button>
+      <button className="btn" onClick={e => addNow(e.currentTarget)}>{t('Add to bag')}</button>
       <button className="btn ghost" onClick={() => { add(p.slug, qty); router.push('/checkout'); }}>{t(pre ? 'Pre-order now' : 'Buy now')}</button>
     </div>}
     {!soldOut && <div className={`buybar ${bar ? 'show' : ''}`} aria-hidden={!bar}>

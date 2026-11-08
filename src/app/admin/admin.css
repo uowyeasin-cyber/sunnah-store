@@ -174,3 +174,8 @@ body:has(.adm)::before{display:none}
 .adm .dec-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 0 36px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:12px;background:#fbfcfe}
 .adm .dec-row .grow{flex:1;min-width:200px}
 .adm .dec-why{margin:8px 0 0 36px;padding:8px 12px;border-radius:10px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:.82rem}
+.seo-check{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line,#e7e9ef);text-decoration:none;color:inherit}
+.seo-check:last-child{border-bottom:0}
+.seo-check .tag{min-width:62px;justify-content:center;text-align:center}
+.seo-check .go{margin-left:auto;font-size:.85rem;color:#f97316}
+.seo-check:hover span:nth-child(2){text-decoration:underline}

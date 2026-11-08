@@ -80,7 +80,7 @@ export default async function SeoAds({ searchParams }: PageProps<'/admin/seo'>) 
 
     <section className="panel">
       <h3>SEO health</h3>
-      <div className="rows">{checks.map(([ok, label, href]) => <Link key={label} href={href.startsWith('#') ? `/admin/seo${href}` : href} className="row2" style={{ gap: 10 }}><span className={`tag ${ok ? 'green' : 'orange'}`}>{ok ? '✓' : 'Fix'}</span><span>{label}</span></Link>)}</div>
+      <div className="rows">{checks.map(([ok, label, href]) => <Link key={label} href={href.startsWith('#') ? `/admin/seo${href}` : href} className="seo-check"><span className={`tag ${ok ? 'green' : 'orange'}`}>{ok ? '✓ Done' : 'Fix'}</span><span>{label}</span>{!ok && <span className="go">Fix it →</span>}</Link>)}</div>
     </section>
 
     <section className="panel" id="ads">

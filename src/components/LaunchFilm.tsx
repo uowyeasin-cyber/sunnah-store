@@ -22,7 +22,7 @@ export default function LaunchFilm({ wide, tall, poster, cta, labels }: { wide: 
   const skip = () => document.querySelector('.lux-hero, .hero')?.scrollIntoView({ behavior: 'smooth' });
   return (
     <section className={`film${tall ? '' : ' wide-only'}`} aria-label="Launch film">
-      {src && <video ref={ref} key={src} src={src} poster={poster || undefined} autoPlay muted={muted} playsInline preload="auto"
+      {src && <video ref={ref} key={src} src={src} poster={poster || undefined} autoPlay muted={muted} playsInline preload="metadata"
         onPlay={() => { setPlaying(true); setEnded(false); }} onPause={() => setPlaying(false)} onEnded={() => { setEnded(true); setPlaying(false); }} />}
       <div className="film-bar">
         <button type="button" onClick={ended ? replay : toggle} aria-label={ended ? labels.replay : playing ? labels.pause : labels.play}>
