@@ -26,8 +26,9 @@ export default async function Home({ params }: PageProps<'/[lang]'>) {
   const df = DEFAULT_SETTINGS.film, ownWide = s.film.wide !== df.wide;
   const filmTall = ownWide && s.film.tall === df.tall ? '' : s.film.tall, filmPoster = ownWide && s.film.poster === df.poster ? '' : s.film.poster;
   const brand = s.store.name;
-  const slides: HeroSlide[] = s.slides.map(sl => {
-    const p = products.find(x => x.slug === sl.product);
+  const withPhoto = products.filter(x => x.image);
+  const slides: HeroSlide[] = s.slides.map((sl, n) => {
+    const p = products.find(x => x.slug === sl.product) || (withPhoto.length ? withPhoto[n % withPhoto.length] : products[n % Math.max(1, products.length)]);
     const art = sl.video ? <video src={sl.video} autoPlay muted loop playsInline /> : sl.image ? <img src={sl.image} alt="" /> : p ? <Art p={p} open brand={brand} /> : null;
     return { id: sl.id, eyebrow: sl.eyebrow, title: sl.title, italic: sl.italic, text: sl.text, cta: sl.cta, href: p ? `/p/${p.slug}` : '/shop', dark: sl.look === 'dark', full: !!(sl.video || sl.image), art };
   });
@@ -45,8 +46,8 @@ export default async function Home({ params }: PageProps<'/[lang]'>) {
       </div></div>}
       <Trust s={s} t={t} />
       <section className="wrap" id="cats">
-        <div className="sec-head"><div><div className="kicker">{t('The house')}</div><h2>{t('Shop by')} <em>{t('collection')}</em></h2></div><p className="muted" style={{ maxWidth: '26em' }}>{t('{n} pieces across {c} collections, each made to be carried every day.', { n: products.length, c: tiles.length })}</p></div>
-        <div className="cats">{tiles.map(({ c, items }) => (
+        <div className="sec-head"><div><div className="kicker">{t('The house')}</div><h2>{t('Shop by')} <em>{t('collection')}</em></h2></div><p className="muted" style={{ maxWidth: '26em' }}>{t('Made to be carried every day, chosen for how they feel in the hand.')}</p></div>
+        <div className="cats" data-n={tiles.length}>{tiles.map(({ c, items }) => (
           <Link key={c.id} className="cat-tile" href={`/c/${c.slug}`}><div className="ca"><Art p={items[0]} brand={brand} /></div>
             <div className="ct"><div className="label">{t(items.length === 1 ? '{n} piece' : '{n} pieces', { n: items.length })}</div><h3>{c.name}</h3><span className="go">{t('Explore')} <span aria-hidden="true">→</span></span></div></Link>))}
         </div>
@@ -56,7 +57,7 @@ export default async function Home({ params }: PageProps<'/[lang]'>) {
       <section className="wrap" id="allgrid">
         <div className="sec-head"><div><div className="kicker">{t('New creations')}</div><h2>{t('The')} <em>{t('collection')}</em></h2></div><Link className="link-arrow" href="/shop">{t('Shop all {n}', { n: products.length })} <span aria-hidden="true">→</span></Link></div>
         {/* Full rows only: 8 fills four columns on desktop and two on phones, the rest live in the shop. */}
-        <div className="grid">{products.slice(0, products.length > 8 ? 8 : products.length).map(p => <ProductCard key={p.id} p={p} brand={brand} />)}</div>
+        <div className="grid" data-n={Math.min(products.length, 8)}>{products.slice(0, products.length > 8 ? 8 : products.length).map(p => <ProductCard key={p.id} p={p} brand={brand} />)}</div>
         {products.length > 8 && <div className="more-row"><Link className="btn ghost" href="/shop">{t('View all {n} products', { n: products.length })}</Link></div>}
       </section>
       <RecentlyViewed brand={brand} />

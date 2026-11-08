@@ -1196,3 +1196,68 @@ footer .share-ic:hover{border-color:var(--gold-b);color:var(--gold-b)}
 .g-thumbs .play{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:.8rem;text-shadow:0 1px 4px #000}
 @media (max-width:540px){.g-thumbs{gap:8px;margin-top:10px}.g-thumbs button{flex-basis:60px;height:60px;border-radius:8px}.g-arrow{display:none}}
 @media (hover:none){.g-arrow{display:none}}
+
+/* ===== Redesign 2026-11: one calm system. Wider page, full-bleed film, hero never half empty,
+   collection and product grids that look finished with 1, 2, 3 or many items. ===== */
+.wrap{max-width:1320px}
+.s-copy{max-width:1320px}
+
+/* Launch film fills the band edge to edge (no black side bars). */
+.film{height:clamp(420px,min(56.25vw,calc(100svh - 190px)),820px)}
+.film video{object-fit:cover}
+.film-bar{padding:18px max(20px,calc((100vw - 1320px) / 2 + 20px))}
+.film-bar button,.film-cta{height:40px}
+.film-bar button{min-width:40px;font-size:.7rem}
+@media (max-aspect-ratio:1/1){.film{height:auto}}
+
+/* Hero: words on the left, the product in a framed panel on the right. */
+.lux-hero{height:clamp(560px,80vh,820px)}
+.slide:not(.full) .s-art{inset:48px max(20px,calc((100vw - 1320px) / 2 + 20px)) 88px 52%;border-radius:22px;overflow:hidden;background:radial-gradient(ellipse at 40% 30%,var(--surface),var(--cloth) 85%);box-shadow:0 40px 80px -40px rgba(0,0,0,.55),inset 0 0 0 1px color-mix(in srgb,var(--gold-b) 22%,transparent)}
+.slide.dark:not(.full) .s-art{background:radial-gradient(ellipse at 40% 30%,var(--night-2),var(--night) 85%)}
+.slide:not(.full) .s-art .kb{width:100%;height:100%}
+.slide:not(.full) .s-art img{width:100%;height:100%;object-fit:cover;display:block}
+.slide:not(.full) .s-art svg{width:84%}
+.s-copy>*{max-width:min(34rem,44vw)}
+.s-ctrl{z-index:3}
+@media (max-width:900px){
+  .lux-hero{--ah:clamp(240px,62vw,420px);height:auto;min-height:calc(var(--ah) + 540px)}
+  .slide:not(.full) .s-art{inset:16px 16px auto 16px;height:var(--ah);border-radius:18px}
+  .slide:not(.full) .s-art svg{max-height:calc(var(--ah) - 20px)}
+  .s-copy{height:calc(var(--ah) + 540px);justify-content:flex-start;padding-block:calc(var(--ah) + 40px) 100px}.s-copy>*{max-width:100%}
+  .s-copy h1{margin-top:12px;font-size:clamp(2.2rem,10vw,3.2rem)}
+}
+
+/* Collections: the layout follows how many there are. */
+.cat-tile,.cat-tile:hover{text-decoration:none}
+.cats[data-n="1"]{grid-template-columns:1fr;grid-auto-rows:clamp(320px,36vw,440px)}
+.cats[data-n="1"] .cat-tile{flex-direction:row;grid-row:auto}
+.cats[data-n="1"] .cat-tile .ca{flex:1 1 56%}
+.cats[data-n="1"] .cat-tile .ct{flex:0 0 44%;justify-content:center;gap:12px;padding:clamp(24px,5vw,64px);border-top:0;border-left:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.cats[data-n="1"] .cat-tile h3{font-size:clamp(2rem,4vw,3.4rem)}
+.cats[data-n="2"],.cats[data-n="4"]{grid-template-columns:1fr 1fr;grid-auto-rows:clamp(260px,30vw,400px)}
+.cats[data-n="2"] .cat-tile:first-child,.cats[data-n="4"] .cat-tile:first-child{grid-row:auto;grid-column:auto}
+.cats:not([data-n="1"]):not([data-n="2"]):not([data-n="3"]):not([data-n="4"]):not([data-n="5"]){grid-template-columns:repeat(3,minmax(0,1fr))}
+.cats:not([data-n="1"]):not([data-n="2"]):not([data-n="3"]):not([data-n="4"]):not([data-n="5"]) .cat-tile:first-child{grid-row:auto}
+@media (max-width:700px){
+  .cats[data-n="1"]{grid-auto-rows:auto}
+  .cats[data-n="1"] .cat-tile{flex-direction:column}
+  .cats[data-n="1"] .cat-tile .ca{flex:none;height:300px}
+  .cats[data-n="1"] .cat-tile .ct{border-left:0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);padding:18px 20px}
+  .cats[data-n="2"],.cats[data-n="4"]{grid-auto-rows:220px;gap:12px}
+}
+
+/* Product grid: a few products sit centred at a good size instead of leaving empty columns. */
+.grid[data-n="1"],.grid[data-n="2"],.grid[data-n="3"]{justify-content:center}
+@media (min-width:541px){
+  .grid[data-n="1"]{grid-template-columns:minmax(0,420px)!important}
+  .grid[data-n="2"]{grid-template-columns:repeat(2,minmax(0,380px))!important}
+  .grid[data-n="3"]{grid-template-columns:repeat(3,minmax(0,360px))!important}
+}
+@media (max-width:540px){.grid[data-n="1"]{grid-template-columns:minmax(0,1fr)}}
+
+/* Calmer rhythm between sections. */
+.view .specs{margin:32px auto 0}
+.view .trust{margin-bottom:0}
+.view>section.wrap{padding-block:clamp(48px,6vw,88px) 0}
+.view>section.wrap:last-of-type{padding-bottom:clamp(48px,6vw,88px)}
+.sec-head{margin-bottom:clamp(24px,3vw,40px)}

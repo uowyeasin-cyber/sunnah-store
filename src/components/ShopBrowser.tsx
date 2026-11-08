@@ -37,6 +37,6 @@ export default function ShopBrowser({ products, cats, brand, empty }: { products
       </div>
     </div>}
     <p className="muted count">{t(list.length === 1 ? '{n} product' : '{n} products', { n: list.length })}</p>
-    {list.length ? <div className="grid">{list.map(p => <ProductCard key={p.id} p={p} brand={brand} />)}</div> : <p className="empty">{t(empty)}</p>}
+    {list.length ? <div className="grid" data-n={Math.min(list.length, 8)}>{list.map(p => <ProductCard key={p.id} p={p} brand={brand} />)}</div> : <p className="empty">{t(empty)}</p>}
   </>;
 }

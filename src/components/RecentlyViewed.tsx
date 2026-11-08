@@ -21,5 +21,5 @@ export default function RecentlyViewed({ skip, brand }: { skip?: string; brand?:
   const list = seen.filter(s => s !== skip && products[s]).slice(0, 4).map(s => products[s]);
   if (!list.length) return null;
   return <section className="wrap recent"><div className="sec-head"><div><div className="kicker">{t('For you')}</div><h2>{t('Recently')} <em>{t('viewed')}</em></h2></div></div>
-    <div className="grid">{list.map(p => <ProductCard key={p.id} p={p} brand={brand} />)}</div></section>;
+    <div className="grid" data-n={Math.min(list.length, 8)}>{list.map(p => <ProductCard key={p.id} p={p} brand={brand} />)}</div></section>;
 }
