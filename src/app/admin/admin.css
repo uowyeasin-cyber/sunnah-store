@@ -133,3 +133,5 @@ body:has(.adm)::before{display:none}
 .adm .ord-tabs a span{background:none;color:inherit;opacity:.6;margin-left:4px;padding:0}
 .adm .ord-note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;color:#1e3a8a;margin:0}
 .adm .sm{font-size:.8rem}
+.adm .kicker::before{display:none}
+.adm .ord-tabs a.bad{color:var(--err);border-color:#fecaca;background:#fef2f2}.adm .ord-tabs a.bad.on{background:var(--err);color:#fff}

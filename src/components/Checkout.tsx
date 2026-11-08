@@ -29,6 +29,8 @@ export default function Checkout() {
   const [pay, setPay] = useState('cod');
   const [trx, setTrx] = useState('');
   const [useCredit, setUseCredit] = useState(true);
+  const [code, setCode] = useState(''); // coupon applied
+  const [codeIn, setCodeIn] = useState(''); // coupon being typed
   const [q, setQ] = useState<Q | null>(null);
   const [qFor, setQFor] = useState('');
   const [qFail, setQFail] = useState(''); // inputs whose quote failed to load
@@ -47,18 +49,18 @@ export default function Checkout() {
   // The quote re-checks credit when the email changes, so the total shown matches the order placed.
   const mail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim()) ? f.email.trim().toLowerCase() : '';
   // Until the quote for the current inputs arrives, the shown total may be stale, so ordering waits.
-  const want = JSON.stringify([key, f.country, useCredit, mail]);
+  const want = JSON.stringify([key, f.country, useCredit, mail, code]);
   const fresh = !!q && qFor === want;
   useEffect(() => {
     if (!lines.length || !f.country) { setQ(null); return; }
     let live = true;
-    checkoutQuote({ lines, country: f.country, useCredit, email: mail || undefined }).then(r => {
+    checkoutQuote({ lines, country: f.country, useCredit, email: mail || undefined, coupon: code || undefined }).then(r => {
       if (!live) return; setQ(r); setQFor(want); setQFail('');
       if (!r.pay.some(m => m.id === pay)) setPay(r.pay[0].id);
       if (r.me) { const a = (r.me.address || {}) as Record<string, string>; setF(x => ({ ...x, email: x.email || r.me!.email || '', name: x.name || r.me!.name, phone: x.phone || r.me!.phone || '', address: x.address || a.address || '', city: x.city || a.city || '', zip: x.zip || a.zip || '', state: x.state || a.state || '' })); }
     }).catch(e => { console.error('quote failed', e); if (live) setQFail(want); });
     return () => { live = false; };
-  }, [key, f.country, useCredit, mail, retry]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key, f.country, useCredit, mail, code, retry]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!lines.length) return <div className="empty"><h2>Your bag is empty</h2><p>Add something you love, then come back.</p></div>;
   const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
@@ -69,7 +71,7 @@ export default function Checkout() {
       if (!fresh) return;
       start(async () => {
         try { localStorage.setItem('pm-details', JSON.stringify(f)); } catch {}
-        const r = await checkout({ lines, ...f, pay, useCredit, trx });
+        const r = await checkout({ lines, ...f, pay, useCredit, trx, coupon: q?.coupon || undefined });
         if ('error' in r && r.error) { setErr(r.error); return; }
         lines.forEach(l => s.setQty(l.slug, 0));
         const o = r as { id: string; pay: boolean };
@@ -100,6 +102,10 @@ export default function Checkout() {
         {q ? <>
           <div className="sum-row"><span>{s.t('Items')}</span><span>{money(q.subtotal)}</span></div>
           <div className="sum-row"><span>{s.t('Delivery')} · {q.courier}</span><span>{q.shipping ? money(q.shipping) : s.t('Free')}</span></div>
+          <div className="coupon-row"><input aria-label={s.t('Discount code')} placeholder={s.t('Discount code')} value={codeIn} onChange={e => setCodeIn(e.target.value.toUpperCase())} />
+            {code ? <button type="button" className="btn ghost sm" onClick={() => { setCode(''); setCodeIn(''); }}>{s.t('Remove')}</button> : <button type="button" className="btn ghost sm" disabled={!codeIn.trim()} onClick={() => setCode(codeIn.trim())}>{s.t('Apply')}</button>}</div>
+          {code && fresh && q.couponError && <p className="err" style={{ margin: 0 }}>{s.t(q.couponError)}</p>}
+          {q.discount > 0 && <div className="sum-row"><span>{s.t('Code')} {q.coupon}</span><span>−{money(q.discount)}</span></div>}
           {q.available > 0 && <label className="toggle"><span>{s.t('Use store credit ({x} available)', { x: money(q.available) })}</span><input type="checkbox" checked={useCredit} onChange={e => setUseCredit(e.target.checked)} /></label>}
           {q.credit > 0 && <div className="sum-row"><span>{s.t('Store credit')}</span><span>−{money(q.credit)}</span></div>}
           <div className="sum-row total"><span>{s.t('Total')}</span><span>{money(q.total)}</span></div>

@@ -43,6 +43,8 @@ model Product {
   images     String[]
   video      String        @default("")
   active     Boolean       @default(true)
+  // Archived products leave the admin list and the shop, and can be restored.
+  archived   Boolean       @default(false)
   sort       Int           @default(0)
   // Stock per warehouse: { "US": 10, "MY": 4, "BD": 30 }
   stock      Json          @default("{}")
@@ -66,6 +68,9 @@ model Offer {
   // ribbon, stamp, pill, glow, timer
   style     String    @default("pill")
   endsAt    DateTime?
+  // Buy X get Y free (0 when the offer is a percent off).
+  buy       Int       @default(0)
+  get       Int       @default(0)
 }
 
 model Ad {
@@ -174,6 +179,9 @@ model Order {
   source       String          @default("")
   // Social media post or ad the buyer came through (Campaign.code), from a /go link.
   campaign     String          @default("")
+  // Coupon code used and the discount it gave, in the order's currency.
+  coupon       String          @default("")
+  discount     Decimal         @default(0) @db.Decimal(12, 2)
   // Pre-order shipping note at the time of the order, e.g. "Ships in 4–6 weeks". Empty for in-stock orders.
   preorder     String          @default("")
   // True when placing the order took units out of warehouse stock (not in pre-order mode).
@@ -424,4 +432,21 @@ model MailCampaign {
   failed  Int      @default(0)
   by      String   @default("")
   at      DateTime @default(now())
+}
+
+// Discount codes typed at checkout. A welcome gift is a one-use coupon tied to one email.
+model Coupon {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  // pct: percent off the items, amount: US cents off the items
+  kind      String    @default("pct")
+  value     Int
+  minCents  Int       @default(0)
+  maxUses   Int       @default(0)
+  used      Int       @default(0)
+  email     String    @default("")
+  note      String    @default("")
+  on        Boolean   @default(true)
+  endsAt    DateTime?
+  createdAt DateTime  @default(now())
 }
