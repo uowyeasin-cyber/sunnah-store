@@ -1,17 +1,20 @@
 import type { MetadataRoute } from 'next';
 import { getCategories, getProducts } from '@/lib/catalog';
+import { alternates, langPath, siteUrl } from '@/lib/seoUrls';
 
-// Every public shop page, for Google and Bing. Admin, checkout, receipts and accounts are left out on purpose.
+// Every public shop page in all four languages, for Google and Bing. Admin, checkout, receipts and accounts are left out on purpose.
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const site = process.env.SITE_URL || 'https://sunnahstore.vercel.app';
   const [products, cats] = await Promise.all([getProducts(), getCategories()]);
+  const page = (path: string, changeFrequency: 'weekly' | 'monthly' | 'yearly', priority: number, images?: string[]) =>
+    ({ url: siteUrl() + langPath('en', path), changeFrequency, priority, alternates: { languages: alternates('en', path).languages }, ...(images?.length ? { images } : {}) });
+  const abs = (u: string) => (u.startsWith('/') ? siteUrl() + u : u);
   return [
-    { url: `${site}/`, changeFrequency: 'weekly', priority: 1 },
-    { url: `${site}/shop`, changeFrequency: 'weekly', priority: 0.9 },
-    { url: `${site}/help`, changeFrequency: 'monthly', priority: 0.4 },
-    { url: `${site}/privacy`, changeFrequency: 'yearly', priority: 0.2 },
-    { url: `${site}/terms`, changeFrequency: 'yearly', priority: 0.2 },
-    ...cats.filter(c => c._count.products > 0).map(c => ({ url: `${site}/c/${c.slug}`, changeFrequency: 'weekly' as const, priority: 0.7 })),
-    ...products.map(p => ({ url: `${site}/p/${p.slug}`, changeFrequency: 'weekly' as const, priority: 0.8 })),
+    page('/', 'weekly', 1),
+    page('/shop', 'weekly', 0.9),
+    ...products.map(p => page(`/p/${p.slug}`, 'weekly', 0.8, p.images.slice(0, 5).map(abs))),
+    ...cats.filter(c => c._count.products > 0).map(c => page(`/c/${c.slug}`, 'weekly', 0.7)),
+    page('/help', 'monthly', 0.4),
+    page('/privacy', 'yearly', 0.2),
+    page('/terms', 'yearly', 0.2),
   ];
 }

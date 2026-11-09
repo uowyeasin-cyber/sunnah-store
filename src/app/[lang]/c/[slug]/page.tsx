@@ -1,3 +1,4 @@
+import { alternates } from '@/lib/seoUrls';
 import { notFound } from 'next/navigation';
 import { getAds, getCategories, getDict, getProducts, getSettings } from '@/lib/catalog';
 import { isLang, makeT, type Lang } from '@/lib/i18n';
@@ -14,7 +15,13 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps<'/[lang]/c/[slug]'>) {
   const { slug, lang } = await params;
-  return { title: (await getCategories(isLang(lang) ? lang : 'en')).find(c => c.slug === slug)?.name };
+  const L: Lang = isLang(lang) ? lang : 'en';
+  const [cats, products, { store }] = await Promise.all([getCategories(L), getProducts(L), getSettings(L)]);
+  const c = cats.find(c => c.slug === slug);
+  if (!c) return {};
+  const names = products.filter(p => p.category.slug === slug).slice(0, 4).map(p => p.name).join(', ');
+  return { title: c.name, description: `${c.name} · ${store.name}${names ? `: ${names}` : ''}${store.tagline ? `. ${store.tagline}` : ''}`.slice(0, 160),
+    alternates: alternates(L, `/c/${slug}`) };
 }
 
 export default async function CategoryPage({ params }: PageProps<'/[lang]/c/[slug]'>) {

@@ -1,10 +1,14 @@
+import { alternates } from '@/lib/seoUrls';
 import { Suspense } from 'react';
 import { getCategories, getDict, getProducts, getSettings } from '@/lib/catalog';
 import { isLang, makeT, type Lang } from '@/lib/i18n';
 
 import ShopBrowser from '@/components/ShopBrowser';
 
-export const metadata = { title: 'Shop' };
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params;
+  return { title: 'Shop', alternates: alternates(isLang(lang) ? lang : 'en', '/shop') };
+}
 
 async function Results({ searchParams, lang }: { searchParams: Promise<{ q?: string }>; lang: Lang }) {
   const [{ q = '' }, products, s, dict, cats] = await Promise.all([searchParams, getProducts(lang), getSettings(lang), getDict(lang), getCategories(lang)]);
