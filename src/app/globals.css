@@ -1174,7 +1174,11 @@ footer .share{border:0;padding:16px 0 0}
 footer .share-main{color:var(--night-ink)}
 footer .share-ic{background:transparent;border-color:color-mix(in srgb,var(--night-ink) 22%,transparent);color:var(--night-ink)}
 footer .share-ic:hover{border-color:var(--gold-b);color:var(--gold-b)}
-.pdp-media{position:relative}
+.pdp-media{position:relative;min-width:0}
+/* Thumbnails scroll inside the column instead of widening the page on phones. */
+.pdp>*{min-width:0}
+@media (max-width:900px){.pdp{grid-template-columns:minmax(0,1fr)}}
+html,body{overflow-x:clip}
 @media (min-width:901px){.pdp>.pdp-media{position:sticky;top:130px;align-self:start}}
 
 /* Product gallery: swipeable big view, thumbnails below it (not on top of the photo). */
