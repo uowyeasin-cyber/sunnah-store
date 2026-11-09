@@ -2,7 +2,13 @@ import type { Rates } from './money';
 
 // Everything an admin can change without touching code. Stored in the Setting table, one row per key.
 export type NavItem = { label: string; to: string; show: boolean }; // to: "all", "cat:<slug>", "track" or a path
-export type Slide = { id: string; eyebrow: string; title: string; italic: string; text: string; product: string; cta: string; look: 'light' | 'dark'; image: string; video: string; motion?: Motion };
+// One item at the top of the home page. Media can be any file: a photo, video, sound, or a document to open.
+// cta is the old single button, kept only so older saved slides still show it (see heroSlides).
+export type HeroButton = { label: string; href: string };
+export type Fit = 'cover' | 'contain' | 'top';
+export const FITS: [Fit, string][] = [['cover', 'Fill the space (edges may be cut)'], ['contain', 'Show all of it (no cutting)'], ['top', 'Fill, keep the top in view']];
+export type Slide = { id: string; eyebrow: string; title: string; italic: string; text: string; product: string; cta: string; look: 'light' | 'dark'; image: string; video: string; motion?: Motion;
+  audio?: string; file?: string; fileName?: string; poster?: string; videoTall?: string; fit?: Fit; buttons?: HeroButton[] };
 // How a showcase slide moves in: fade, slide in from the side, slow zoom, slow pan across, or rise up.
 export type Motion = 'fade' | 'slide' | 'zoom' | 'pan' | 'rise';
 export const MOTIONS: [Motion, string][] = [['fade', 'Fade'], ['slide', 'Slide in from the side'], ['zoom', 'Slow zoom'], ['pan', 'Slow pan across'], ['rise', 'Rise up']];
@@ -21,6 +27,7 @@ export type Settings = {
   nav: NavItem[];
   slides: Slide[];
   slideSecs: number;
+  heroHeight: number; // height of the top section, % of the screen height (0 = automatic)
   catStyle: CatStyle;
   popupDelay: number;
   rewardRate: number; // percent of order total given back as store credit
@@ -56,6 +63,7 @@ export const DEFAULT_SETTINGS: Settings = {
     { id: 's3', eyebrow: 'Attar & oils', title: 'Amber oud attar', italic: '', text: 'Alcohol free, 6 ml. Rolls on like the oil in the pen cap.', product: 'amber-oud-attar', cta: 'Discover', look: 'light', image: '', video: '' },
   ],
   slideSecs: 6.5,
+  heroHeight: 0,
   catStyle: 'float',
   popupDelay: 5,
   rewardRate: 0.5,
@@ -103,4 +111,19 @@ export function themeStyle(t: Settings['theme']): Record<string, string> {
   vars['--body'] = BODY_FONTS[t.body] || BODY_FONTS.Jost;
   vars['--radius'] = t.radius + 'px';
   return vars;
+}
+
+// The top of the home page as one list. Older stores kept the launch film apart and gave each slide one
+// button (cta): both are folded in here, so nothing the owner made disappears. Saving the list stores
+// the result, and the film is then turned off as a separate thing.
+export function heroSlides(s: Pick<Settings, 'slides' | 'film'>): Slide[] {
+  const list = s.slides.map(sl => sl.buttons ? sl : { ...sl, buttons: sl.cta ? [{ label: sl.cta, href: sl.product ? `/p/${sl.product}` : '/shop' }] : [] });
+  const f = s.film, d = DEFAULT_SETTINGS.film;
+  if (f.on && (f.wide || f.tall) && !list.some(x => x.id === 'film')) {
+    // A wide film the owner uploaded replaces the built-in phone and cover versions too.
+    const own = f.wide !== d.wide;
+    list.unshift({ id: 'film', eyebrow: '', title: '', italic: '', text: '', product: '', cta: '', look: 'dark', image: '', video: f.wide || f.tall, motion: 'fade',
+      videoTall: own && f.tall === d.tall ? '' : f.tall, poster: own && f.poster === d.poster ? '' : f.poster, fit: 'cover', buttons: f.cta ? [{ label: f.cta, href: '/shop' }] : [] });
+  }
+  return list;
 }

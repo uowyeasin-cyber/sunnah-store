@@ -21,7 +21,7 @@ export default function BlobUploads({ folder }: { folder?: string }) {
         for (const f of [...input.files]) {
           const clean = f.name.toLowerCase().replace(/[^a-z0-9.]+/g, '-');
           const ext = clean.split('.').pop() || '';
-          const type = f.type || (/^(mp4|mov|webm|m4v)$/.test(ext) ? 'video/' + (ext === 'mov' ? 'quicktime' : ext) : 'image/' + (ext === 'jpg' ? 'jpeg' : ext || 'jpeg'));
+          const type = f.type || (/^(mp4|mov|webm|m4v)$/.test(ext) ? 'video/' + (ext === 'mov' ? 'quicktime' : ext) : /^(mp3|m4a|wav|ogg|aac|flac)$/.test(ext) ? 'audio/' + (ext === 'mp3' ? 'mpeg' : ext) : /^(jpe?g|png|webp|gif|avif)$/.test(ext) || !ext ? 'image/' + (ext === 'jpg' ? 'jpeg' : ext || 'jpeg') : 'application/octet-stream');
           const r = await upload(`${dir}/${clean}`, f, { access: 'public', handleUploadUrl: '/api/upload', contentType: type, multipart: f.size > 20 * 1024 * 1024 });
           const h = Object.assign(document.createElement('input'), { type: 'hidden', name, value: r.url });
           h.dataset.up = name;

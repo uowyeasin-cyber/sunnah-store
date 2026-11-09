@@ -4,7 +4,7 @@ import { getAds, getBestSellers, getCategories, getDict, getLiveReviews, getProd
 import { isLang, makeT, type Lang } from '@/lib/i18n';
 
 import Hero, { type HeroSlide } from '@/components/Hero';
-import { DEFAULT_SETTINGS } from '@/lib/settings';
+import { heroSlides } from '@/lib/settings';
 import Rail from '@/components/Rail';
 import ProductCard from '@/components/ProductCard';
 import Art from '@/components/Art';
@@ -27,23 +27,22 @@ export default async function Home({ params }: PageProps<'/[lang]'>) {
   const [s, products, cats, ads, reviews, dict, best] = await Promise.all([getSettings(lang), getProducts(lang), getCategories(lang), getAds(lang), getLiveReviews(), getDict(lang), getBestSellers()]);
   const sellers = best.map(id => products.find(p => p.id === id)).filter(p => !!p);
   const t = makeT(dict);
-  // A newly uploaded wide film replaces the built-in phone version too, unless a tall one was uploaded as well.
-  const df = DEFAULT_SETTINGS.film, ownWide = s.film.wide !== df.wide;
-  const filmTall = ownWide && s.film.tall === df.tall ? '' : s.film.tall, filmPoster = ownWide && s.film.poster === df.poster ? '' : s.film.poster;
   const brand = s.store.name;
   const withPhoto = products.filter(x => x.image);
-  const slides: HeroSlide[] = s.slides.map((sl, n) => {
-    const p = products.find(x => x.slug === sl.product) || (sl.image || sl.video ? undefined : withPhoto.length ? withPhoto[n % withPhoto.length] : products[n % Math.max(1, products.length)]);
+  // One list: photos, videos, sounds or files, each with its own fit, text and buttons (lib/settings heroSlides).
+  const slides: HeroSlide[] = heroSlides(s).map((sl, n) => {
+    const media = sl.image || sl.video;
+    const p = products.find(x => x.slug === sl.product) || (media || sl.audio || sl.file || sl.id === 'film' ? undefined : withPhoto.length ? withPhoto[n % withPhoto.length] : products[n % Math.max(1, products.length)]);
     const art = sl.image ? <img src={sl.image} alt={sl.title || brand} /> : p ? <Art p={p} open brand={brand} /> : null;
-    return { id: sl.id, eyebrow: sl.eyebrow, title: sl.title, italic: sl.italic, text: sl.text, cta: sl.cta, href: p ? `/p/${p.slug}` : '/shop', dark: sl.look === 'dark', full: !!(sl.video || sl.image), art, motion: sl.motion || 'fade', video: sl.video || undefined };
+    const buttons = (sl.buttons || []).map(b => ({ label: sl.id === 'film' ? t(b.label) : b.label, href: b.href }));
+    return { id: sl.id, eyebrow: sl.eyebrow, title: sl.title, italic: sl.italic, text: sl.text, buttons, dark: sl.look === 'dark', full: !!media || (!p && !art), art, motion: sl.motion || 'fade',
+      fit: sl.fit || 'cover', video: sl.video || undefined, videoTall: sl.videoTall || undefined, poster: sl.poster || undefined, audio: sl.audio || undefined, file: sl.file || undefined, fileName: sl.fileName || undefined };
   });
-  // The opening film is the first slide of the showcase.
-  if (s.film.on && (s.film.wide || s.film.tall)) slides.unshift({ id: 'film', eyebrow: '', title: '', italic: '', text: '', cta: t(s.film.cta), href: '/shop', dark: true, full: true, art: null, motion: 'fade', video: s.film.wide || s.film.tall, videoTall: filmTall || undefined, poster: filmPoster || undefined });
   const tiles = cats.map(c => ({ c, items: products.filter(p => p.category.slug === c.slug) })).filter(t => t.items.length);
   const homeAds = ads.filter(a => adLive(a) && ['home-top', 'home-mid'].includes(a.place)).map(a => a.id);
   return (
     <div className="view">
-      {slides.length > 0 && <Hero slides={slides} secs={s.slideSecs} />}
+      {slides.length > 0 && <Hero slides={slides} secs={s.slideSecs} height={s.heroHeight} />}
       {tiles.length > 0 && <section className="wrap cat-icons-sec" id="cats" aria-label={t('Collections')}>
         <div className={`cat-icons cs-${s.catStyle}`}><div className="ci-track" style={{ ['--n' as string]: tiles.length }}>
           {(s.catStyle === 'marquee' && tiles.length > 2 ? [...tiles, ...tiles] : tiles).map(({ c, items }, k) => (

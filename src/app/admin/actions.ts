@@ -4,8 +4,8 @@ import { redirect } from 'next/navigation';
 import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 import { getSettings } from '@/lib/catalog';
-import { keepUpload, isVideoUrl } from '@/lib/upload';
-import { CAT_STYLES, DEFAULT_SETTINGS, MOTIONS, type Motion, type NavItem, type Settings, type Slide } from '@/lib/settings';
+import { keepUpload, isVideoUrl, isAudioUrl, isImageUrl } from '@/lib/upload';
+import { CAT_STYLES, FITS, heroSlides, MOTIONS, type Motion, type NavItem, type Settings, type Slide } from '@/lib/settings';
 const motionOf = (v: string): Motion => (MOTIONS.find(([k]) => k === v)?.[0] || 'fade');
 import { badgeFrom } from '@/lib/badges';
 import { after } from 'next/server';
@@ -32,34 +32,51 @@ export async function saveStore(fd: FormData) {
 export async function saveSlides(fd: FormData) {
   await requireAdmin('homepage', 'saveSlides');
   const s = await getSettings();
+  const before = heroSlides(s); // includes the old launch film and single buttons, so saving keeps them
   const ids = fd.getAll('id').map(String);
   const slides: Slide[] = [];
+  const href = (v: string) => { v = v.trim(); return !v ? '/shop' : /^(https?:\/\/|\/|mailto:|tel:|#)/i.test(v) ? v.slice(0, 300) : v.includes('.') ? 'https://' + v.slice(0, 290) : '/' + v.replace(/^\/+/, '').slice(0, 290); };
   for (const [i, id] of ids.entries()) {
     if (fd.get(`del-${i}`)) continue;
-    const old = s.slides.find(x => x.id === id);
-    let image = old?.image || '', video = old?.video || '';
-    if (fd.get(`clear-${i}`)) image = video = '';
-    const url = await keepUpload(fd.get(`media-${i}`), 'slides');
-    if (url) { if (isVideoUrl(url)) { video = url; image = ''; } else { image = url; video = ''; } }
-    slides.push({ id, eyebrow: str(fd, `eyebrow-${i}`), title: str(fd, `title-${i}`), italic: str(fd, `italic-${i}`), text: str(fd, `text-${i}`), product: str(fd, `product-${i}`), cta: str(fd, `cta-${i}`), look: str(fd, `look-${i}`) === 'dark' ? 'dark' : 'light', image, video, motion: motionOf(str(fd, `motion-${i}`)) });
+    const old = before.find(x => x.id === id);
+    let m = { image: old?.image || '', video: old?.video || '', audio: old?.audio || '', file: old?.file || '', fileName: old?.fileName || '', poster: old?.poster || '', videoTall: old?.videoTall || '' };
+    if (fd.get(`clear-${i}`)) m = { image: '', video: '', audio: '', file: '', fileName: '', poster: '', videoTall: '' };
+    const raw = fd.get(`media-${i}`);
+    const url = await keepUpload(raw, 'slides', true) || (str(fd, `link-${i}`).match(/^https?:\/\/\S+$/)?.[0] ?? '');
+    if (url) m = { ...mediaOf(url, raw), poster: '', videoTall: '' };
+    const buttons = fd.getAll(`bl-${i}`).map(String).map((label, k) => ({ label: label.trim().slice(0, 40), href: href(String(fd.getAll(`bh-${i}`)[k] ?? '')), drop: !!fd.get(`bd-${i}-${k}`) }))
+      .filter(b => b.label && !b.drop).map(({ label, href }) => ({ label, href }));
+    const fit = FITS.find(([k]) => k === str(fd, `fit-${i}`))?.[0] || 'cover';
+    slides.push({ id, eyebrow: str(fd, `eyebrow-${i}`), title: str(fd, `title-${i}`), italic: str(fd, `italic-${i}`), text: str(fd, `text-${i}`), product: str(fd, `product-${i}`), cta: '', look: str(fd, `look-${i}`) === 'light' ? 'light' : 'dark', motion: motionOf(str(fd, `motion-${i}`)), fit, buttons, ...m });
   }
-  // Many photos and videos at once: each one becomes its own slide, ready for a heading and a description.
+  // Add media: each picked file (any kind) becomes its own item, ready for text and buttons.
   const motion = motionOf(str(fd, 'newMotion'));
   for (const [n, v] of fd.getAll('newMedia').entries()) {
-    const url = await keepUpload(v, 'slides');
+    const url = await keepUpload(v, 'slides', true);
     if (!url) continue;
-    const vid = isVideoUrl(url);
-    slides.push({ id: 's' + Date.now().toString(36) + n, eyebrow: '', title: '', italic: '', text: '', product: '', cta: '', look: 'dark', image: vid ? '' : url, video: vid ? url : '', motion });
+    slides.push({ id: 's' + Date.now().toString(36) + n, eyebrow: '', title: '', italic: '', text: '', product: '', cta: '', look: 'dark', motion, fit: 'cover', buttons: [], ...mediaOf(url, v), poster: '', videoTall: '' });
   }
-  if (fd.get('add')) slides.push({ id: 's' + Date.now(), eyebrow: 'New', title: 'Your headline', italic: '', text: '', product: '', cta: 'Discover', look: 'light', image: '', video: '', motion: 'fade' });
+  if (fd.get('add')) slides.push({ id: 's' + Date.now(), eyebrow: '', title: 'Your headline', italic: '', text: '', product: '', cta: '', look: 'dark', image: '', video: '', motion: 'fade', fit: 'cover', buttons: [{ label: 'Shop now', href: '/shop' }] });
   const up = Number(fd.get('up'));
   if (up > 0 && up < slides.length) [slides[up - 1], slides[up]] = [slides[up], slides[up - 1]];
   await setSetting('slides', slides);
+  if (s.film.on) await setSetting('film', { ...s.film, on: false }); // the film now lives in the list above
   await setSetting('slideSecs', Math.min(20, Math.max(3, num(fd, 'slideSecs') || 6.5)));
+  await setSetting('heroHeight', Math.min(100, Math.max(0, Math.round(num(fd, 'heroHeight')))));
   const cs = str(fd, 'catStyle');
   const csOk = CAT_STYLES.find(([k]) => k === cs)?.[0];
   if (csOk) await setSetting('catStyle', csOk);
   done();
+}
+
+// Sorts an uploaded file into photo, video, sound or "other file" by its name.
+function mediaOf(url: string, raw: FormDataEntryValue | null) {
+  const name = (raw instanceof File ? raw.name : decodeURIComponent(url.split('/').pop() || '')).replace(/-[A-Za-z0-9]{20,}(?=\.[^.]+$)/, '').slice(0, 80);
+  const e = { image: '', video: '', audio: '', file: '', fileName: '' };
+  if (isVideoUrl(url)) return { ...e, video: url };
+  if (isAudioUrl(url)) return { ...e, audio: url, fileName: name };
+  if (isImageUrl(url) || /\/[^/.]+$/.test(url)) return { ...e, image: url };
+  return { ...e, file: url, fileName: name };
 }
 
 export async function saveConnections(fd: FormData) {
@@ -104,17 +121,6 @@ export async function saveMenu(fd: FormData) {
 export async function savePreorder(fd: FormData) {
   await requireAdmin('settings', 'savePreorder');
   await setSetting('preorder', { on: !!fd.get('on'), ships: str(fd, 'ships').slice(0, 120) || 'Ships in 4–6 weeks' });
-  done();
-}
-
-export async function saveFilm(fd: FormData) {
-  await requireAdmin('homepage', 'saveFilm');
-  const f = DEFAULT_SETTINGS.film, cur = (await getSettings()).film;
-  const pick = async (k: 'wide' | 'tall' | 'poster') => fd.get(`reset-${k}`) ? f[k] : (await keepUpload(fd.get(k), 'film')) || str(fd, `${k}Url`) || cur[k];
-  const wide = await pick('wide'), tall = await pick('tall'), poster = await pick('poster');
-  // A new wide video without a new tall one: phones show the wide one rather than the old built-in film.
-  const newWide = wide !== cur.wide, newTall = tall !== cur.tall;
-  await setSetting('film', { on: !!fd.get('on'), wide, tall: newWide && !newTall && tall === f.tall ? '' : tall, poster: newWide && poster === f.poster ? '' : poster, cta: str(fd, 'cta').slice(0, 40) || f.cta });
   done();
 }
 
@@ -202,6 +208,57 @@ export async function saveCategories(fd: FormData) {
     nav.splice(at < 0 ? nav.length : at, 0, { label: name, to: `cat:${slug}`, show: true });
     await setSetting('nav', nav);
   }
+  done();
+}
+
+// Home page collections in one place: add, rename, icon, order, delete, pick products, and how the icons move.
+// A product sits in one collection: ticking it in another moves it there. Deleting a collection moves
+// its products to the first collection that stays, and takes it out of the menu bar.
+export async function saveHomeCollections(fd: FormData) {
+  await requireAdmin('homepage', 'saveHomeCollections');
+  const ids = fd.getAll('cid').map(String);
+  const del = new Set(ids.filter((_, i) => fd.get(`cdel-${i}`)));
+  const order = ids.filter(id => !del.has(id));
+  const up = Number(fd.get('cup'));
+  const ui = up > 0 ? order.indexOf(ids[up]) : -1;
+  if (ui > 0) [order[ui - 1], order[ui]] = [order[ui], order[ui - 1]];
+  const s = await getSettings();
+  let nav = [...s.nav];
+  // New collection first, so products can be ticked into it in the same save.
+  const name = str(fd, 'newCat');
+  let newId = '';
+  if (name) {
+    let slug = slugify(name);
+    if (await db.category.findUnique({ where: { slug } })) slug += '-' + Date.now().toString(36).slice(-4);
+    const icon = await keepUpload(fd.get('newIcon'), 'categories');
+    newId = (await db.category.create({ data: { name, slug, sort: order.length, image: icon } })).id;
+    order.push(newId);
+    const at = nav.findIndex(n => n.to === 'track');
+    nav.splice(at < 0 ? nav.length : at, 0, { label: name, to: `cat:${slug}`, show: true });
+  }
+  for (const [i, id] of ids.entries()) {
+    if (del.has(id)) continue;
+    const clear = !!fd.get(`cclear-${i}`), icon = clear ? '' : await keepUpload(fd.get(`cicon-${i}`), 'categories');
+    await db.category.update({ where: { id }, data: { name: str(fd, `cname-${i}`) || undefined, sort: order.indexOf(id), ...(icon || clear ? { image: icon } : {}) } });
+  }
+  // Products: where each one is ticked. A tick in a different collection than its own wins.
+  const ticks = new Map<string, string[]>();
+  for (const [i, id] of ids.entries()) if (!del.has(id)) for (const p of fd.getAll(`cp-${i}`).map(String)) ticks.set(p, [...(ticks.get(p) || []), id]);
+  if (newId) for (const p of fd.getAll('newProducts').map(String)) ticks.set(p, [...(ticks.get(p) || []), newId]);
+  const fallback = order[0];
+  for (const p of await db.product.findMany({ select: { id: true, categoryId: true } })) {
+    const t = ticks.get(p.id) || [];
+    const to = t.find(c => c !== p.categoryId) || (del.has(p.categoryId) ? fallback : '');
+    if (to && to !== p.categoryId) await db.product.update({ where: { id: p.id }, data: { categoryId: to } });
+  }
+  if (del.size && fallback) {
+    const gone = await db.category.findMany({ where: { id: { in: [...del] } } });
+    for (const c of gone) if (!(await db.product.count({ where: { categoryId: c.id } }))) await db.category.delete({ where: { id: c.id } });
+    nav = nav.filter(n => !gone.some(c => n.to === `cat:${c.slug}`));
+  }
+  await setSetting('nav', nav);
+  const cs = CAT_STYLES.find(([k]) => k === str(fd, 'catStyle'))?.[0];
+  if (cs) await setSetting('catStyle', cs);
   done();
 }
 

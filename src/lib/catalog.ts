@@ -30,7 +30,7 @@ export async function getSettings(lang: Lang = 'en'): Promise<Settings> {
   if (lang === 'en') return s;
   const t = await tFor(lang);
   return { ...s, store: { ...s.store, announce: t(s.store.announce), tagline: t(s.store.tagline) }, nav: s.nav.map(n => ({ ...n, label: t(n.label) })),
-    slides: s.slides.map(x => ({ ...x, eyebrow: t(x.eyebrow), title: t(x.title), italic: t(x.italic), text: t(x.text), cta: t(x.cta) })) };
+    slides: s.slides.map(x => ({ ...x, eyebrow: t(x.eyebrow), title: t(x.title), italic: t(x.italic), text: t(x.text), cta: t(x.cta), buttons: x.buttons?.map(b => ({ ...b, label: t(b.label) })) })) };
 }
 
 const productInclude = { category: true, offer: true } as const;
