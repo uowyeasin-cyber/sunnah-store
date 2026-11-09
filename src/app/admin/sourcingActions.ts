@@ -129,3 +129,24 @@ export async function aiSuppliers(fd: FormData) {
   try { for (const f of await findSuppliers(name, s)) { await saveFound(f); n++; } } catch (e) { msg = e instanceof Error ? e.message : 'AI failed'; }
   redirect(`/admin/sourcing?tab=${back}${run ? `&run=${run}` : ''}${note(msg || (n ? `${n} suppliers for “${name}” saved in Suppliers with website, address, phone and email where found. Check them before you order.` : 'The AI found no suppliers it was sure of. Try a more specific product name.'))}`);
 }
+
+// Dropship tab: one CJ product becomes a hidden draft, linked to CJ (first in-stock variant), with CJ photos, cost and stock.
+// When a customer pays for it, Automation → Dropship orders sends the order to CJ.
+export async function importCj(fd: FormData) {
+  const pid = str(fd, 'pid');
+  await requireAdmin('sourcing', 'importCj', pid);
+  const { product } = await import('@/lib/cj');
+  const d = await product(pid);
+  const v = d.variants.find(x => x.stock > 0) || d.variants[0];
+  if (!v) throw new Error('This CJ product has no variants to sell');
+  const markup = Math.max(1, Number(str(fd, 'markup')) || 2.5);
+  const cost = v.price || d.price;
+  let supplier = await db.supplier.findFirst({ where: { api: 'cj' } });
+  if (!supplier) supplier = await db.supplier.create({ data: { name: 'CJ Dropshipping', api: 'cj', website: 'https://cjdropshipping.com', country: 'China', currency: 'USD', leadDays: 12, source: 'CJ API', notes: 'Dropship supplier. Orders are placed through the API and paid from the CJ balance.' } });
+  const p = await draft(d.name.slice(0, 120), cost, Math.ceil(cost * markup) - 0.01, d.description, await categoryId(fd));
+  const n = Math.max(0, Math.min(999, v.stock));
+  const images = [...new Set([v.image, ...d.images].filter(u => /^https:\/\//.test(u)))].slice(0, 10);
+  await db.product.update({ where: { id: p.id }, data: { images, sub: v.name !== d.name ? v.name.slice(0, 80) : '', dropship: true, supplierId: supplier.id, supplierSku: v.vid, supplierUrl: `cj:${d.pid}`, stock: { BD: n, MY: n, US: n } } });
+  const s = await getSourcing(); s.imported++; await saveSourcing(s);
+  redirect(`/admin/products/${p.id}?saved=1`);
+}

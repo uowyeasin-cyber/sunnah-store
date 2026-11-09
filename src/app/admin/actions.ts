@@ -157,6 +157,7 @@ export async function saveProduct(fd: FormData) {
     name, sub: str(fd, 'sub'), details: str(fd, 'details'), priceCents: Math.round(num(fd, 'price') * 100), costCents: Math.round(num(fd, 'cost') * 100), kind: str(fd, 'kind') || 'gift', finish: str(fd, 'finish'),
     swatch: str(fd, 'swatch'), active: !!fd.get('active'), sort: num(fd, 'sort'), categoryId: str(fd, 'categoryId'), images, video,
     stock: { US: num(fd, 'stockUS'), MY: num(fd, 'stockMY'), BD: num(fd, 'stockBD') },
+    dropship: !!fd.get('dropship'), supplierId: str(fd, 'supplierId').slice(0, 40), supplierSku: str(fd, 'supplierSku').slice(0, 120), supplierUrl: str(fd, 'supplierUrl').slice(0, 500),
   };
   let slug = slugify(str(fd, 'slug') || name);
   if (await db.product.findFirst({ where: { slug, NOT: id ? { id } : undefined } })) slug += '-' + Date.now().toString(36).slice(-4);

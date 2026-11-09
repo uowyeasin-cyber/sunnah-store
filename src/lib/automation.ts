@@ -76,6 +76,7 @@ export async function runAll() {
 
 // Called when an order is placed or paid: book the courier now, queue it for approval, or leave it.
 export async function onOrderReady(orderId: string) {
+  await dropshipNow(orderId).catch(e => console.error('dropship failed', orderId, e));
   const mode = await modeOf('courier');
   if (mode === 'off') return;
   if (mode === 'approve') return queueBooking(orderId);
@@ -85,7 +86,29 @@ export async function onOrderReady(orderId: string) {
 
 export const onOrderReadySafe = (orderId: string) => onOrderReady(orderId).catch(e => console.error('order automation failed', orderId, e));
 
+// Dropship lines: supplier orders are made at once, then placed (automatic) or put in Today's decisions (ask me first).
+export async function dropshipNow(orderId: string) {
+  const mode = await modeOf('dropship');
+  if (mode === 'off') return;
+  const { makeDropOrders, placeDropOrder } = await import('./dropship');
+  for (const id of await makeDropOrders(orderId)) {
+    if (mode === 'auto') await placeDropOrder(id).catch(() => {}); // the reason is saved on the purchase order
+    else await queueDrop(id);
+  }
+}
+export const dropshipNowSafe = (orderId: string) => dropshipNow(orderId).catch(e => console.error('dropship failed', orderId, e));
+
+async function queueDrop(poId: string) {
+  if (await db.automationTask.findFirst({ where: { job: 'dropship', ref: poId, status: 'pending' } })) return false;
+  const po = await db.purchaseOrder.findUnique({ where: { id: poId }, include: { lines: true, supplier: true } });
+  if (!po || po.status !== 'draft') return false;
+  await db.automationTask.create({ data: { job: 'dropship', ref: poId, label: `Order from ${po.supplier.name} for customer order ${po.saleNo}: ${po.lines.map(l => `${l.qty} × ${l.name}`).join(', ')}`.slice(0, 300) } });
+  return true;
+}
+
 async function queueBooking(orderId: string) {
+  const { onlyDropship } = await import('./fulfil');
+  if (await onlyDropship(orderId)) return false;
   const o = await db.order.findUnique({ where: { id: orderId } });
   if (!o || o.trackingNo || (o.payStatus !== 'paid' && o.payStatus !== 'cod')) return false;
   if (await db.automationTask.findFirst({ where: { job: 'courier', ref: orderId, status: 'pending' } })) return false;
@@ -104,6 +127,11 @@ export async function decideTask(id: string, approve: boolean, by: string) {
       await sendToCourier(t.ref);
       const o = await db.order.findUnique({ where: { id: t.ref } });
       await db.automationTask.update({ where: { id }, data: { result: o?.trackingNo ? `Booked, tracking ${o.trackingNo}` : 'No booking made: courier not connected or order not ready' } });
+    }
+    if (t.job === 'dropship') {
+      const { placeDropOrder } = await import('./dropship');
+      const po = await placeDropOrder(t.ref);
+      await db.automationTask.update({ where: { id }, data: { result: po.supplierRef ? `Placed with the supplier, ref ${po.supplierRef}` : `Sent to the supplier (${po.no})` } });
     }
   } catch (e) {
     await db.automationTask.update({ where: { id }, data: { status: 'failed', result: (e as Error).message.slice(0, 300) } });
@@ -125,6 +153,18 @@ const WORK: Record<JobId, (mode: Mode) => Promise<Result>> = {
     }
     if (open.length && failed && !booked && failed + gaveUp === open.length) return { status: 'failed', summary: `${failed} bookings failed. See the notes on each order.` };
     return { status: 'ok', summary: `${open.length} orders waiting · ${booked} booked · ${queued} sent for approval · ${failed} failed · ${gaveUp} left for you after 3 tries` };
+  },
+  // Supplier orders for paid dropship products, placing them, tracking numbers back, CJ cost and stock.
+  async dropship(mode) {
+    const since = new Date(Date.now() - 14 * 864e5);
+    const paid = await db.order.findMany({ where: { createdAt: { gte: since }, payStatus: { in: ['paid', 'cod'] }, status: { lt: DELIVERED } }, select: { id: true }, take: 300 });
+    const { makeDropOrders, syncDrop, syncDropStock } = await import('./dropship');
+    let made = 0, queued = 0;
+    for (const o of paid) for (const id of await makeDropOrders(o.id)) { made++; if (mode === 'approve' && await queueDrop(id)) queued++; }
+    if (mode === 'approve') for (const d of await db.purchaseOrder.findMany({ where: { status: 'draft', saleId: { not: '' }, error: '' }, select: { id: true }, take: 50 })) if (await queueDrop(d.id)) queued++;
+    const r = await syncDrop(mode === 'auto');
+    const st = await syncDropStock().catch(() => ({ checked: 0, changed: 0 }));
+    return { status: (r.failed && !r.placed ? 'failed' : 'ok') as Result['status'], summary: `${made} supplier orders made · ${r.placed} placed · ${queued} waiting for your OK · ${r.failed} failed · ${r.tracked} got tracking · ${st.changed}/${st.checked} CJ products updated` };
   },
   // Pulls courier status for open orders and moves them forward.
   async tracking() {
