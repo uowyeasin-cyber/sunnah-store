@@ -1,8 +1,12 @@
+import { alternates } from '@/lib/seoUrls';
 import Link from 'next/link';
 import { getDict, getSettings } from '@/lib/catalog';
 import { isLang, makeT, type Lang } from '@/lib/i18n';
 
-export const metadata = { title: 'Privacy' };
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params;
+  return { title: 'Privacy', alternates: alternates(isLang(lang) ? lang : 'en', '/privacy') };
+}
 
 // What the shop stores and why, matching what the code actually does.
 export default async function Privacy({ params }: PageProps<'/[lang]/privacy'>) {

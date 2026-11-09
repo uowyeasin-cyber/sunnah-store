@@ -7,7 +7,7 @@ import { aiReady } from '@/lib/ai';
 import { key, loadKeys } from '@/lib/keys';
 import { PLATFORMS } from '@/lib/social';
 import { formatAmount, type Currency } from '@/lib/money';
-import { aiAd, aiProducts, aiSite, savePixels, saveProductSeo, saveSiteSeo, saveVerify } from '../seoActions';
+import { aiAd, aiProducts, aiSite, pingSearch, savePixels, saveProductSeo, saveSiteSeo, saveVerify } from '../seoActions';
 
 const site = () => process.env.SITE_URL || 'https://sunnahstore.vercel.app';
 const LOST = ['failed', 'cancelled', 'refunded'];
@@ -131,6 +131,9 @@ export default async function SeoAds({ searchParams }: PageProps<'/admin/seo'>) 
         <div className="grid2">{VERIFY.map(([k, label, url]) => <div key={k} className="field"><label>{label} · <a className="link" href={url} target="_blank" rel="noreferrer">open ↗</a></label><input name={k} defaultValue={seo.verify[k as keyof typeof seo.verify]} placeholder='<meta name="…" content="…">' /></div>)}</div>
         <button className="btn">Save codes</button>
       </form>
+      <h4>Fast indexing</h4>
+      <p className="muted sm">Every product you save as live is sent to Bing (and Yandex, Seznam, Naver) by IndexNow within minutes. Press this after big changes to send every page again. Google finds pages through the sitemap; in Search Console use URL inspection → Request indexing for the most important ones.</p>
+      <form action={pingSearch}><button className="btn ghost">Send all pages to search engines now</button></form>
     </section>
 
     <section className="panel" id="pixels">

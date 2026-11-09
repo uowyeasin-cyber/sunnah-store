@@ -8,6 +8,8 @@ import { keepUpload, isVideoUrl, isAudioUrl, isImageUrl } from '@/lib/upload';
 import { CAT_STYLES, FITS, heroSlides, MOTIONS, type Motion, type NavItem, type Settings, type Slide } from '@/lib/settings';
 const motionOf = (v: string): Motion => (MOTIONS.find(([k]) => k === v)?.[0] || 'fade');
 import { badgeFrom } from '@/lib/badges';
+import { after } from 'next/server';
+import { allLangs, pingIndexNow } from '@/lib/indexnow';
 
 // Every admin change: check the signer is an admin, write, then refresh the storefront cache.
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim();
@@ -172,6 +174,8 @@ export async function saveProduct(fd: FormData) {
     const offer = { on: !!fd.get('offerOn'), label, pct: Math.min(90, Math.max(0, num(fd, 'offerPct'))), style: badgeFrom(fd, 'offerStyle'), endsAt: str(fd, 'offerEnds') ? new Date(str(fd, 'offerEnds') + 'T23:59:59') : null };
     await db.offer.upsert({ where: { productId: p.id }, update: offer, create: { ...offer, productId: p.id } });
   } else await db.offer.deleteMany({ where: { productId: p.id } });
+  // A live product is announced to Bing/IndexNow right away, so it can show in search the same day.
+  if (p.active) after(() => pingIndexNow(allLangs([`/p/${p.slug}`])));
   done();
   if (!id) redirect(`/admin/products/${p.id}?saved=1`);
 }

@@ -16,6 +16,7 @@ import { AdCta, adHref, adLive, AdVisual } from '@/components/Ads';
 import Pixels from '@/components/Pixels';
 import Share from '@/components/Share';
 import { getSeo } from '@/lib/seo';
+import { ldJson, OG_LOCALE, siteUrl } from '@/lib/seoUrls';
 import '../globals.css';
 import '@/components/badges.css';
 
@@ -29,10 +30,14 @@ export async function generateMetadata({ params }: LayoutProps<'/[lang]'>): Prom
   if (v.bing) other['msvalidate.01'] = v.bing;
   if (v.pinterest) other['p:domain_verify'] = v.pinterest;
   if (v.facebook) other['facebook-domain-verification'] = v.facebook;
+  const L: Lang = isLang(lang) ? lang : 'en';
   return {
-    title: { default: seo.title || store.name, template: `%s · ${store.name}` }, description: seo.description || store.tagline,
+    metadataBase: new URL(siteUrl()),
+    title: { default: seo.title || (store.tagline ? `${store.name} · ${store.tagline}` : store.name), template: `%s · ${store.name}` }, description: seo.description || store.tagline,
     keywords: seo.keywords ? seo.keywords.split(',').map(k => k.trim()).filter(Boolean) : undefined,
-    openGraph: { siteName: store.name, type: 'website', ...(seo.ogImage ? { images: [seo.ogImage] } : {}) },
+    openGraph: { siteName: store.name, type: 'website', locale: OG_LOCALE[L], ...(seo.ogImage ? { images: [seo.ogImage] } : {}) },
+    twitter: { card: 'summary_large_image', ...(seo.ogImage ? { images: [seo.ogImage] } : {}) },
+    robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1, 'max-video-preview': -1 } },
     verification: { google: v.google || undefined, yandex: v.yandex || undefined, other },
   };
 }
@@ -50,6 +55,11 @@ export default async function StoreLayout({ children, params }: LayoutProps<'/[l
     <Html lang={lang}>
       <StoreProvider products={products} rates={s.rates} lang={lang} dict={dict} pre={s.preorder?.on ? s.preorder.ships || 'Pre-order' : ''}>
         <a className="skip" href="#main">{t('Skip to content')}</a>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson({ '@context': 'https://schema.org', '@graph': [
+          { '@type': 'Organization', '@id': `${siteUrl()}/#org`, name: s.store.name, url: siteUrl(), ...(seo.ogImage ? { logo: seo.ogImage } : {}) },
+          { '@type': 'WebSite', '@id': `${siteUrl()}/#site`, name: s.store.name, url: siteUrl(), inLanguage: lang, publisher: { '@id': `${siteUrl()}/#org` },
+            potentialAction: { '@type': 'SearchAction', target: { '@type': 'EntryPoint', urlTemplate: `${siteUrl()}/shop?q={search_term_string}` }, 'query-input': 'required name=search_term_string' } },
+        ] }) }} />
         {s.store.announce && <div className="announce">{s.store.announce}</div>}
         <Header name={s.store.name} nav={s.nav} ticker={ticker} />
         <main id="main">{children}</main>

@@ -1,3 +1,4 @@
+import { alternates } from '@/lib/seoUrls';
 import Link from 'next/link';
 import { getAds, getBestSellers, getCategories, getDict, getLiveReviews, getProducts, getSettings } from '@/lib/catalog';
 import { isLang, makeT, type Lang } from '@/lib/i18n';
@@ -14,6 +15,11 @@ import Trust from '@/components/Trust';
 import ForYou from '@/components/ForYou';
 import ProductChips from '@/components/ProductChips';
 import NewsletterForm from '@/components/NewsletterForm';
+
+export async function generateMetadata({ params }: PageProps<'/[lang]'>) {
+  const { lang } = await params;
+  return { alternates: alternates(isLang(lang) ? lang : 'en', '/') };
+}
 
 export default async function Home({ params }: PageProps<'/[lang]'>) {
   const { lang: l } = await params;
