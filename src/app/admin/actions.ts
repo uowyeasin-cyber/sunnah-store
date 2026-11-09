@@ -211,6 +211,57 @@ export async function saveCategories(fd: FormData) {
   done();
 }
 
+// Home page collections in one place: add, rename, icon, order, delete, pick products, and how the icons move.
+// A product sits in one collection: ticking it in another moves it there. Deleting a collection moves
+// its products to the first collection that stays, and takes it out of the menu bar.
+export async function saveHomeCollections(fd: FormData) {
+  await requireAdmin('homepage', 'saveHomeCollections');
+  const ids = fd.getAll('cid').map(String);
+  const del = new Set(ids.filter((_, i) => fd.get(`cdel-${i}`)));
+  const order = ids.filter(id => !del.has(id));
+  const up = Number(fd.get('cup'));
+  const ui = up > 0 ? order.indexOf(ids[up]) : -1;
+  if (ui > 0) [order[ui - 1], order[ui]] = [order[ui], order[ui - 1]];
+  const s = await getSettings();
+  let nav = [...s.nav];
+  // New collection first, so products can be ticked into it in the same save.
+  const name = str(fd, 'newCat');
+  let newId = '';
+  if (name) {
+    let slug = slugify(name);
+    if (await db.category.findUnique({ where: { slug } })) slug += '-' + Date.now().toString(36).slice(-4);
+    const icon = await keepUpload(fd.get('newIcon'), 'categories');
+    newId = (await db.category.create({ data: { name, slug, sort: order.length, image: icon } })).id;
+    order.push(newId);
+    const at = nav.findIndex(n => n.to === 'track');
+    nav.splice(at < 0 ? nav.length : at, 0, { label: name, to: `cat:${slug}`, show: true });
+  }
+  for (const [i, id] of ids.entries()) {
+    if (del.has(id)) continue;
+    const clear = !!fd.get(`cclear-${i}`), icon = clear ? '' : await keepUpload(fd.get(`cicon-${i}`), 'categories');
+    await db.category.update({ where: { id }, data: { name: str(fd, `cname-${i}`) || undefined, sort: order.indexOf(id), ...(icon || clear ? { image: icon } : {}) } });
+  }
+  // Products: where each one is ticked. A tick in a different collection than its own wins.
+  const ticks = new Map<string, string[]>();
+  for (const [i, id] of ids.entries()) if (!del.has(id)) for (const p of fd.getAll(`cp-${i}`).map(String)) ticks.set(p, [...(ticks.get(p) || []), id]);
+  if (newId) for (const p of fd.getAll('newProducts').map(String)) ticks.set(p, [...(ticks.get(p) || []), newId]);
+  const fallback = order[0];
+  for (const p of await db.product.findMany({ select: { id: true, categoryId: true } })) {
+    const t = ticks.get(p.id) || [];
+    const to = t.find(c => c !== p.categoryId) || (del.has(p.categoryId) ? fallback : '');
+    if (to && to !== p.categoryId) await db.product.update({ where: { id: p.id }, data: { categoryId: to } });
+  }
+  if (del.size && fallback) {
+    const gone = await db.category.findMany({ where: { id: { in: [...del] } } });
+    for (const c of gone) if (!(await db.product.count({ where: { categoryId: c.id } }))) await db.category.delete({ where: { id: c.id } });
+    nav = nav.filter(n => !gone.some(c => n.to === `cat:${c.slug}`));
+  }
+  await setSetting('nav', nav);
+  const cs = CAT_STYLES.find(([k]) => k === str(fd, 'catStyle'))?.[0];
+  if (cs) await setSetting('catStyle', cs);
+  done();
+}
+
 export async function saveAd(fd: FormData) {
   await requireAdmin('ads', 'saveAd');
   const id = str(fd, 'id');

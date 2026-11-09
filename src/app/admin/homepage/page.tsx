@@ -1,7 +1,7 @@
 import { db } from '@/lib/db';
 import { adminOrNull } from '@/lib/auth';
 import { getSettings } from '@/lib/catalog';
-import { saveSlides } from '../actions';
+import { saveHomeCollections, saveSlides } from '../actions';
 import { CAT_STYLES, FITS, heroSlides, MOTIONS } from '@/lib/settings';
 
 const SIZES: [number, string][] = [[0, 'Automatic'], [45, 'Small'], [65, 'Medium'], [82, 'Large'], [100, 'Full screen']];
@@ -10,7 +10,8 @@ const SIZES: [number, string][] = [[0, 'Automatic'], [45, 'Small'], [65, 'Medium
 // with its own size/fit, text and as many buttons as you like.
 export default async function Homepage() {
   if (!(await adminOrNull('homepage'))) return null;
-  const [s, products] = await Promise.all([getSettings(), db.product.findMany({ orderBy: { sort: 'asc' } })]);
+  const [s, products, cats] = await Promise.all([getSettings(), db.product.findMany({ orderBy: { sort: 'asc' } }), db.category.findMany({ orderBy: { sort: 'asc' } })]);
+  const pick = (name: string, on: (catId: string) => boolean) => <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px' }}>{products.map(p => <label key={p.id} style={{ fontSize: '.85rem' }}><input type="checkbox" name={name} value={p.id} defaultChecked={on(p.categoryId)} /> {p.name}{p.sub ? ` · ${p.sub}` : ''}</label>)}</div>;
   const slides = heroSlides(s);
   const thumb = { width: 200, height: 112, objectFit: 'cover', borderRadius: 8, background: '#000' } as const;
   return <>
@@ -66,8 +67,30 @@ export default async function Homepage() {
           </details>
         </fieldset>;
       })}
-      <div className="field" style={{ maxWidth: 320 }}><label>Collection icons (under this section)</label><select name="catStyle" defaultValue={s.catStyle}>{CAT_STYLES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select><small className="muted">Each collection&apos;s icon picture is set in Categories.</small></div>
       <div className="row2"><button className="btn">Save</button><button className="btn ghost" name="add" value="1">Add an item without media</button></div>
+    </form>
+
+    <div><h2 style={{ fontSize: '2rem' }}>Collections</h2></div>
+    <form className="panel" action={saveHomeCollections} style={{ gap: 20 }}>
+      <p className="muted" style={{ fontSize: '.88rem' }}>The round icons under the top section. Tick the products that belong in each collection (a product is in one collection; ticking it in another moves it). Collections with no products are hidden on the home page.</p>
+      <div className="field" style={{ maxWidth: 320 }}><label>Animation</label><select name="catStyle" defaultValue={s.catStyle}>{CAT_STYLES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
+      {cats.map((c, i) => <fieldset key={c.id} className="panel" style={{ background: 'var(--bg)' }}>
+        <input type="hidden" name="cid" value={c.id} />
+        <div className="row2"><h3 style={{ flex: 1 }}>{c.name}</h3>{i > 0 && <button className="btn ghost sm" name="cup" value={i}>Move up</button>}<label><input type="checkbox" name={`cdel-${i}`} /> Delete</label></div>
+        <div className="two">
+          <div className="field"><label>Name</label><input name={`cname-${i}`} defaultValue={c.name} /></div>
+          <div className="field"><label>Icon picture</label>{c.image && <img src={c.image} alt="" style={{ width: 48, height: 48, borderRadius: 14, objectFit: 'cover' }} />}<input type="file" name={`cicon-${i}`} accept="image/*" />{c.image && <label style={{ fontSize: '.8rem' }}><input type="checkbox" name={`cclear-${i}`} /> Remove (use first product photo)</label>}</div>
+        </div>
+        <div className="field"><label>Products</label>{pick(`cp-${i}`, id => id === c.id)}</div>
+      </fieldset>)}
+      <fieldset className="panel" style={{ background: 'var(--bg)', borderStyle: 'dashed' }}>
+        <b>Add a collection</b>
+        <div className="two"><div className="field"><label>Name</label><input name="newCat" placeholder="Prayer essentials" /></div>
+          <div className="field"><label>Icon picture (optional)</label><input type="file" name="newIcon" accept="image/*" /></div></div>
+        <div className="field"><label>Products to put in it</label>{pick('newProducts', () => false)}</div>
+      </fieldset>
+      <small className="muted">Deleting a collection moves its products to the first collection that stays.</small>
+      <div><button className="btn">Save collections</button></div>
     </form>
   </>;
 }
