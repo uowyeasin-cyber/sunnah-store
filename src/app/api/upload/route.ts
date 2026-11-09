@@ -15,7 +15,8 @@ export async function POST(request: Request) {
           if (!me?.email || !(await isAdminEmail(me.email))) throw new Error('Not allowed');
         }
         // Shoppers' review files are capped like server uploads (lib/upload); admins can upload long product films.
-        return { allowedContentTypes: ['image/*', 'video/*'], maximumSizeInBytes: (review ? 60 : 100) * 1024 * 1024, addRandomSuffix: true };
+        // The home page top section takes any file (sound, PDF, ...), so admins are not limited to photos and videos.
+        return { allowedContentTypes: review ? ['image/*', 'video/*'] : undefined, maximumSizeInBytes: (review ? 60 : 100) * 1024 * 1024, addRandomSuffix: true };
       },
       onUploadCompleted: async () => {},
     });
