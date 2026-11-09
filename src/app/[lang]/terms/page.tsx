@@ -1,9 +1,13 @@
+import { alternates } from '@/lib/seoUrls';
 import Link from 'next/link';
 import { getDict, getSettings } from '@/lib/catalog';
 import { isLang, makeT, type Lang } from '@/lib/i18n';
 import { RETURN_DAYS } from '@/lib/returns';
 
-export const metadata = { title: 'Terms of sale' };
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params;
+  return { title: 'Terms of sale', alternates: alternates(isLang(lang) ? lang : 'en', '/terms') };
+}
 
 // The rules of buying here, taken from how checkout, pre-order, returns and store credit work.
 export default async function Terms({ params }: PageProps<'/[lang]/terms'>) {

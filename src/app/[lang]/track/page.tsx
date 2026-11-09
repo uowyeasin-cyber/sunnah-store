@@ -1,3 +1,4 @@
+import { alternates } from '@/lib/seoUrls';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { db } from '@/lib/db';
@@ -10,7 +11,10 @@ import { getDict } from '@/lib/catalog';
 import { isLang, makeT, type Lang } from '@/lib/i18n';
 
 
-export const metadata = { title: 'Track order' };
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params;
+  return { title: 'Track order', alternates: alternates(isLang(lang) ? lang : 'en', '/track'), robots: { index: false, follow: true } };
+}
 
 // Signed-in customers also see their orders and store credit history here.
 async function Mine({ lang }: { lang: Lang }) {

@@ -8,6 +8,7 @@ import { aiProductSeo, aiSiteSeo } from '@/lib/seoAi';
 import { ask, parseJson } from '@/lib/ai';
 import { newCode, PLATFORMS } from '@/lib/social';
 import { getSettings } from '@/lib/catalog';
+import { allLangs, pingIndexNow } from '@/lib/indexnow';
 
 const str = (fd: FormData, k: string) => String(fd.get(k) || '').trim();
 const back = (m: string, hash = ''): never => { updateTag('catalog'); redirect('/admin/seo?note=' + encodeURIComponent(m) + hash); };
@@ -74,4 +75,16 @@ export async function aiAd(fd: FormData) {
   } catch (e) { back('The AI could not answer: ' + (e as Error).message.slice(0, 160), '#ads'); }
   const c = await db.campaign.create({ data: { code: await newCode(), name: (out?.name || `${PLATFORMS[platform].name} ${kind}`).slice(0, 120), platform, kind, target: p ? `/p/${p.slug}` : '/', message: String(out?.text || '').slice(0, 2000), image: p?.images[0] || '', status: 'paused' } });
   redirect(`/admin/social?open=${c.id}&note=${encodeURIComponent('The AI wrote it. Check the text, then post it or copy the tracked link.')}#c-${c.id}`);
+}
+
+// Ask Bing and friends to (re)read every shop page now.
+export async function pingSearch() {
+  await requireAdmin('seo', 'pingSearch');
+  const [products, cats] = await Promise.all([
+    db.product.findMany({ where: { active: true }, select: { slug: true } }),
+    db.category.findMany({ select: { slug: true } }),
+  ]);
+  const urls = allLangs(['/', '/shop', ...products.map(p => `/p/${p.slug}`), ...cats.map(c => `/c/${c.slug}`), '/help']);
+  const r = await pingIndexNow(urls);
+  back(r.ok ? `Sent ${urls.length} pages to Bing, Yandex and other IndexNow engines.` : `IndexNow did not accept the list (status ${r.status}). It works only on the live site address.`, '#verify');
 }

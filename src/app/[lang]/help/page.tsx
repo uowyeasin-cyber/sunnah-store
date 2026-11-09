@@ -1,3 +1,4 @@
+import { alternates } from '@/lib/seoUrls';
 import Link from 'next/link';
 import { getDict, getSettings } from '@/lib/catalog';
 import { isLang, makeT, type Lang } from '@/lib/i18n';
@@ -7,7 +8,10 @@ import { deliveryRows } from '@/lib/deliveryRows';
 import Faq from '@/components/Faq';
 import ContactHelp from '@/components/ContactHelp';
 
-export const metadata = { title: 'Help, shipping and returns' };
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params;
+  return { title: 'Help, shipping and returns', alternates: alternates(isLang(lang) ? lang : 'en', '/help') };
+}
 
 // Shipping, payment, returns, store credit and contact, all read from the shop's live rules.
 export default async function Help({ params }: PageProps<'/[lang]/help'>) {
