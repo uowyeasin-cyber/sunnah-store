@@ -18,7 +18,7 @@ export async function saveSupplier(fd: FormData) {
   await requireAdmin('suppliers', id ? 'editSupplier' : 'addSupplier', str(fd, 'name'));
   const data = { name: str(fd, 'name').slice(0, 120), contact: str(fd, 'contact').slice(0, 120), email: str(fd, 'email').slice(0, 160), phone: str(fd, 'phone').slice(0, 40), country: str(fd, 'country').slice(0, 60),
     currency: CUR.includes(str(fd, 'currency')) ? str(fd, 'currency') : 'USD', leadDays: Math.min(365, Math.max(0, Math.floor(Number(fd.get('leadDays')) || 0))), notes: str(fd, 'notes').slice(0, 1000), active: fd.get('active') !== 'off',
-    api: str(fd, 'api') === 'cj' ? 'cj' : '', website: str(fd, 'website').slice(0, 300), address: str(fd, 'address').slice(0, 300), links: str(fd, 'links').split(/\s+/).filter(l => /^https?:\/\//i.test(l)).slice(0, 40) };
+    api: ['cj', 'aliexpress'].includes(str(fd, 'api')) ? str(fd, 'api') : '', website: str(fd, 'website').slice(0, 300), address: str(fd, 'address').slice(0, 300), links: str(fd, 'links').split(/\s+/).filter(l => /^https?:\/\//i.test(l)).slice(0, 40) };
   if (!data.name) throw new Error('Enter a name');
   if (id) await db.supplier.update({ where: { id }, data }); else await db.supplier.create({ data });
   done();
