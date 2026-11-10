@@ -242,15 +242,18 @@ export async function saveHomeCollections(fd: FormData) {
     const clear = !!fd.get(`cclear-${i}`), icon = clear ? '' : await keepUpload(fd.get(`cicon-${i}`), 'categories');
     await db.category.update({ where: { id }, data: { name: str(fd, `cname-${i}`) || undefined, sort: order.indexOf(id), ...(icon || clear ? { image: icon } : {}) } });
   }
-  // Products: where each one is ticked. A tick in a different collection than its own wins.
+  // Products: a product shows in every collection it is ticked in. Its main collection stays if still
+  // ticked, otherwise the first ticked one. Not ticked anywhere: it keeps its main collection only.
   const ticks = new Map<string, string[]>();
   for (const [i, id] of ids.entries()) if (!del.has(id)) for (const p of fd.getAll(`cp-${i}`).map(String)) ticks.set(p, [...(ticks.get(p) || []), id]);
   if (newId) for (const p of fd.getAll('newProducts').map(String)) ticks.set(p, [...(ticks.get(p) || []), newId]);
   const fallback = order[0];
-  for (const p of await db.product.findMany({ select: { id: true, categoryId: true } })) {
-    const t = ticks.get(p.id) || [];
-    const to = t.find(c => c !== p.categoryId) || (del.has(p.categoryId) ? fallback : '');
-    if (to && to !== p.categoryId) await db.product.update({ where: { id: p.id }, data: { categoryId: to } });
+  const slugOf = new Map((await db.category.findMany({ select: { id: true, slug: true } })).map(c => [c.id, c.slug]));
+  for (const p of await db.product.findMany({ select: { id: true, categoryId: true, alsoIn: true } })) {
+    const t = [...new Set(ticks.get(p.id) || [])];
+    const main = t.includes(p.categoryId) ? p.categoryId : t[0] || (del.has(p.categoryId) ? fallback || p.categoryId : p.categoryId);
+    const alsoIn = t.filter(c => c !== main).map(c => slugOf.get(c)!).filter(Boolean);
+    if (main !== p.categoryId || alsoIn.join() !== p.alsoIn.join()) await db.product.update({ where: { id: p.id }, data: { categoryId: main, alsoIn } });
   }
   if (del.size && fallback) {
     const gone = await db.category.findMany({ where: { id: { in: [...del] } } });

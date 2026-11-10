@@ -59,6 +59,7 @@ model Product {
   supplierCost Int         @default(0)
   category   Category      @relation(fields: [categoryId], references: [id])
   categoryId String
+  alsoIn     String[]      @default([]) // slugs of other collections this product also shows in
   offer      Offer?
   reviews    Review[]
   createdAt  DateTime      @default(now())

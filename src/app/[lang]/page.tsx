@@ -38,7 +38,7 @@ export default async function Home({ params }: PageProps<'/[lang]'>) {
     return { id: sl.id, eyebrow: sl.eyebrow, title: sl.title, italic: sl.italic, text: sl.text, buttons, dark: sl.look === 'dark', full: !!media || (!p && !art), art, motion: sl.motion || 'fade',
       fit: sl.fit || 'cover', video: sl.video || undefined, videoTall: sl.videoTall || undefined, poster: sl.poster || undefined, audio: sl.audio || undefined, file: sl.file || undefined, fileName: sl.fileName || undefined };
   });
-  const tiles = cats.map(c => ({ c, items: products.filter(p => p.category.slug === c.slug) })).filter(t => t.items.length);
+  const tiles = cats.map(c => ({ c, items: products.filter(p => p.cats.includes(c.slug)) })).filter(t => t.items.length);
   const homeAds = ads.filter(a => adLive(a) && ['home-top', 'home-mid'].includes(a.place)).map(a => a.id);
   return (
     <div className="view">
@@ -56,7 +56,7 @@ export default async function Home({ params }: PageProps<'/[lang]'>) {
       <section className="wrap" id="allgrid">
         <div className="sec-head"><div><div className="kicker">{t('The collection')}</div><h2>{t('Our')} <em>{t('products')}</em></h2></div><Link className="link-arrow" href="/shop">{t('Shop all {n}', { n: products.length })} <span aria-hidden="true">→</span></Link></div>
         <ProductChips target="allgrid" cats={tiles.map(({ c, items }) => ({ slug: c.slug, name: c.name, n: items.length }))} />
-        <div className="grid" data-n={Math.min(products.length, 8)}>{products.slice(0, 12).map(p => <div key={p.id} data-cat={p.category.slug} className="g-cell"><ProductCard p={p} brand={brand} /></div>)}</div>
+        <div className="grid" data-n={Math.min(products.length, 8)}>{products.slice(0, 12).map(p => <div key={p.id} data-cat={p.cats.join(' ')} className="g-cell"><ProductCard p={p} brand={brand} /></div>)}</div>
         {products.length > 12 && <div className="more-row"><Link className="btn ghost" href="/shop">{t('View all {n} products', { n: products.length })}</Link></div>}
       </section>
       <ForYou brand={brand} />
