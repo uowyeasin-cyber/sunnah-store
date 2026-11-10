@@ -130,30 +130,47 @@ export async function aiSuppliers(fd: FormData) {
   redirect(`/admin/sourcing?tab=${back}${run ? `&run=${run}` : ''}${note(msg || (n ? `${n} suppliers for “${name}” saved in Suppliers with website, address, phone and email where found. Check them before you order.` : 'The AI found no suppliers it was sure of. Try a more specific product name.'))}`);
 }
 
-// Dropship tab: one CJ product becomes a hidden draft, linked to CJ (first in-stock variant), with CJ photos, cost and stock.
-// When a customer pays for it, Automation → Dropship orders sends the order to CJ.
-export async function importCj(fd: FormData) {
-  const pid = str(fd, 'pid');
-  await requireAdmin('sourcing', 'importCj', pid);
-  const { product } = await import('@/lib/cj');
+// Dropship tab: a CJ product becomes a product linked to CJ (first in-stock variant), with CJ photos, cost and stock,
+// priced by the rule (or the owner's own price). When a customer pays, Automation → Dropship orders sends the order to CJ.
+async function importOneCj(pid: string, categoryId: string, own: number, s: Awaited<ReturnType<typeof getSourcing>>) {
+  const { product, cheapestShipping } = await import('@/lib/cj');
   const d = await product(pid);
   const v = d.variants.find(x => x.stock > 0) || d.variants[0];
   if (!v) throw new Error('This CJ product has no variants to sell');
-  const cost = v.price || d.price;
-  const s = await getSourcing(), rule = s.price;
+  const rule = s.price, base = v.price || d.price;
   // Shipping is part of the cost, so the profit is real: CJ's cheapest line to the chosen country.
-  let ship = 0;
-  if (rule.ship) { const { cheapestShipping } = await import('@/lib/cj'); ship = (await cheapestShipping(rule.ship, [{ vid: v.vid, quantity: 1 }]).catch(() => null))?.logisticPrice || 0; }
-  const own = Number(str(fd, 'price'));
-  const price = own > 0 ? Math.round(own * 100) / 100 : applyRule(cost + ship, rule);
+  const ship = rule.ship ? (await cheapestShipping(rule.ship, [{ vid: v.vid, quantity: 1 }]).catch(() => null))?.logisticPrice || 0 : 0;
+  const cost = Math.round((base + ship) * 100) / 100;
+  const price = own > 0 ? Math.round(own * 100) / 100 : applyRule(cost, rule);
   let supplier = await db.supplier.findFirst({ where: { api: 'cj' } });
   if (!supplier) supplier = await db.supplier.create({ data: { name: 'CJ Dropshipping', api: 'cj', website: 'https://cjdropshipping.com', country: 'China', currency: 'USD', leadDays: 12, source: 'CJ API', notes: 'Dropship supplier. Orders are placed through the API and paid from the CJ balance.' } });
-  const p = await draft(d.name.slice(0, 120), Math.round((cost + ship) * 100) / 100, price, d.description, await categoryId(fd));
+  let text = { name: d.name.slice(0, 120), sub: v.name !== d.name ? v.name.slice(0, 80) : '', details: d.description };
+  if (rule.ai) {
+    const { aiWriteProduct } = await import('./aiWriteActions');
+    const r = await aiWriteProduct({ ...text, instruction: 'Rewrite this supplier listing for our shop: a short, clear product name without supplier words or keyword lists, a short line, and an honest premium description with 3 to 5 key points.', lang: 'English', keep: false }).catch(() => null);
+    if (r && !('error' in r)) text = r;
+  }
+  const p = await draft(text.name, cost, price, text.details, categoryId);
   const n = Math.max(0, Math.min(999, v.stock));
   const images = [...new Set([v.image, ...d.images].filter(u => /^https:\/\//.test(u)))].slice(0, 10);
-  await db.product.update({ where: { id: p.id }, data: { images, sub: v.name !== d.name ? v.name.slice(0, 80) : '', dropship: true, supplierId: supplier.id, supplierSku: v.vid, supplierUrl: `cj:${d.pid}`, stock: { BD: n, MY: n, US: n } } });
-  s.imported++; await saveSourcing(s);
-  redirect(`/admin/products/${p.id}?saved=1`);
+  await db.product.update({ where: { id: p.id }, data: { images, sub: text.sub, active: rule.live && images.length > 0, dropship: true, supplierId: supplier.id, supplierSku: v.vid, supplierUrl: `cj:${d.pid}`, supplierCost: Math.round(base * 100), stock: { BD: n, MY: n, US: n } } });
+  s.imported++;
+  return p.id;
+}
+
+// One product (its own Import button), or every ticked one (Import ticked). At most 10 at a time.
+export async function importCj(fd: FormData) {
+  const one = str(fd, 'one');
+  const pids = one ? [one] : fd.getAll('pids').map(String).filter(Boolean).slice(0, 10);
+  await requireAdmin('sourcing', 'importCj', pids.join(','));
+  if (!pids.length) go('cj', `&cq=${encodeURIComponent(str(fd, 'cq'))}${note('Tick at least one product first.')}`);
+  const s = await getSourcing(), cat = await categoryId(fd);
+  const done: string[] = [], failed: string[] = [];
+  for (const pid of pids) await importOneCj(pid, cat, Number(str(fd, `price-${pid}`)) || 0, s).then(id => done.push(id), e => failed.push((e as Error).message.slice(0, 80)));
+  await saveSourcing(s);
+  try { revalidateTag('catalog', 'max'); } catch {}
+  if (one && done.length) redirect(`/admin/products/${done[0]}?saved=1`);
+  go('cj', `&cq=${encodeURIComponent(str(fd, 'cq'))}&cpage=${encodeURIComponent(str(fd, 'cpage') || '1')}${note(`${done.length} imported${s.price.live ? ' and live in the shop' : ' as hidden drafts'}${failed.length ? ` · ${failed.length} failed: ${failed[0]}` : ''}. See Products.`)}`);
 }
 
 // The pricing rule for CJ imports: × times, % profit or + fixed $, with or without shipping, rounded to .99.
@@ -161,7 +178,7 @@ export async function savePriceRule(fd: FormData) {
   await requireAdmin('sourcing', 'priceRule');
   const s = await getSourcing();
   const mode = (['x', 'pct', 'add'] as const).find(m => m === str(fd, 'mode')) || 'x';
-  s.price = { mode, value: Math.min(100000, Math.max(0, Number(str(fd, 'value')) || 0)), ship: /^[A-Z]{2}$/.test(str(fd, 'ship')) ? str(fd, 'ship') : '', round: fd.get('round') === 'on' };
+  s.price = { mode, value: Math.min(100000, Math.max(0, Number(str(fd, 'value')) || 0)), ship: /^[A-Z]{2}$/.test(str(fd, 'ship')) ? str(fd, 'ship') : '', round: fd.get('round') === 'on', ai: fd.get('ai') === 'on', live: fd.get('live') === 'on', reprice: fd.get('reprice') === 'on' };
   await saveSourcing(s);
   go('cj', `${str(fd, 'cq') ? `&cq=${encodeURIComponent(str(fd, 'cq'))}` : ''}${note('Price rule saved. New imports use it.')}`);
 }

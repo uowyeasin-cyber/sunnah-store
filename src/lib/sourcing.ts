@@ -72,9 +72,10 @@ export function searchUrl(p: Platform, q: string) {
 export type Idea = { name: string; cat: string; cost: number; price: number; why: string; platforms: string[]; from: string };
 export type Run = { id: string; q: string; at: string; max: number; items: Idea[]; note: string };
 // How imported dropship products are priced. cost = supplier price + (optional) cheapest shipping to `ship`.
-export type PriceRule = { mode: 'x' | 'pct' | 'add'; value: number; ship: string; round: boolean };
+// ai: the AI rewrites the description on import. live: imports go straight into the shop. reprice: when CJ's cost changes, the price follows the rule.
+export type PriceRule = { mode: 'x' | 'pct' | 'add'; value: number; ship: string; round: boolean; ai: boolean; live: boolean; reprice: boolean };
 export const PRICE_MODES: [PriceRule['mode'], string][] = [['x', '× times the cost'], ['pct', '% profit on the cost'], ['add', '+ fixed $ profit']];
-export const defaultRule = (): PriceRule => ({ mode: 'x', value: 2.5, ship: 'US', round: true });
+export const defaultRule = (): PriceRule => ({ mode: 'x', value: 2.5, ship: 'US', round: true, ai: false, live: false, reprice: true });
 export function applyRule(cost: number, r: PriceRule) {
   const v = Math.max(0, Number(r.value) || 0);
   let p = r.mode === 'pct' ? cost * (1 + v / 100) : r.mode === 'add' ? cost + v : cost * Math.max(1, v);

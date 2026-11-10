@@ -115,6 +115,8 @@ export async function syncDropStock() {
   const { cjReady, product } = await import('./cj');
   if (!(await cjReady())) return { checked: 0, changed: 0 };
   const list = await db.product.findMany({ where: { dropship: true, archived: false, supplierSku: { not: '' }, supplierUrl: { startsWith: 'cj:' } }, take: 60 });
+  const { getSourcing, applyRule } = await import('./sourcing');
+  const rule = (await getSourcing()).price;
   let changed = 0;
   for (const p of list) {
     const pid = p.supplierUrl.slice(3);
@@ -123,8 +125,14 @@ export async function syncDropStock() {
     if (!v) continue;
     const n = Math.max(0, Math.min(999, v.stock));
     const stock = { BD: n, MY: n, US: n };
-    const cost = Math.round(v.price * 100);
-    if (cost !== p.costCents || JSON.stringify(p.stock) !== JSON.stringify(stock)) { await db.product.update({ where: { id: p.id }, data: { costCents: cost || p.costCents, stock } }); changed++; }
+    const base = Math.round(v.price * 100);
+    // Cost moves by CJ's change only, so shipping added at import stays in it. Older imports without a base price start from now.
+    const cost = p.supplierCost && base ? Math.max(0, p.costCents + base - p.supplierCost) : p.costCents;
+    const price = rule.reprice && base && p.supplierCost && base !== p.supplierCost ? Math.round(applyRule(cost / 100, rule) * 100) : p.priceCents;
+    if (cost !== p.costCents || price !== p.priceCents || base !== p.supplierCost || JSON.stringify(p.stock) !== JSON.stringify(stock)) {
+      await db.product.update({ where: { id: p.id }, data: { costCents: cost, priceCents: price, supplierCost: base || p.supplierCost, stock } });
+      changed++;
+    }
   }
   return { checked: list.length, changed };
 }
