@@ -11,7 +11,7 @@ const SIZES: [number, string][] = [[0, 'Automatic'], [45, 'Small'], [65, 'Medium
 export default async function Homepage() {
   if (!(await adminOrNull('homepage'))) return null;
   const [s, products, cats] = await Promise.all([getSettings(), db.product.findMany({ orderBy: { sort: 'asc' } }), db.category.findMany({ orderBy: { sort: 'asc' } })]);
-  const pick = (name: string, on: (catId: string) => boolean) => <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px' }}>{products.map(p => <label key={p.id} style={{ fontSize: '.85rem' }}><input type="checkbox" name={name} value={p.id} defaultChecked={on(p.categoryId)} /> {p.name}{p.sub ? ` · ${p.sub}` : ''}</label>)}</div>;
+  const pick = (name: string, on: (p: { categoryId: string; alsoIn: string[] }) => boolean) => <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px' }}>{products.map(p => <label key={p.id} style={{ fontSize: '.85rem' }}><input type="checkbox" name={name} value={p.id} defaultChecked={on(p)} /> {p.name}{p.sub ? ` · ${p.sub}` : ''}</label>)}</div>;
   const slides = heroSlides(s);
   const thumb = { width: 200, height: 112, objectFit: 'cover', borderRadius: 8, background: '#000' } as const;
   return <>
@@ -72,7 +72,7 @@ export default async function Homepage() {
 
     <div><h2 style={{ fontSize: '2rem' }}>Collections</h2></div>
     <form className="panel" action={saveHomeCollections} style={{ gap: 20 }}>
-      <p className="muted" style={{ fontSize: '.88rem' }}>The round icons under the top section. Tick the products that belong in each collection (a product is in one collection; ticking it in another moves it). Collections with no products are hidden on the home page.</p>
+      <p className="muted" style={{ fontSize: '.88rem' }}>The round icons under the top section. Tick the products for each collection. One product can be in as many collections as you like. Collections with no products are hidden on the home page.</p>
       <div className="field" style={{ maxWidth: 320 }}><label>Animation</label><select name="catStyle" defaultValue={s.catStyle}>{CAT_STYLES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
       {cats.map((c, i) => <fieldset key={c.id} className="panel" style={{ background: 'var(--bg)' }}>
         <input type="hidden" name="cid" value={c.id} />
@@ -81,7 +81,7 @@ export default async function Homepage() {
           <div className="field"><label>Name</label><input name={`cname-${i}`} defaultValue={c.name} /></div>
           <div className="field"><label>Icon picture</label>{c.image && <img src={c.image} alt="" style={{ width: 48, height: 48, borderRadius: 14, objectFit: 'cover' }} />}<input type="file" name={`cicon-${i}`} accept="image/*" />{c.image && <label style={{ fontSize: '.8rem' }}><input type="checkbox" name={`cclear-${i}`} /> Remove (use first product photo)</label>}</div>
         </div>
-        <div className="field"><label>Products</label>{pick(`cp-${i}`, id => id === c.id)}</div>
+        <div className="field"><label>Products</label>{pick(`cp-${i}`, p => p.categoryId === c.id || p.alsoIn.includes(c.slug))}</div>
       </fieldset>)}
       <fieldset className="panel" style={{ background: 'var(--bg)', borderStyle: 'dashed' }}>
         <b>Add a collection</b>

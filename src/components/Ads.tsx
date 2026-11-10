@@ -16,7 +16,7 @@ export function adHref(link: string) {
 export function AdVisual({ ad, products, brand }: { ad: Ad; products: CardProduct[]; brand: string }) {
   if (ad.video) return <video src={ad.video} autoPlay muted loop playsInline />;
   if (ad.image) return <img src={ad.image} alt="" />;
-  const p = ad.link.startsWith('cat:') ? products.find(x => x.category.slug === ad.link.slice(4)) : products.find(x => x.slug === ad.link);
+  const p = ad.link.startsWith('cat:') ? products.find(x => x.cats.includes(ad.link.slice(4))) : products.find(x => x.slug === ad.link);
   return p ? <Art p={p} brand={brand} /> : <span className="ad-mono">{brand.slice(0, 2)}</span>;
 }
 
@@ -46,7 +46,7 @@ export function AdBanner({ ad, products, brand }: { ad: Ad; products: CardProduc
 
 export function AdSlot({ ads, place, products, brand, wrap = true }: { ads: Ad[]; place: string; products: CardProduct[]; brand: string; wrap?: boolean }) {
   // An ad for a product or collection that is hidden or gone would show an empty picture and lead nowhere: skip it.
-  const target = (a: Ad) => !a.link || /^https?:/.test(a.link) || (a.link.startsWith('cat:') ? products.some(x => x.category.slug === a.link.slice(4)) : products.some(x => x.slug === a.link));
+  const target = (a: Ad) => !a.link || /^https?:/.test(a.link) || (a.link.startsWith('cat:') ? products.some(x => x.cats.includes(a.link.slice(4))) : products.some(x => x.slug === a.link));
   const list = ads.filter(a => a.place === place && adLive(a) && target(a));
   return <>{list.map(a => <div key={a.id} className={`${wrap ? 'wrap ' : ''}ad-slot`}><AdBanner ad={a} products={products} brand={brand} /></div>)}</>;
 }

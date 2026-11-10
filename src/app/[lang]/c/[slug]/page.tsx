@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: PageProps<'/[lang]/c/[slug]'>
   const [cats, products, { store }] = await Promise.all([getCategories(L), getProducts(L), getSettings(L)]);
   const c = cats.find(c => c.slug === slug);
   if (!c) return {};
-  const names = products.filter(p => p.category.slug === slug).slice(0, 4).map(p => p.name).join(', ');
+  const names = products.filter(p => p.cats.includes(slug)).slice(0, 4).map(p => p.name).join(', ');
   return { title: c.name, description: `${c.name} · ${store.name}${names ? `: ${names}` : ''}${store.tagline ? `. ${store.tagline}` : ''}`.slice(0, 160),
     alternates: alternates(L, `/c/${slug}`) };
 }
@@ -31,7 +31,7 @@ export default async function CategoryPage({ params }: PageProps<'/[lang]/c/[slu
   const t = makeT(dict);
   const cat = cats.find(c => c.slug === slug);
   if (!cat) notFound();
-  const list = products.filter(p => p.category.slug === slug);
+  const list = products.filter(p => p.cats.includes(slug));
   return (
     <div className="view"><section className="wrap">
       <div className="sec-head"><div><div className="kicker">{t('Collection')}</div><h2>{cat.name}</h2></div></div>

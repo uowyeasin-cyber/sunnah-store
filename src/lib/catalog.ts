@@ -86,7 +86,7 @@ function toCard(p: Row, t: (s: string) => string = s => s) {
   return {
     id: p.id, slug: p.slug, name: t(p.name), sub: t(p.sub), kind: p.kind, finish: p.finish, swatch: p.swatch,
     image: p.images[0] || '', images: p.images, video: p.video, priceCents: p.priceCents,
-    category: { slug: p.category.slug, name: t(p.category.name) },
+    category: { slug: p.category.slug, name: t(p.category.name) }, cats: [p.category.slug, ...p.alsoIn], // every collection it shows in
     offer: o ? { label: t(o.label), pct: o.pct, style: o.style, endsAt: o.endsAt?.toISOString() || null } : null,
   };
 }

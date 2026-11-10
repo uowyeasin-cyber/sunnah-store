@@ -9,7 +9,7 @@ export default function ProductChips({ cats, target }: { cats: { slug: string; n
   if (cats.length < 2) return null;
   const pick = (slug: string) => {
     setOn(slug);
-    document.querySelectorAll<HTMLElement>(`#${target} [data-cat]`).forEach(el => { el.hidden = slug !== 'all' && el.dataset.cat !== slug; });
+    document.querySelectorAll<HTMLElement>(`#${target} [data-cat]`).forEach(el => { el.hidden = slug !== 'all' && !(el.dataset.cat || '').split(' ').includes(slug); });
   };
   return <div className="chips" role="tablist" aria-label={t('Collections')}>
     {[{ slug: 'all', name: t('All'), n: cats.reduce((a, c) => a + c.n, 0) }, ...cats].map(c => <button key={c.slug} type="button" role="tab" aria-selected={on === c.slug} className={on === c.slug ? 'on' : ''} onClick={() => pick(c.slug)}>{c.name}<small>{c.n}</small></button>)}

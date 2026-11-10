@@ -16,13 +16,13 @@ export default function ShopBrowser({ products, cats, brand, empty }: { products
   const hasOffers = products.some(p => p.offer);
   const list = useMemo(() => {
     const price = (p: CardProduct) => unitCents(p.priceCents, p.offer?.pct || 0);
-    const l = products.filter(p => (!cat || p.category.slug === cat) && (!offer || p.offer));
+    const l = products.filter(p => (!cat || p.cats.includes(cat)) && (!offer || p.offer));
     if (sort === 'low') return [...l].sort((a, b) => price(a) - price(b));
     if (sort === 'high') return [...l].sort((a, b) => price(b) - price(a));
     if (sort === 'new') return [...l].reverse();
     return l;
   }, [products, cat, sort, offer]);
-  const usedCats = cats?.filter(c => products.some(p => p.category.slug === c.slug)) || [];
+  const usedCats = cats?.filter(c => products.some(p => p.cats.includes(c.slug))) || [];
   return <>
     {(usedCats.length > 1 || products.length > 1) && <div className="shop-filters">
       {usedCats.length > 1 && <div className="shop-chips" role="group" aria-label={t('Collection')}>
