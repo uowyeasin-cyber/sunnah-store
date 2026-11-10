@@ -3,8 +3,8 @@ import { adminOrNull } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { aiReady } from '@/lib/ai';
 import { cjReady, search as cjSearch, type CjHit } from '@/lib/cj';
-import { getSourcing, IDEAS, PLATFORMS, searchUrl, TOP_COUNTRIES, type Idea } from '@/lib/sourcing';
-import { aiSuppliers, bulkImport, importCj, clearHistory, favIdea, importIdea, refreshTrend, savePlatforms, searchSourcing, setBuyFrom } from '../sourcingActions';
+import { applyRule, getSourcing, IDEAS, PRICE_MODES, PLATFORMS, searchUrl, TOP_COUNTRIES, type Idea } from '@/lib/sourcing';
+import { aiSuppliers, bulkImport, importCj, savePriceRule, clearHistory, favIdea, importIdea, refreshTrend, savePlatforms, searchSourcing, setBuyFrom } from '../sourcingActions';
 
 export const metadata = { title: 'Global sourcing' };
 const TABS: [string, string, string][] = [['search', 'Search & import', '🔎'], ['cj', 'Dropship (CJ)', '📦'], ['platforms', 'Platforms', '🌐'], ['bulk', 'Bulk import links', '⇪'], ['favs', 'Favourites', '☆'], ['history', 'History', '🕘']];
@@ -94,19 +94,30 @@ export default async function Sourcing({ searchParams }: PageProps<'/admin/sourc
         <h3>Dropship from CJ (auto sourcing)</h3>
         <p className="muted sm">Like AutoDS or DSers on Shopify. Search CJ’s catalog and import a product as a hidden draft, already linked to CJ. When a customer pays, the order goes to CJ by itself (Automation → Dropship orders) and ships straight to the customer with no invoice or prices. Tracking comes back to the order, and cost and stock stay current.</p>
         {!ready ? <p className="ord-note">Connect CJ Dropshipping in <Link className="link" href="/admin/connections">Connections → Suppliers</Link> first. It is free: make an account on cjdropshipping.com, then My CJ → Authorization → API → Generate key.</p> : <>
+          <form action={savePriceRule} className="panel" style={{ background: 'var(--cloth)', display: 'grid', gap: 10 }}>
+            <b>💲 Price rule for imports</b>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'end' }}>
+              <div className="field" style={{ margin: 0 }}><label htmlFor="pr-mode">Price =</label><select id="pr-mode" name="mode" defaultValue={s.price.mode}>{PRICE_MODES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
+              <div className="field" style={{ margin: 0 }}><label htmlFor="pr-val">Value</label><input id="pr-val" name="value" type="number" step="0.01" min="0" defaultValue={s.price.value} style={{ width: 100 }} /></div>
+              <div className="field" style={{ margin: 0 }}><label htmlFor="pr-ship">Add CJ shipping to</label><select id="pr-ship" name="ship" defaultValue={s.price.ship}><option value="">Don’t add shipping</option>{[['US', 'USA'], ['MY', 'Malaysia'], ['BD', 'Bangladesh'], ['GB', 'UK'], ['SA', 'Saudi Arabia'], ['AE', 'UAE'], ['CA', 'Canada'], ['AU', 'Australia']].map(([c, n]) => <option key={c} value={c}>{n}</option>)}</select></div>
+              <label className="sm" style={{ display: 'flex', gap: 6, alignItems: 'center' }}><input type="checkbox" name="round" defaultChecked={s.price.round} /> End in .99</label>
+              <input type="hidden" name="cq" value={cq} /><button className="btn sm">Save rule</button>
+            </div>
+            <p className="muted sm" style={{ margin: 0 }}>Cost = CJ price{s.price.ship ? ' + cheapest CJ shipping' : ''}. Examples for a $5 cost: ×2.5 → {$(applyRule(5, { ...s.price, mode: 'x', value: 2.5 }))} · 80% → {$(applyRule(5, { ...s.price, mode: 'pct', value: 80 }))} · +$6 → {$(applyRule(5, { ...s.price, mode: 'add', value: 6 }))}. Or type your own price on any product below.</p>
+          </form>
           <form className="src-search" method="get"><input type="hidden" name="tab" value="cj" /><input name="cq" required defaultValue={cq} placeholder="Search CJ, e.g. miswak, attar bottle, travel perfume" /><button className="btn orange">Search CJ</button></form>
           {err && <p className="err sm">{err}</p>}
           {cq && !err && !hits.length && <p className="muted">Nothing found for “{cq}”.</p>}
           {hits.length > 0 && <div className="src-grid">{hits.map(h => <div key={h.pid} className="src-card">
             {h.image && <img src={h.image} alt="" loading="lazy" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 8 }} />}
             <b className="sm">{h.name}</b>
-            <div className="src-money"><span>CJ cost {$(h.price)}</span><span className="muted">+ shipping</span></div>
+            <div className="src-money"><span>CJ cost {$(h.price)}</span><span>Sells ~{$(applyRule(h.price, s.price))}{s.price.ship ? ' + ship' : ''}</span></div>
             <form action={importCj} className="src-import"><input type="hidden" name="pid" value={h.pid} />
               <select name="category" aria-label="Category">{cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
-              <input name="markup" type="number" step="0.1" min="1" defaultValue={2.5} aria-label="Markup times cost" title="Price = cost × this" style={{ width: 70 }} />
+              <input name="price" type="number" step="0.01" min="0" placeholder="Own $" aria-label="Your own price in USD (optional)" title="Leave empty to use the price rule" style={{ width: 80 }} />
               <button className="btn sm orange">+ Import</button></form>
           </div>)}</div>}
-          <p className="muted sm">Imported products start hidden. Open one, check the photos and price, use ✨ Write with AI for the description, then turn on Show in the store.</p>
+          <p className="muted sm">Imported products start hidden, priced by the rule above (or your own price). Open one, check the photos and price, use ✨ Write with AI for the description, then turn on Show in the store.</p>
         </>}
       </section>;
     })()}

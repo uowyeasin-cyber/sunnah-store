@@ -71,12 +71,23 @@ export function searchUrl(p: Platform, q: string) {
 
 export type Idea = { name: string; cat: string; cost: number; price: number; why: string; platforms: string[]; from: string };
 export type Run = { id: string; q: string; at: string; max: number; items: Idea[]; note: string };
-export type Sourcing = { off: string[]; buyFrom: string[]; favs: Idea[]; runs: Run[]; trend: { at: string; items: Idea[] } | null; imported: number };
+// How imported dropship products are priced. cost = supplier price + (optional) cheapest shipping to `ship`.
+export type PriceRule = { mode: 'x' | 'pct' | 'add'; value: number; ship: string; round: boolean };
+export const PRICE_MODES: [PriceRule['mode'], string][] = [['x', '× times the cost'], ['pct', '% profit on the cost'], ['add', '+ fixed $ profit']];
+export const defaultRule = (): PriceRule => ({ mode: 'x', value: 2.5, ship: 'US', round: true });
+export function applyRule(cost: number, r: PriceRule) {
+  const v = Math.max(0, Number(r.value) || 0);
+  let p = r.mode === 'pct' ? cost * (1 + v / 100) : r.mode === 'add' ? cost + v : cost * Math.max(1, v);
+  // Round up to the next .99 (e.g. 7.20 → 7.99) so prices look like shop prices.
+  if (r.round) p = Math.ceil(p + 0.01) - 0.01;
+  return Math.round(p * 100) / 100;
+}
+export type Sourcing = { off: string[]; buyFrom: string[]; favs: Idea[]; runs: Run[]; trend: { at: string; items: Idea[] } | null; imported: number; price: PriceRule };
 
 export async function getSourcing(): Promise<Sourcing> {
   const r = await db.setting.findUnique({ where: { key: 'sourcing' } });
   const v = (r?.value as Partial<Sourcing>) || {};
-  return { off: v.off || [], buyFrom: v.buyFrom || [], favs: v.favs || [], runs: v.runs || [], trend: v.trend || null, imported: v.imported || 0 };
+  return { off: v.off || [], buyFrom: v.buyFrom || [], favs: v.favs || [], runs: v.runs || [], trend: v.trend || null, imported: v.imported || 0, price: { ...defaultRule(), ...(v.price || {}) } };
 }
 export async function saveSourcing(s: Sourcing) {
   const value = { ...s, runs: s.runs.slice(0, 20), favs: s.favs.slice(0, 60) } as object;
