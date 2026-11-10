@@ -331,3 +331,24 @@ export async function deleteExpense(fd: FormData) {
   await requireAdmin('expenses', 'deleteExpense');
   await db.expense.deleteMany({ where: { id: str(fd, 'id') } });
 }
+
+// One box for every key: works out which service each pasted key is for and saves it.
+export async function pasteKeys(fd: FormData) {
+  await requireAdmin('connections', 'pasteKeys');
+  const { detectKeys, allFields } = await import('@/lib/keyDetect');
+  const { saveKeys, storedKeys } = await import('@/lib/keys');
+  const back = (m: string): never => redirect('/admin/connections?note=' + encodeURIComponent(m) + '#paste');
+  const text = str(fd, 'paste'), to = str(fd, 'to');
+  if (!text.trim()) back('Paste a key first.');
+  let { found, unknown } = detectKeys(text.slice(0, 20000));
+  if (to) {
+    const f = allFields().find(x => x.env === to);
+    const one = text.trim();
+    if (f && one && !/\s/.test(one)) { found = [{ env: f.env, value: one.slice(0, 500), service: f.service }]; unknown = []; }
+  }
+  if (!found.length) back(unknown.length ? 'This key was not recognised. Pick where it goes in "Or put it in" and press Save again.' : 'No key found in what you pasted.');
+  await saveKeys({ ...(await storedKeys()), ...Object.fromEntries(found.map(f => [f.env, f.value])) });
+  done();
+  const names = [...new Set(found.map(f => f.service))].join(', ');
+  back(`Saved ${found.length} key${found.length > 1 ? 's' : ''} for ${names}.` + (unknown.length ? ` ${unknown.length} more not recognised: pick where it goes and paste it alone.` : ''));
+}

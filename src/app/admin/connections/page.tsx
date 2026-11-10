@@ -3,17 +3,28 @@ import { connected, keyHint, loadKeys, MODE_LABEL, SERVICES, key } from '@/lib/k
 import { getSettings } from '@/lib/catalog';
 import { gatewayReady } from '@/lib/pay';
 import { payMethodsFor, REGIONS } from '@/lib/shipping';
-import { saveConnections } from '../actions';
+import { pasteKeys, saveConnections } from '../actions';
+import { allFields } from '@/lib/keyDetect';
 
 const COUNTRY = { BD: 'Bangladesh', MY: 'Malaysia', US: 'United States', INTL: 'Other' } as const;
 
-export default async function Connections() {
+export default async function Connections({ searchParams }: PageProps<'/admin/connections'>) {
+  const note = ((await searchParams) as Record<string, string | undefined>).note;
   if (!(await adminOrNull('connections'))) return null;
   await loadKeys(true);
   const st = await getSettings();
   return <>
     <div><h2 style={{ fontSize: '2rem' }}>Connections</h2></div>
     <p className="muted" style={{ maxWidth: 680 }}>Paste the keys from each merchant account here. A service turns on by itself as soon as its keys are saved: payment methods appear at checkout, couriers book and track parcels. Saved keys are never shown again; leave a box empty to keep what is saved.</p>
+    <form id="paste" action={pasteKeys} className="panel" style={{ display: 'grid', gap: 10 }}>
+      <h3 style={{ margin: 0 }}>Paste any key</h3>
+      <p className="muted" style={{ fontSize: '.88rem', margin: 0 }}>Paste one key, or many at once (a .env file, NAME=value lines or JSON work too). The store sees which service each key is for and saves it in the right place. Gemini, Groq, OpenRouter, Claude, Stripe, PayPal, Shippo, CJ, Amazon, eBay and Facebook keys are recognised by their look; for any other, pick where it goes.</p>
+      {note && <p role="status" style={{ margin: 0, fontWeight: 600 }}>{note}</p>}
+      <textarea name="paste" rows={4} autoComplete="off" spellCheck={false} placeholder="AIza… or GEMINI_API_KEY=… or several lines" style={{ fontFamily: 'monospace' }} />
+      <div className="field" style={{ margin: 0 }}><label htmlFor="to">Or put it in</label>
+        <select id="to" name="to" defaultValue=""><option value="">Find it by itself</option>{allFields().map(f => <option key={f.env} value={f.env}>{f.service}: {f.label}</option>)}</select></div>
+      <button className="btn">Save key</button>
+    </form>
     <form action={saveConnections} style={{ display: 'grid', gap: 18 }}>
       <h3>By country</h3>
       <div className="two">{REGIONS.map(r => {
