@@ -1376,3 +1376,10 @@ html,body{overflow-x:clip}
   .showcase .s-copy h1{font-size:clamp(2.2rem,min(5.4vw,8.2vh),5.6rem);line-height:1.04}
   .showcase .s-copy .lead{margin-top:16px}
 }
+/* Text left, picture right: the card's width follows the owner's size slider (--cw, % of the screen) */
+@media (min-width:901px){
+  .showcase .slide:not(.full) .s-art{left:calc((100 - var(--cw,48)) * 1vw)}
+  .showcase .slide:not(.full) .s-copy>*{max-width:min(34rem,calc((100 - var(--cw,48)) * 1vw - 160px))}
+}
+.slide:not(.full) .s-art video{width:100%;height:100%;object-fit:cover;display:block}
+.showcase .slide:not(.full).fit-contain .s-art img,.showcase .slide:not(.full).fit-contain .s-art video{object-fit:contain;background:transparent}

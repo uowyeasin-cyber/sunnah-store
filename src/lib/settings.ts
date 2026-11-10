@@ -8,7 +8,10 @@ export type HeroButton = { label: string; href: string };
 export type Fit = 'cover' | 'contain' | 'top';
 export const FITS: [Fit, string][] = [['cover', 'Fill the space (edges may be cut)'], ['contain', 'Show all of it (no cutting)'], ['top', 'Fill, keep the top in view']];
 export type Slide = { id: string; eyebrow: string; title: string; italic: string; text: string; product: string; cta: string; look: 'light' | 'dark'; image: string; video: string; motion?: Motion;
-  audio?: string; file?: string; fileName?: string; poster?: string; videoTall?: string; fit?: Fit; buttons?: HeroButton[] };
+  audio?: string; file?: string; fileName?: string; poster?: string; videoTall?: string; fit?: Fit; buttons?: HeroButton[];
+  layout?: 'card' | 'full'; size?: number }; // card: text left, picture in a card on the right, size = card width %
+// Photos default to the card look; videos fill the width.
+export const layoutOf = (sl: Slide) => sl.layout || (sl.video ? 'full' : 'card');
 // How a showcase slide moves in: fade, slide in from the side, slow zoom, slow pan across, or rise up.
 export type Motion = 'fade' | 'slide' | 'zoom' | 'pan' | 'rise';
 export const MOTIONS: [Motion, string][] = [['fade', 'Fade'], ['slide', 'Slide in from the side'], ['zoom', 'Slow zoom'], ['pan', 'Slow pan across'], ['rise', 'Rise up']];

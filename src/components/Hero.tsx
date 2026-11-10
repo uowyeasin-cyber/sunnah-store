@@ -5,7 +5,7 @@ import { useStore } from './StoreProvider';
 
 export type HeroSlide = {
   id: string; eyebrow: string; title: string; italic: string; text: string; buttons: { label: string; href: string }[]; dark: boolean;
-  full: boolean; art: React.ReactNode; motion: string; fit: string;
+  full: boolean; art: React.ReactNode; motion: string; fit: string; size?: number; // size: picture card width % (text-left look)
   video?: string; videoTall?: string; poster?: string; // a video slide plays to the end before moving on
   audio?: string; file?: string; fileName?: string; // a sound plays with controls; any other file opens from a button
 };
@@ -44,7 +44,7 @@ export default function Hero({ slides, secs, height }: { slides: HeroSlide[]; se
     <section ref={box} className={`lux-hero showcase ${height ? `sized ${height < 60 ? 'short' : ''}` : ''}`} aria-roledescription="carousel" aria-label={t('Showcase')} style={{ ['--dur' as string]: `${secs}s`, ...(height ? { height: `max(300px, ${height}svh)`, minHeight: 0 } : {}) }}
       onPointerDown={down} onPointerUp={up} onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       {slides.map((s, k) => (
-        <div key={s.id} className={`slide m-${s.motion || 'fade'} ${k === i ? 'on' : k === prev ? 'out' : ''} ${s.dark ? 'dark' : ''} ${s.full ? 'full' : ''} fit-${s.fit} ${s.title || s.text ? '' : 'bare'}`} aria-hidden={k !== i}>
+        <div key={s.id} className={`slide m-${s.motion || 'fade'} ${k === i ? 'on' : k === prev ? 'out' : ''} ${s.dark ? 'dark' : ''} ${s.full ? 'full' : ''} fit-${s.fit} ${s.title || s.text ? '' : 'bare'}`} aria-hidden={k !== i} style={s.full ? undefined : { ['--cw' as string]: s.size || 48 }}>
           <div className="s-art"><div className="kb">
             {s.video ? <video ref={el => { vids.current[k] = el; }} src={tall && s.videoTall ? s.videoTall : s.video} poster={s.poster || undefined} muted={muted} playsInline preload={k === 0 ? 'auto' : 'metadata'} autoPlay={k === 0} onEnded={() => go(i + 1)} /> : s.art}
           </div></div>

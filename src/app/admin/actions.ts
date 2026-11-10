@@ -5,7 +5,7 @@ import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 import { getSettings } from '@/lib/catalog';
 import { keepUpload, isVideoUrl, isAudioUrl, isImageUrl } from '@/lib/upload';
-import { CAT_STYLES, FITS, heroSlides, MOTIONS, type Motion, type NavItem, type Settings, type Slide } from '@/lib/settings';
+import { CAT_STYLES, type Fit, heroSlides, MOTIONS, type Motion, type NavItem, type Settings, type Slide } from '@/lib/settings';
 const motionOf = (v: string): Motion => (MOTIONS.find(([k]) => k === v)?.[0] || 'fade');
 import { badgeFrom } from '@/lib/badges';
 import { after } from 'next/server';
@@ -46,8 +46,9 @@ export async function saveSlides(fd: FormData) {
     if (url) m = { ...mediaOf(url, raw), poster: '', videoTall: '' };
     const buttons = fd.getAll(`bl-${i}`).map(String).map((label, k) => ({ label: label.trim().slice(0, 40), href: href(String(fd.getAll(`bh-${i}`)[k] ?? '')), drop: !!fd.get(`bd-${i}-${k}`) }))
       .filter(b => b.label && !b.drop).map(({ label, href }) => ({ label, href }));
-    const fit = FITS.find(([k]) => k === str(fd, `fit-${i}`))?.[0] || 'cover';
-    slides.push({ id, eyebrow: str(fd, `eyebrow-${i}`), title: str(fd, `title-${i}`), italic: str(fd, `italic-${i}`), text: str(fd, `text-${i}`), product: str(fd, `product-${i}`), cta: '', look: str(fd, `look-${i}`) === 'light' ? 'light' : 'dark', motion: motionOf(str(fd, `motion-${i}`)), fit, buttons, ...m });
+    const fit: Fit = fd.get(`whole-${i}`) ? 'contain' : 'cover';
+    const layout = str(fd, `layout-${i}`) === 'full' ? 'full' : 'card', size = Math.min(70, Math.max(30, num(fd, `size-${i}`) || 48));
+    slides.push({ id, eyebrow: str(fd, `eyebrow-${i}`), title: str(fd, `title-${i}`), italic: str(fd, `italic-${i}`), text: str(fd, `text-${i}`), product: str(fd, `product-${i}`), cta: '', look: str(fd, `look-${i}`) === 'light' ? 'light' : 'dark', motion: motionOf(str(fd, `motion-${i}`)), fit, layout, size, buttons, ...m });
   }
   // Add media: each picked file (any kind) becomes its own item, ready for text and buttons.
   const motion = motionOf(str(fd, 'newMotion'));
