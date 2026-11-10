@@ -61,6 +61,13 @@ export async function placeDropOrder(poId: string) {
       const { placeOrder } = await import('./cj');
       const r = await placeOrder(po.no, to, po.lines.map(l => ({ vid: l.sku, quantity: l.qty })), BLIND);
       await db.purchaseOrder.update({ where: { id: po.id }, data: { supplierRef: r.ref, carrier: r.carrier, shipping: D(r.cost || 0) } });
+    } else if (po.supplier.api === 'aliexpress') {
+      if (!to.country) throw new Error(`No country code for ${to.countryName}; this order needs to be placed by hand`);
+      const missing = po.lines.filter(l => !l.sku.includes('|'));
+      if (missing.length) throw new Error(`Import these from AliExpress again so they carry the AliExpress product: ${missing.map(l => l.name).join(', ')}`);
+      const { placeOrder } = await import('./aliexpress');
+      const r = await placeOrder(po.no, to, po.lines.map(l => ({ sku: l.sku, quantity: l.qty })), BLIND);
+      await db.purchaseOrder.update({ where: { id: po.id }, data: { supplierRef: r.ref, carrier: 'AliExpress' } });
     } else {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(po.supplier.email)) throw new Error(`Add an email for ${po.supplier.name}, or set it up as CJ Dropshipping`);
       const s = await getSettings();
@@ -92,7 +99,7 @@ export async function setDropTracking(poId: string, trackingNo: string, carrier:
   await advance(o.id, Math.max(o.status, 4), { trackingNo, courier: carrier || o.courier });
 }
 
-// Called on a schedule: places drafts (when automatic) and pulls tracking numbers from CJ.
+// Called on a schedule: places drafts (when automatic) and pulls tracking numbers from CJ and AliExpress.
 export async function syncDrop(auto: boolean) {
   const { cjReady, orderStatus } = await import('./cj');
   let placed = 0, failed = 0, tracked = 0;
@@ -105,6 +112,14 @@ export async function syncDrop(auto: boolean) {
     for (const p of open) {
       const s = await orderStatus(p.supplierRef).catch(() => null);
       if (s?.trackingNo) { await setDropTracking(p.id, s.trackingNo, s.carrier); tracked++; }
+    }
+  }
+  const { aeLinked, orderStatus: aeStatus } = await import('./aliexpress');
+  if (await aeLinked().catch(() => false)) {
+    const open = await db.purchaseOrder.findMany({ where: { status: 'ordered', saleId: { not: '' }, supplierRef: { not: '' }, supplier: { api: 'aliexpress' } }, take: 100 });
+    for (const p of open) {
+      const s = await aeStatus(p.supplierRef).catch(() => null);
+      if (s?.trackingNo) { await setDropTracking(p.id, s.trackingNo, s.carrier || 'AliExpress'); tracked++; }
     }
   }
   return { placed, failed, tracked };

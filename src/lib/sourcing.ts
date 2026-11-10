@@ -83,6 +83,23 @@ export const PLATFORMS: Platform[] = [
   { id: 'saudiexports', name: 'Saudi Exports', where: 'Saudi Arabia', domain: 'saudiexports.sa' },
   { id: 'tradewheel', name: 'TradeWheel', where: 'Worldwide', domain: 'tradewheel.com' },
   { id: 'go4worldbusiness', name: 'go4WorldBusiness', where: 'Worldwide', domain: 'go4worldbusiness.com' },
+  { id: 'thomasnet', name: 'Thomasnet (US manufacturers)', where: 'USA', domain: 'thomasnet.com' },
+  { id: 'kompass', name: 'Kompass', where: 'Worldwide', domain: 'kompass.com' },
+  { id: 'ecplaza', name: 'ECPlaza', where: 'South Korea', domain: 'ecplaza.net' },
+  { id: 'ecvv', name: 'ECVV', where: 'China', domain: 'ecvv.com' },
+  { id: 'eworldtrade', name: 'eWorldTrade', where: 'Worldwide', domain: 'eworldtrade.com' },
+  { id: 'lightinthebox', name: 'LightInTheBox', where: 'China', domain: 'lightinthebox.com' },
+  { id: 'tomtop', name: 'Tomtop', where: 'China', domain: 'tomtop.com' },
+  { id: 'dropshipzone', name: 'Dropshipzone', where: 'Australia', domain: 'dropshipzone.com.au' },
+  { id: 'avasam', name: 'Avasam', where: 'UK', domain: 'avasam.com' },
+  { id: 'appscenic', name: 'AppScenic', where: 'UK / USA / EU', domain: 'appscenic.com' },
+  { id: 'trendsi', name: 'Trendsi (fashion)', where: 'USA', domain: 'trendsi.com' },
+  { id: 'brandsgateway', name: 'BrandsGateway (designer fashion)', where: 'Europe', domain: 'brandsgateway.com' },
+  { id: 'griffati', name: 'Griffati (Italian fashion)', where: 'Italy', domain: 'griffati.com' },
+  { id: 'gelato', name: 'Gelato (print on demand)', where: 'Worldwide', domain: 'gelato.com' },
+  { id: 'cjpod', name: 'Gooten (print on demand)', where: 'USA', domain: 'gooten.com' },
+  { id: 'pakbiz', name: 'Pakistan exporters (TDAP)', where: 'Pakistan', domain: 'tdap.gov.pk' },
+  { id: 'epb', name: 'Bangladesh EPB exporters', where: 'Bangladesh', domain: 'epb.gov.bd' },
 ];
 
 export const TOP_COUNTRIES = ['China', 'India', 'Vietnam', 'Bangladesh', 'Türkiye', 'Pakistan', 'Indonesia', 'Thailand', 'Malaysia', 'South Korea', 'Japan', 'Taiwan', 'Germany', 'Italy', 'United States', 'Mexico', 'United Arab Emirates', 'Poland'];

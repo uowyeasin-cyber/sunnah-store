@@ -182,3 +182,45 @@ export async function savePriceRule(fd: FormData) {
   await saveSourcing(s);
   go('cj', `${str(fd, 'cq') ? `&cq=${encodeURIComponent(str(fd, 'cq'))}` : ''}${note('Price rule saved. New imports use it.')}`);
 }
+
+// AliExpress: "Link AliExpress" opens AliExpress's own allow page; it comes back to /api/channels/callback.
+export async function linkAe() {
+  await requireAdmin('sourcing', 'linkAliExpress');
+  const { aeReady, authUrl } = await import('@/lib/aliexpress');
+  if (!(await aeReady())) go('ae', note('Add the AliExpress app key and secret in Connections → Suppliers first.'));
+  redirect(authUrl(`${process.env.SITE_URL || 'https://sunnahstore.vercel.app'}/api/channels/callback`));
+}
+
+// AliExpress product links (or IDs) → products in the store, linked to AliExpress and priced by the same rule as CJ.
+export async function importAe(fd: FormData) {
+  const { productId, product } = await import('@/lib/aliexpress');
+  const ids = [...new Set(str(fd, 'links').split(/\s+/).map(productId).filter(Boolean))].slice(0, 10);
+  await requireAdmin('sourcing', 'importAliExpress', ids.join(','));
+  if (!ids.length) go('ae', note('Paste at least one AliExpress product link.'));
+  const s = await getSourcing(), cat = await categoryId(fd), rule = s.price, own = Number(str(fd, 'price')) || 0;
+  let supplier = await db.supplier.findFirst({ where: { api: 'aliexpress' } });
+  if (!supplier) supplier = await db.supplier.create({ data: { name: 'AliExpress', api: 'aliexpress', website: 'https://www.aliexpress.com', country: 'China', currency: 'USD', leadDays: 15, source: 'AliExpress API', notes: 'Dropship supplier. Orders are placed through the AliExpress Dropshipping API.' } });
+  const done: string[] = [], failed: string[] = [];
+  for (const id of ids) {
+    try {
+      const d = await product(id, rule.ship || 'US');
+      const v = d.variants.filter(x => x.stock > 0).sort((a, b) => a.price - b.price)[0] || d.variants[0];
+      if (!v || !v.price) throw new Error('no variant with a price');
+      const cost = Math.round(v.price * 100) / 100, price = own > 0 ? Math.round(own * 100) / 100 : applyRule(cost, rule);
+      let text = { name: d.name.slice(0, 120), sub: v.name.slice(0, 80), details: d.description };
+      if (rule.ai) {
+        const { aiWriteProduct } = await import('./aiWriteActions');
+        const r = await aiWriteProduct({ ...text, instruction: 'Rewrite this supplier listing for our shop: a short, clear product name without supplier words or keyword lists, a short line, and an honest premium description with 3 to 5 key points.', lang: 'English', keep: false }).catch(() => null);
+        if (r && !('error' in r)) text = r;
+      }
+      const p = await draft(text.name, cost, price, text.details, cat);
+      const images = [...new Set([v.image, ...d.images].filter(u => /^https:\/\//.test(u)))].slice(0, 10), n = Math.max(0, Math.min(999, v.stock));
+      await db.product.update({ where: { id: p.id }, data: { images, sub: text.sub, active: rule.live && images.length > 0, dropship: true, supplierId: supplier.id, supplierSku: `${d.id}|${v.sku}`, supplierUrl: `ae:${d.id}`, supplierCost: Math.round(v.price * 100), stock: { BD: n, MY: n, US: n } } });
+      s.imported++; done.push(p.id);
+    } catch (e) { failed.push(`${id}: ${(e as Error).message.slice(0, 80)}`); }
+  }
+  await saveSourcing(s);
+  try { revalidateTag('catalog', 'max'); } catch {}
+  if (ids.length === 1 && done.length) redirect(`/admin/products/${done[0]}?saved=1`);
+  go('ae', note(`${done.length} imported${rule.live ? ' and live in the shop' : ' as hidden drafts'}${failed.length ? ` · ${failed.length} failed: ${failed[0]}` : ''}. See Products.`));
+}

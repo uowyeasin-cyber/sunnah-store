@@ -3,11 +3,12 @@ import { adminOrNull } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { aiReady } from '@/lib/ai';
 import { cjReady, search as cjSearch, type CjHit } from '@/lib/cj';
+import { aeLinked, aeReady } from '@/lib/aliexpress';
 import { applyRule, getSourcing, IDEAS, PRICE_MODES, PLATFORMS, searchUrl, TOP_COUNTRIES, type Idea } from '@/lib/sourcing';
-import { aiSuppliers, bulkImport, importCj, savePriceRule, clearHistory, favIdea, importIdea, refreshTrend, savePlatforms, searchSourcing, setBuyFrom } from '../sourcingActions';
+import { aiSuppliers, bulkImport, importAe, importCj, linkAe, savePriceRule, clearHistory, favIdea, importIdea, refreshTrend, savePlatforms, searchSourcing, setBuyFrom } from '../sourcingActions';
 
 export const metadata = { title: 'Global sourcing' };
-const TABS: [string, string, string][] = [['search', 'Search & import', '🔎'], ['cj', 'Dropship (CJ)', '📦'], ['platforms', 'Platforms', '🌐'], ['bulk', 'Bulk import links', '⇪'], ['favs', 'Favourites', '☆'], ['history', 'History', '🕘']];
+const TABS: [string, string, string][] = [['search', 'Search & import', '🔎'], ['cj', 'Dropship (CJ)', '📦'], ['ae', 'AliExpress', '🛒'], ['platforms', 'Platforms', '🌐'], ['bulk', 'Bulk import links', '⇪'], ['favs', 'Favourites', '☆'], ['history', 'History', '🕘']];
 const $ = (n: number) => '$' + n.toFixed(2);
 
 function IdeaCard({ i, n, live, cats, fav, back, run }: { i: Idea; n?: number; live: typeof PLATFORMS; cats: { id: string; name: string }[]; fav: boolean; back: string; run?: string }) {
@@ -134,6 +135,25 @@ export default async function Sourcing({ searchParams }: PageProps<'/admin/sourc
           </form>}
           <p className="muted sm">Open an imported product to check photos and price. ✨ Write with AI on the product page rewrites the text any time.</p>
         </>}
+      </section>;
+    })()}
+
+    {tab === 'ae' && await (async () => {
+      const ready = await aeReady(), on = ready && await aeLinked(), n = await db.product.count({ where: { supplierUrl: { startsWith: 'ae:' } } });
+      return <section className="panel" style={{ display: 'grid', gap: 12 }}>
+        <h3 style={{ margin: 0 }}>Dropship from AliExpress (like DSers)</h3>
+        <p className="muted sm" style={{ margin: 0 }}>Paste AliExpress product links. Each is imported with photos, the cheapest variant’s cost and your price rule (set on the Dropship (CJ) tab), already linked to AliExpress. When a customer pays, the order is placed on AliExpress for the customer’s address with no invoice or prices (Automation → Dropship orders), and the tracking number comes back to the order. AliExpress charges your saved card or balance; if not, pay it in AliExpress → My orders.</p>
+        {!ready ? <p className="ord-note">Add the AliExpress app key and secret in <Link className="link" href="/admin/connections">Connections → Suppliers</Link> first. Free: openservice.aliexpress.com → create a Dropshipping app, callback URL <code>{(process.env.SITE_URL || 'https://sunnahstore.vercel.app') + '/api/channels/callback'}</code>.</p>
+          : !on ? <form action={linkAe}><button className="btn orange">🔗 Link AliExpress</button> <span className="muted sm">Sign in with the AliExpress buyer account that pays for orders.</span></form>
+          : <form action={importAe} style={{ display: 'grid', gap: 10 }}>
+            <textarea name="links" rows={6} required placeholder={'https://www.aliexpress.com/item/1005004043442825.html\n(up to 10 links, one per line)'} style={{ width: '100%' }} />
+            <div className="row2" style={{ gap: 8, flexWrap: 'wrap' }}>
+              <select name="category" aria-label="Collection for imports">{cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+              <input name="price" type="number" step="0.01" min="0" placeholder="Own $ (optional)" aria-label="Your own price in USD" style={{ width: 140 }} />
+              <button className="btn orange">⇩ Import from AliExpress</button>
+            </div>
+            <p className="muted sm" style={{ margin: 0 }}>Linked ✓ · {n} AliExpress product{n === 1 ? '' : 's'} in your store.</p>
+          </form>}
       </section>;
     })()}
 
