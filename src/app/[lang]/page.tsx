@@ -4,7 +4,7 @@ import { getAds, getBestSellers, getCategories, getDict, getLiveReviews, getProd
 import { isLang, makeT, type Lang } from '@/lib/i18n';
 
 import Hero, { type HeroSlide } from '@/components/Hero';
-import { heroSlides } from '@/lib/settings';
+import { heroSlides, layoutOf } from '@/lib/settings';
 import Rail from '@/components/Rail';
 import ProductCard from '@/components/ProductCard';
 import Art from '@/components/Art';
@@ -35,7 +35,7 @@ export default async function Home({ params }: PageProps<'/[lang]'>) {
     const p = products.find(x => x.slug === sl.product) || (media || sl.audio || sl.file || sl.id === 'film' ? undefined : withPhoto.length ? withPhoto[n % withPhoto.length] : products[n % Math.max(1, products.length)]);
     const art = sl.image ? <img src={sl.image} alt={sl.title || brand} /> : p ? <Art p={p} open brand={brand} /> : null;
     const buttons = (sl.buttons || []).map(b => ({ label: sl.id === 'film' ? t(b.label) : b.label, href: b.href }));
-    return { id: sl.id, eyebrow: sl.eyebrow, title: sl.title, italic: sl.italic, text: sl.text, buttons, dark: sl.look === 'dark', full: !!media || (!p && !art), art, motion: sl.motion || 'fade',
+    return { id: sl.id, eyebrow: sl.eyebrow, title: sl.title, italic: sl.italic, text: sl.text, buttons, dark: sl.look === 'dark', full: (!!media && layoutOf(sl) === 'full') || (!p && !art), size: sl.size || 48, art, motion: sl.motion || 'fade',
       fit: sl.fit || 'cover', video: sl.video || undefined, videoTall: sl.videoTall || undefined, poster: sl.poster || undefined, audio: sl.audio || undefined, file: sl.file || undefined, fileName: sl.fileName || undefined };
   });
   const tiles = cats.map(c => ({ c, items: products.filter(p => p.cats.includes(c.slug)) })).filter(t => t.items.length);
