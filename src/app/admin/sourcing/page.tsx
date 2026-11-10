@@ -2,11 +2,12 @@ import Link from 'next/link';
 import { adminOrNull } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { aiReady } from '@/lib/ai';
+import { cjReady, search as cjSearch, type CjHit } from '@/lib/cj';
 import { getSourcing, IDEAS, PLATFORMS, searchUrl, TOP_COUNTRIES, type Idea } from '@/lib/sourcing';
-import { aiSuppliers, bulkImport, clearHistory, favIdea, importIdea, refreshTrend, savePlatforms, searchSourcing, setBuyFrom } from '../sourcingActions';
+import { aiSuppliers, bulkImport, importCj, clearHistory, favIdea, importIdea, refreshTrend, savePlatforms, searchSourcing, setBuyFrom } from '../sourcingActions';
 
 export const metadata = { title: 'Global sourcing' };
-const TABS: [string, string, string][] = [['search', 'Search & import', '🔎'], ['platforms', 'Platforms', '🌐'], ['bulk', 'Bulk import links', '⇪'], ['favs', 'Favourites', '☆'], ['history', 'History', '🕘']];
+const TABS: [string, string, string][] = [['search', 'Search & import', '🔎'], ['cj', 'Dropship (CJ)', '📦'], ['platforms', 'Platforms', '🌐'], ['bulk', 'Bulk import links', '⇪'], ['favs', 'Favourites', '☆'], ['history', 'History', '🕘']];
 const $ = (n: number) => '$' + n.toFixed(2);
 
 function IdeaCard({ i, n, live, cats, fav, back, run }: { i: Idea; n?: number; live: typeof PLATFORMS; cats: { id: string; name: string }[]; fav: boolean; back: string; run?: string }) {
@@ -84,6 +85,31 @@ export default async function Sourcing({ searchParams }: PageProps<'/admin/sourc
         <div className="src-ideas">{Object.entries(IDEAS).map(([g, list]) => <div key={g}><div className="label">{g}</div><div className="src-chips">{list.map(x => <form key={x} action={searchSourcing}><input type="hidden" name="q" value={x} /><button className="chip">{x}</button></form>)}</div></div>)}</div>
       </section>
     </>}
+
+    {tab === 'cj' && await (async () => {
+      const ready = await cjReady(), cq = String(sp.cq || '').slice(0, 100);
+      let hits: CjHit[] = [], err = '';
+      if (ready && cq) hits = await cjSearch(cq).catch(e => { err = (e as Error).message; return []; });
+      return <section className="panel">
+        <h3>Dropship from CJ (auto sourcing)</h3>
+        <p className="muted sm">Like AutoDS or DSers on Shopify. Search CJ’s catalog and import a product as a hidden draft, already linked to CJ. When a customer pays, the order goes to CJ by itself (Automation → Dropship orders) and ships straight to the customer with no invoice or prices. Tracking comes back to the order, and cost and stock stay current.</p>
+        {!ready ? <p className="ord-note">Connect CJ Dropshipping in <Link className="link" href="/admin/connections">Connections → Suppliers</Link> first. It is free: make an account on cjdropshipping.com, then My CJ → Authorization → API → Generate key.</p> : <>
+          <form className="src-search" method="get"><input type="hidden" name="tab" value="cj" /><input name="cq" required defaultValue={cq} placeholder="Search CJ, e.g. miswak, attar bottle, travel perfume" /><button className="btn orange">Search CJ</button></form>
+          {err && <p className="err sm">{err}</p>}
+          {cq && !err && !hits.length && <p className="muted">Nothing found for “{cq}”.</p>}
+          {hits.length > 0 && <div className="src-grid">{hits.map(h => <div key={h.pid} className="src-card">
+            {h.image && <img src={h.image} alt="" loading="lazy" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 8 }} />}
+            <b className="sm">{h.name}</b>
+            <div className="src-money"><span>CJ cost {$(h.price)}</span><span className="muted">+ shipping</span></div>
+            <form action={importCj} className="src-import"><input type="hidden" name="pid" value={h.pid} />
+              <select name="category" aria-label="Category">{cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+              <input name="markup" type="number" step="0.1" min="1" defaultValue={2.5} aria-label="Markup times cost" title="Price = cost × this" style={{ width: 70 }} />
+              <button className="btn sm orange">+ Import</button></form>
+          </div>)}</div>}
+          <p className="muted sm">Imported products start hidden. Open one, check the photos and price, use ✨ Write with AI for the description, then turn on Show in the store.</p>
+        </>}
+      </section>;
+    })()}
 
     {tab === 'platforms' && <form action={savePlatforms} className="panel">
       <div className="row2" style={{ justifyContent: 'space-between', gap: 12 }}><h3 style={{ margin: 0 }}>Supplier platforms ({live.length}/{PLATFORMS.length} on)</h3><button className="btn orange sm">Save</button></div>

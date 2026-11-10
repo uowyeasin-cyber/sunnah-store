@@ -49,6 +49,12 @@ model Product {
   sort       Int           @default(0)
   // Stock per warehouse: { "US": 10, "MY": 4, "BD": 30 }
   stock      Json          @default("{}")
+  // Dropshipping: the supplier ships this product straight to the customer (blind, no prices or supplier logo).
+  dropship    Boolean      @default(false)
+  supplierId  String       @default("")
+  // The supplier's variant ID or SKU (CJ "vid" or SKU); for email suppliers, their product code.
+  supplierSku String       @default("")
+  supplierUrl String       @default("")
   category   Category      @relation(fields: [categoryId], references: [id])
   categoryId String
   offer      Offer?
@@ -373,6 +379,8 @@ model Supplier {
   address   String          @default("")
   links     String[]        @default([])
   source    String          @default("")
+  // How dropship orders reach this supplier: "cj" (CJ Dropshipping API) or "" (email).
+  api       String          @default("")
   active    Boolean         @default(true)
   createdAt DateTime        @default(now())
   orders    PurchaseOrder[]
@@ -384,8 +392,16 @@ model PurchaseOrder {
   no         String         @unique
   supplier   Supplier       @relation(fields: [supplierId], references: [id])
   supplierId String
-  warehouse  String // BD, MY or US
-  status     String         @default("draft") // draft, ordered, received, cancelled
+  warehouse  String // BD, MY or US; DROP when the supplier ships straight to a customer
+  status     String         @default("draft") // draft, ordered, shipped, received, cancelled
+  // Dropship: the customer order this was made for, where it ships, and what the supplier sent back.
+  saleId     String         @default("")
+  saleNo     String         @default("")
+  shipTo     Json           @default("{}")
+  supplierRef String        @default("")
+  trackingNo String         @default("")
+  carrier    String         @default("")
+  error      String         @default("")
   currency   String
   shipping   Decimal        @default(0) @db.Decimal(12, 2)
   note       String         @default("")
@@ -395,6 +411,7 @@ model PurchaseOrder {
   lines      PurchaseLine[]
 
   @@index([status])
+  @@index([saleId])
 }
 
 model PurchaseLine {
@@ -405,6 +422,7 @@ model PurchaseLine {
   name      String
   qty       Int
   unitCost  Decimal       @db.Decimal(12, 2)
+  sku       String        @default("")
 }
 
 // Newsletter list. Double opt-in: only confirmed, not-unsubscribed emails get campaigns.

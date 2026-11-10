@@ -13,6 +13,13 @@ export async function record(tx: Tx | typeof db, e: Entry) {
 // The one place an order's payment status changes by hand. Moving to "paid" books the money in;
 // moving away from "paid" (other than a refund, which has its own entry) books it back out.
 export async function setPayStatus(orderId: string, next: string, by: string) {
+  const changed = await changePayStatus(orderId, next, by);
+  // Marked paid by hand: dropship items go to their supplier now, like an online payment.
+  if (changed && next === 'paid') await import('./automation').then(a => a.dropshipNowSafe(orderId));
+  return changed;
+}
+
+function changePayStatus(orderId: string, next: string, by: string) {
   return db.$transaction(async tx => {
     const o = await tx.order.findUniqueOrThrow({ where: { id: orderId } });
     if (o.payStatus === next) return false;

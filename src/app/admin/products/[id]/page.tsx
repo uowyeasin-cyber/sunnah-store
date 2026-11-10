@@ -4,6 +4,8 @@ import { db } from '@/lib/db';
 import { adminOrNull } from '@/lib/auth';
 import { deleteProduct, saveProduct } from '../../actions';
 import BadgePicker from '../../BadgePicker';
+import AiWriter from '../../AiWriter';
+import { aiReady } from '@/lib/ai';
 
 const KINDS = [['pen', 'Pen'], ['sticks', 'Miswak sticks'], ['oil', 'Oil set'], ['attar', 'Attar bottle'], ['sleeve', 'Sleeve'], ['gift', 'Gift box']];
 
@@ -11,7 +13,7 @@ export default async function EditProduct({ params, searchParams }: PageProps<'/
   if (!(await adminOrNull('products'))) return null;
   const { id } = await params;
   const { saved } = (await searchParams) as { saved?: string };
-  const [p, cats] = await Promise.all([id === 'new' ? null : db.product.findUnique({ where: { id }, include: { offer: true } }), db.category.findMany({ orderBy: { sort: 'asc' } })]);
+  const [p, cats, ai, suppliers] = await Promise.all([id === 'new' ? null : db.product.findUnique({ where: { id }, include: { offer: true } }), db.category.findMany({ orderBy: { sort: 'asc' } }), aiReady(), db.supplier.findMany({ where: { active: true }, orderBy: { name: 'asc' }, select: { id: true, name: true, api: true } })]);
   if (id !== 'new' && !p) notFound();
   const st = (p?.stock || {}) as Record<string, number>;
   const o = p?.offer;
@@ -20,6 +22,7 @@ export default async function EditProduct({ params, searchParams }: PageProps<'/
     <form className="panel" action={saveProduct}>
       <input type="hidden" name="id" value={p?.id || ''} />
       <h3>Details</h3>
+      <AiWriter ready={ai} />
       <div className="two"><div className="field"><label>Name</label><input name="name" required defaultValue={p?.name} /></div><div className="field"><label>Short line under the name</label><input name="sub" defaultValue={p?.sub} /></div></div>
       <div className="field"><label>Description</label><textarea name="details" rows={4} defaultValue={p?.details} /></div>
       <div className="two"><div className="field"><label>Price (USD)</label><input name="price" type="number" step="0.01" min="0" required defaultValue={p ? (p.priceCents / 100).toFixed(2) : ''} /></div>
@@ -30,6 +33,12 @@ export default async function EditProduct({ params, searchParams }: PageProps<'/
       <h3>Stock by warehouse</h3>
       <div className="two"><div className="field"><label>USA</label><input name="stockUS" type="number" min="0" defaultValue={st.US ?? 0} /></div><div className="field"><label>Malaysia</label><input name="stockMY" type="number" min="0" defaultValue={st.MY ?? 0} /></div></div>
       <div className="field" style={{ maxWidth: 300 }}><label>Bangladesh</label><input name="stockBD" type="number" min="0" defaultValue={st.BD ?? 0} /></div>
+      <h3>Dropship (auto sourcing)</h3>
+      <p className="muted" style={{ fontSize: '.88rem' }}>Turn on when a supplier ships this product straight to the customer. When the customer pays, the order goes to the supplier (see Automation → Dropship orders), with no invoice or prices in the parcel. For CJ products the cost and stock above update by themselves.</p>
+      <label className="toggle"><span>Supplier ships it (dropship)</span><input type="checkbox" name="dropship" defaultChecked={p?.dropship} /></label>
+      <div className="two"><div className="field"><label>Supplier</label><select name="supplierId" defaultValue={p?.supplierId || ''}><option value="">—</option>{suppliers.map(x => <option key={x.id} value={x.id}>{x.name}{x.api === 'cj' ? ' (CJ API)' : ' (email)'}</option>)}</select></div>
+        <div className="field"><label>Supplier variant ID or SKU</label><input name="supplierSku" defaultValue={p?.supplierSku} placeholder="CJ variant ID (vid)" /></div></div>
+      <div className="field"><label>Supplier product link</label><input name="supplierUrl" defaultValue={p?.supplierUrl} placeholder="https://… or cj:<product id>" /></div>
       <h3>Photos and video</h3>
       {(p?.images.length || p?.video) ? <div className="thumbs">{p.images.map(u => <label key={u}><img src={u} alt="" /><span><input type="checkbox" name="removeImage" value={u} /> Remove</span></label>)}{p.video && <label><video src={p.video} muted /><span><input type="checkbox" name="clearVideo" /> Remove</span></label>}</div> : <p className="muted">No photos yet. The built-in drawing is shown until you add one.</p>}
       <div className="two"><div className="field"><label>Add photos</label><input type="file" name="images" accept="image/*" multiple /></div><div className="field"><label>Product video</label><input type="file" name="video" accept="video/*" /></div></div>

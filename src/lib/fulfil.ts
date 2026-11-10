@@ -24,8 +24,18 @@ export async function advance(id: string, step: number, data: Record<string, unk
 
 // Books the courier once an order is ready to ship: cash on delivery at once, online payments after they clear.
 // A failed booking is logged on the order as an admin-only note (step -1) so the admin sees why, then thrown for the caller.
+// True when every item is shipped by its supplier, so there is nothing for our courier to pick up.
+export async function onlyDropship(id: string) {
+  const lines = await db.orderLine.findMany({ where: { orderId: id }, select: { productId: true } });
+  if (!lines.length || lines.some(l => !l.productId)) return false;
+  const ids = [...new Set(lines.map(l => l.productId!))];
+  const n = await db.product.count({ where: { id: { in: ids }, dropship: true, supplierId: { not: '' } } });
+  return n === ids.length;
+}
+
 export async function sendToCourier(id: string) {
   const o = await db.order.findUniqueOrThrow({ where: { id }, include: { lines: true } });
+  if (await onlyDropship(id)) return;
   if (o.trackingNo || (o.payStatus !== 'paid' && o.payStatus !== 'cod')) return;
   await loadKeys();
   const booker = bookerFor({ warehouse: o.warehouse, courier: o.courier, cod: o.payStatus === 'cod' });
