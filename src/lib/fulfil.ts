@@ -35,7 +35,8 @@ export async function onlyDropship(id: string) {
 
 export async function sendToCourier(id: string) {
   const o = await db.order.findUniqueOrThrow({ where: { id }, include: { lines: true } });
-  if (await onlyDropship(id)) return;
+  // Marketplace orders (Daraz, Lazada, …) are delivered by the marketplace.
+  if (o.payMethod.startsWith('ch:') || await onlyDropship(id)) return;
   if (o.trackingNo || (o.payStatus !== 'paid' && o.payStatus !== 'cod')) return;
   await loadKeys();
   const booker = bookerFor({ warehouse: o.warehouse, courier: o.courier, cod: o.payStatus === 'cod' });
