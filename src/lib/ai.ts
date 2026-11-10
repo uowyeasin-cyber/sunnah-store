@@ -35,6 +35,21 @@ export const webReady = async () => (await connectedProviders()).some(p => p.id 
 
 const OPENAI_BASE: Record<string, string> = { groq: 'https://api.groq.com/openai/v1', openrouter: 'https://openrouter.ai/api/v1' };
 
+// Current Gemini Flash models for this key (newest first), asked from Google and remembered for 6 hours.
+const gone = new Set<string>();
+let listed: { at: number; key: string; names: string[] } | null = null;
+async function geminiModels(base: string, k: string) {
+  if (!listed || listed.key !== k || Date.now() - listed.at > 6 * 36e5) {
+    const r = await fetch(`${base}/models?pageSize=200`, { headers: { 'x-goog-api-key': k }, signal: AbortSignal.timeout(8e3) }).then(r => (r.ok ? r.json() : null)).catch(() => null) as { models?: { name: string; supportedGenerationMethods?: string[] }[] } | null;
+    const names = (r?.models || []).filter(m => m.supportedGenerationMethods?.includes('generateContent')).map(m => m.name.replace(/^models\//, ''))
+      .filter(n => /^gemini-[\d.]+-flash(-lite)?$/.test(n));
+    const ver = (n: string) => parseFloat(n.slice(7)) || 0;
+    names.sort((a, b) => ver(b) - ver(a) || Number(a.includes('lite')) - Number(b.includes('lite')));
+    listed = { at: Date.now(), key: k, names: names.length ? names : ['gemini-2.5-flash', 'gemini-2.5-flash-lite'] };
+  }
+  return listed.names.filter(n => !gone.has(n));
+}
+
 async function call(p: Provider, system: string, messages: Turn[], maxTokens: number, json: boolean, web = false): Promise<string> {
   const k = key(p.env), model = key(p.modelEnv) || p.model;
   if (p.id === 'claude') {
@@ -44,11 +59,14 @@ async function call(p: Provider, system: string, messages: Turn[], maxTokens: nu
   }
   const ctl = AbortSignal.timeout(45e3);
   if (p.id === 'gemini') {
-    // Google's free models get "high demand" (503) or limit (429) errors often. Try the picked model, then lighter ones.
-    const models = [...new Set([model, 'gemini-flash-latest', 'gemini-2.5-flash', 'gemini-flash-lite-latest', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'])];
+    // Google retires model names often and its free models get "high demand" (503) or limit (429) errors.
+    // So: the picked model, then the "-latest" aliases, then every current Flash model Google lists for this key.
+    const base = process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta';
+    const models = [...new Set([key(p.modelEnv), 'gemini-flash-latest', ...(await geminiModels(base, k)), 'gemini-flash-lite-latest'].filter(Boolean))].slice(0, 8);
     let err: AiError | null = null;
+    const rank = (s: number) => (s === 429 ? 3 : s === 503 || s === 500 ? 2 : 1); // keep the most useful error to show
     for (const m of models) {
-      const r = await fetch(`${process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta'}/models/${m}:generateContent`, {
+      const r = await fetch(`${base}/models/${m}:generateContent`, {
         method: 'POST', signal: ctl, headers: { 'Content-Type': 'application/json', 'x-goog-api-key': k },
         body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: messages.map(x => ({ role: x.role === 'assistant' ? 'model' : 'user', parts: [{ text: x.content }] })),
           // web: Gemini looks things up with Google Search first (free on the free plan). JSON mode cannot be combined with it.
@@ -61,8 +79,10 @@ async function call(p: Provider, system: string, messages: Turn[], maxTokens: nu
         if (text) return text;
         continue;
       }
-      err = new AiError(p.name, r.status, (await r.text()).slice(0, 300));
-      if (![404, 429, 500, 503].includes(r.status)) throw err; // a bad key: no point trying other models
+      const e = new AiError(p.name, r.status, (await r.text()).slice(0, 300));
+      if (r.status === 404) gone.add(m);
+      if (![400, 404, 429, 500, 503].includes(r.status) || (r.status === 400 && !web)) throw e; // a bad key: no point trying other models
+      if (!err || rank(e.status) >= rank(err.status)) err = e;
     }
     throw err || new AiError(p.name, 503, 'No model answered.');
   }
@@ -89,8 +109,9 @@ export async function ask(system: string, messages: Turn[], opts: { maxTokens?: 
   let last: unknown;
   for (const p of list) {
     try {
-      const web = !!opts.web && p.id === 'gemini';
-      const text = await call(p, system, messages, opts.maxTokens || 1200, !!opts.json, web);
+      let web = !!opts.web && p.id === 'gemini';
+      // Google Search has its own daily limit: when it is used up, Gemini still answers without it.
+      const text = await call(p, system, messages, opts.maxTokens || 1200, !!opts.json, web).catch(e => { if (!web) throw e; web = false; return call(p, system, messages, opts.maxTokens || 1200, !!opts.json, false); });
       if (text) return { text, provider: p.name, web };
     } catch (e) { last = e; console.error('ai call failed', p.id, (e as Error).message); }
   }
