@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import { adminOrNull } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { aiReady } from '@/lib/ai';
+import { aiReady, webReady } from '@/lib/ai';
 import { cjReady, search as cjSearch, type CjHit } from '@/lib/cj';
 import { aeLinked, aeReady } from '@/lib/aliexpress';
-import { applyRule, getSourcing, IDEAS, PRICE_MODES, PLATFORMS, searchUrl, TOP_COUNTRIES, type Idea } from '@/lib/sourcing';
-import { aiSuppliers, bulkImport, importAe, importCj, linkAe, savePriceRule, clearHistory, favIdea, importIdea, refreshTrend, savePlatforms, searchSourcing, setBuyFrom } from '../sourcingActions';
+import { applyRule, COUNTRIES, flag, getSourcing, IDEAS, mapsSearch, marketsFor, PRICE_MODES, PLATFORMS, searchUrl, TOP_COUNTRIES, type Idea } from '@/lib/sourcing';
+import { aiSuppliers, findShops, saveAutoSourcing, bulkImport, importAe, importCj, linkAe, savePriceRule, clearHistory, favIdea, importIdea, refreshTrend, savePlatforms, searchSourcing, setBuyFrom } from '../sourcingActions';
 
 export const metadata = { title: 'Global sourcing' };
 const TABS: [string, string, string][] = [['search', 'Search & import', '🔎'], ['cj', 'Dropship (CJ)', '📦'], ['ae', 'AliExpress', '🛒'], ['platforms', 'Platforms', '🌐'], ['bulk', 'Bulk import links', '⇪'], ['favs', 'Favourites', '☆'], ['history', 'History', '🕘']];
@@ -34,7 +34,7 @@ export default async function Sourcing({ searchParams }: PageProps<'/admin/sourc
   if (!(await adminOrNull('sourcing'))) return null;
   const sp = await searchParams;
   const tab = TABS.some(([k]) => k === sp.tab) ? String(sp.tab) : 'search';
-  const [s, ai, cats] = await Promise.all([getSourcing(), aiReady(), db.category.findMany({ orderBy: { sort: 'asc' }, select: { id: true, name: true } })]);
+  const [s, ai, web, cats] = await Promise.all([getSourcing(), aiReady(), webReady(), db.category.findMany({ orderBy: { sort: 'asc' }, select: { id: true, name: true } })]);
   const live = PLATFORMS.filter(p => !s.off.includes(p.id));
   const run = sp.run ? s.runs.find(r => r.id === sp.run) : null;
   const q = run?.q || String(sp.q || '');
@@ -54,32 +54,82 @@ export default async function Sourcing({ searchParams }: PageProps<'/admin/sourc
           <input name="max" type="number" min="0" step="0.5" placeholder="Max cost $" defaultValue={run?.max || ''} />
           <button className="btn orange">Search {live.length} platforms</button>
         </form>
-        <div className="src-box">
-          <div className="sm"><b>Buy from</b> <span className="muted">(supplier countries; none picked = anywhere)</span></div>
-          <div className="src-chips">{s.buyFrom.length ? s.buyFrom.map(c => <form key={c} action={setBuyFrom}><input type="hidden" name="country" value={c} /><button name="what" value="remove" className="chip on">{c} ×</button></form>) : <span className="chip on">🌐 All countries</span>}
-            {s.buyFrom.length > 0 && <form action={setBuyFrom}><button name="what" value="clear" className="chip">Clear</button></form>}</div>
-          <div className="src-chips">{TOP_COUNTRIES.filter(c => !s.buyFrom.includes(c)).map(c => <form key={c} action={setBuyFrom}><input type="hidden" name="country" value={c} /><button name="what" value="add" className="chip">+ {c}</button></form>)}</div>
+        <p className="sm" style={{ margin: 0, color: '#cbd5e1' }}>Leave Max cost empty to see everything, or set it to keep a good profit.</p>
+        <div className="src-two">
+          {([['buyFrom', 'Buy from', 'supplier countries; none picked = anywhere'], ['sellIn', 'Sell in', 'your customers’ countries; none picked = your shop’s regions']] as const).map(([list, title, hint]) => <div key={list} className="src-box">
+            <div className="sm"><b>{title}</b> <span className="muted">({hint})</span></div>
+            <div className="src-chips">{s[list].length ? s[list].map(c => <form key={c} action={setBuyFrom}><input type="hidden" name="list" value={list} /><input type="hidden" name="country" value={c} /><button name="what" value="remove" className="chip on">{flag(c)} {c} ×</button></form>) : <span className="chip on">🌐 All countries</span>}
+              {s[list].length > 0 && <form action={setBuyFrom}><input type="hidden" name="list" value={list} /><button name="what" value="clear" className="chip">🌐 All countries</button></form>}
+              {list === 'buyFrom' && <form action={setBuyFrom}><input type="hidden" name="list" value={list} /><button name="what" value="all" className="chip">⭐ Pick all suggested</button></form>}</div>
+            {list === 'buyFrom' && <><div className="muted sm">World’s top sourcing countries (tap to add)</div>
+              <div className="src-chips">{TOP_COUNTRIES.filter(c => !s.buyFrom.includes(c)).map(c => <form key={c} action={setBuyFrom}><input type="hidden" name="list" value={list} /><input type="hidden" name="country" value={c} /><button name="what" value="add" className="chip">+ {flag(c)} {c}</button></form>)}</div></>}
+            <form action={setBuyFrom} className="src-add"><input type="hidden" name="list" value={list} /><input type="hidden" name="what" value="add" /><input name="country" list="all-countries" placeholder="Add a country…" aria-label={`Add a country to ${title}`} /><button className="btn sm">Add</button></form>
+          </div>)}
         </div>
-        <div className="src-searching sm"><span className="muted">Searching:</span> {live.map(p => <span key={p.id} className="src-p">✓ {p.name}</span>)} <Link className="link" href="/admin/sourcing?tab=platforms">Change</Link></div>
+        <datalist id="all-countries">{COUNTRIES.map(c => <option key={c.code} value={c.name} />)}</datalist>
+        <div className="src-searching sm"><span className="muted">Searching:</span> {live.map(p => <span key={p.id} className="src-p">{p.id === 'cj' ? '✓ CJ Dropshipping LIVE' : `✓ ${p.name}`}</span>)} <Link className="link" href="/admin/sourcing?tab=platforms">+ Add platforms</Link></div>
       </section>
 
-      {!ai && <p className="ord-note">Connect a free AI in <Link className="link" href="/admin/aitools#connect">AI tools &amp; chatbot</Link> (Gemini or Groq, no card needed) so the search can suggest products, costs and prices. The platform buttons below work without AI.</p>}
+      {web ? <p className="ord-note" style={{ background: '#ecfdf5', borderColor: '#a7f3d0' }}><b>Free search is on: Google Gemini with Google Search.</b> The AI looks on the web for products, prices and suppliers before it answers. It is free within Google’s daily allowance; when that is used up the next AI answers from what it knows until it resets. Prices on the web can be out of date, so check the supplier page before you buy. <Link className="link" href="/admin/aitools#connect">Change AI</Link></p>
+        : ai ? <p className="ord-note">The AI answers from what it knows. Connect free <b>Google Gemini</b> in <Link className="link" href="/admin/aitools#connect">AI tools &amp; chatbot</Link> and every search also reads Google live (real shops, phone numbers, this week’s best sellers).</p>
+        : <p className="ord-note">Connect a free AI in <Link className="link" href="/admin/aitools#connect">AI tools &amp; chatbot</Link> (Google Gemini is best: it searches Google live; no card needed). The platform and Google Maps buttons below work without AI.</p>}
 
       {run && <section className="panel">
-        <h3>Results for “{run.q}”{run.max ? ` under $${run.max}` : ''} <span className="muted sm">· {run.items.length} products</span></h3>
+        <h3>Results for “{run.q}”{run.max ? ` under $${run.max}` : ''} <span className="muted sm">· {run.items.length} products{run.web ? ' · from Google Search' : ''}</span></h3>
         {run.note && <p className="err sm">{run.note}</p>}
-        <form action={aiSuppliers} style={{ margin: '0 0 10px' }}><input type="hidden" name="name" value={run.q} /><input type="hidden" name="run" value={run.id} /><button className="btn ghost sm">🏭 Find suppliers for “{run.q}” and add them to Suppliers</button></form>
+        <form action={aiSuppliers} style={{ margin: '0 0 10px' }}><input type="hidden" name="name" value={run.q} /><input type="hidden" name="run" value={run.id} /><button className="btn ghost sm">🏭 Find suppliers with websites for “{run.q}” and add them to Suppliers</button></form>
         <p className="muted sm">Costs and prices are AI estimates. Tap a platform to see live prices and suppliers before you buy. “Add to store” makes a hidden draft in Products.</p>
         {run.items.length > 0 && <div className="src-grid">{run.items.map((i, k) => card(i, k))}</div>}
-        <h4 style={{ margin: '18px 0 8px' }}>Search “{run.q}” directly on each platform</h4>
-        <div className="src-links wide">{live.map(p => <a key={p.id} href={searchUrl(p, run.q)} target="_blank" rel="noopener noreferrer">{p.name} <small>{p.where}</small> ↗</a>)}</div>
+      </section>}
+
+      {run && <section className="panel">
+        <h3>Open “{run.q}” directly on each platform</h3>
+        <div className="src-links wide">{live.map(p => <a key={p.id} href={searchUrl(p, run.q)} target="_blank" rel="noopener noreferrer">{flag(p.where.split(' / ')[0])} {p.name} ↗</a>)}</div>
+        <p className="muted sm" style={{ marginBottom: 0 }}>Found something? Copy the product links into <Link className="link" href="/admin/sourcing?tab=bulk">Bulk import links</Link> to add them all at once.</p>
+      </section>}
+
+      {run && <section className="panel">
+        <div className="row2" style={{ justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}><h3 style={{ margin: 0 }}>Find “{run.q}” at markets and suppliers without a website</h3>
+          <form action={findShops}><input type="hidden" name="name" value={run.q} /><input type="hidden" name="run" value={run.id} /><button className="btn orange sm" disabled={!ai}>🏪 Find shops with phone and email (AI)</button></form></div>
+        <p className="muted sm">Many of the best wholesalers have no website, only a shop in a market and a Google Maps listing. Each market opens Google Maps at the shops selling this there. The AI button looks up real shops{web ? ' on Google' : ''} with address, phone, WhatsApp, email and what they are best for, and saves them in <Link className="link" href="/admin/suppliers">Suppliers</Link>.</p>
+        {(run.shops || []).length > 0 && <><h4 style={{ margin: '12px 0 8px' }}>Shops found ({run.shops!.length}) · saved in Suppliers</h4>
+          <div className="src-grid">{run.shops!.map(sh => <div key={sh.name + sh.address} className="src-card">
+            <div className="src-top"><b>{sh.name}</b><span>{flag(sh.country)}</span></div>
+            <div className="muted sm">{[sh.market, sh.address, sh.city, sh.country].filter(Boolean).join(', ')}</div>
+            {sh.good && <p className="sm" style={{ margin: 0 }}>Best for: {sh.good}</p>}
+            <div className="src-links">{sh.phone && <a href={`tel:${sh.phone.replace(/[^\d+]/g, '')}`}>📞 {sh.phone}</a>}{sh.whatsapp && <a href={`https://wa.me/${sh.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">WhatsApp</a>}{sh.email && <a href={`mailto:${sh.email}`}>✉ {sh.email}</a>}<a href={sh.maps} target="_blank" rel="noopener noreferrer">📍 Google Maps ↗</a></div>
+          </div>)}</div>
+          <p className="muted sm">Found by AI: check each shop on Google Maps and call before you send money.</p></>}
+        <h4 style={{ margin: '14px 0 8px' }}>Wholesale markets and fairs{s.buyFrom.length ? ` in ${s.buyFrom.join(', ')}` : ' worldwide'}</h4>
+        <div className="src-grid">{marketsFor(run.q, s.buyFrom).slice(0, 24).map(m => <div key={m.name} className="src-card">
+          <div className="src-top"><b>{m.name}</b><span>{flag(m.country)}</span></div>
+          <div className="muted sm">{m.kind} · {m.city}, {m.country}</div>
+          <p className="sm" style={{ margin: 0 }}>Good for: {m.good}</p>
+          <div className="src-links"><a href={mapsSearch(`${run.q} wholesale near ${m.name}, ${m.city}`)} target="_blank" rel="noopener noreferrer">📍 Shops for this on Google Maps ↗</a><a href={mapsSearch(`${m.name}, ${m.city}`)} target="_blank" rel="noopener noreferrer">Market ↗</a></div>
+        </div>)}</div>
+        {!marketsFor(run.q, s.buyFrom).length && <p className="muted sm">No big market listed in those countries yet. <a className="link" href={mapsSearch(`${run.q} wholesale ${s.buyFrom[0] || ''}`)} target="_blank" rel="noopener noreferrer">Search Google Maps ↗</a></p>}
       </section>}
 
       <section className="panel">
         <div className="row2" style={{ justifyContent: 'space-between', gap: 12 }}><h3 style={{ margin: 0 }}>Selling best worldwide right now</h3>
           <form action={refreshTrend}><button className="btn ghost sm" disabled={!ai}>↻ {s.trend ? 'Update now with AI' : 'Find with AI'}</button></form></div>
-        {s.trend ? <><p className="muted sm">Found by AI on {s.trend.at.slice(0, 10)}. Tap a platform to search it there, or add it to your store.</p><div className="src-grid">{s.trend.items.map((i, k) => card(i, k, k + 1))}</div></>
-          : <p className="muted sm">Press the button and the AI lists the 20 product types selling best online worldwide, with cost, price and where to buy.</p>}
+        {s.trend ? <><p className="muted sm">Ranked: #1 sells the most. Found by AI{s.trend.web ? ' from Google' : ''} on {s.trend.at.slice(0, 10)}{s.auto.trend ? '; updates itself every week' : ''}. Tap one to search it on all your platforms, or open it below to add it to your store.</p>
+          <div className="src-rank">{s.trend.items.map((i, k) => <form key={i.name + k} action={searchSourcing}><input type="hidden" name="q" value={i.name} /><button className="src-rank-item"><b><span className="src-n">#{k + 1}</span> {i.name}</b><small>{[i.cat, i.from && `source: ${i.from}`].filter(Boolean).join(' · ')}{i.cost > 0 ? ` · cost ~$${i.cost}, sells $${i.price}` : ''}</small></button></form>)}</div>
+          <details style={{ marginTop: 12 }}><summary className="sm">Show as cards with Add to store</summary><div className="src-grid" style={{ marginTop: 10 }}>{s.trend.items.map((i, k) => card(i, k, k + 1))}</div></details></>
+          : <p className="muted sm">Press the button and the AI lists the 30 products selling the most online worldwide, in order, with cost, price and where to buy.</p>}
+      </section>
+
+      <section className="panel">
+        <h3 style={{ marginTop: 0 }}>🤖 AI sourcing on autopilot</h3>
+        <p className="muted sm">Once a week (Automation → <Link className="link" href="/admin/automation">AI sourcing</Link>) the AI does the sourcing work by itself. Tick what it may do:</p>
+        <form action={saveAutoSourcing} style={{ display: 'grid', gap: 6 }}>
+          <label className="sm"><input type="checkbox" name="trend" defaultChecked={s.auto.trend} /> Update the best-sellers list above</label>
+          <label className="sm"><input type="checkbox" name="suppliers" defaultChecked={s.auto.suppliers} /> Find suppliers with websites for the top 5 and save them in Suppliers</label>
+          <label className="sm"><input type="checkbox" name="shops" defaultChecked={s.auto.shops} /> Find shops without a website (Google Maps, phone, email) for the top 3 and save them</label>
+          <label className="sm"><input type="checkbox" name="importCj" defaultChecked={s.auto.importCj} /> Import the closest CJ product for the top 5 as hidden drafts, priced by your rule (needs CJ connected; nothing is bought)</label>
+          <div><button className="btn sm orange">Save</button></div>
+        </form>
+        {s.auto.log.length > 0 && <><p className="sm" style={{ margin: '10px 0 4px' }}><b>Last run {s.auto.lastRun.slice(0, 10)}</b></p><ul className="sm" style={{ margin: 0, paddingLeft: 18 }}>{s.auto.log.map((l, k) => <li key={k}>{l}</li>)}</ul></>}
       </section>
 
       <section className="panel"><h3>More ideas</h3>

@@ -232,6 +232,36 @@ const WORK: Record<JobId, (mode: Mode) => Promise<Result>> = {
     const n = await aiProductSeo(false, 15);
     return { status: 'ok', summary: n ? `SEO written for ${n} products` : 'Every product already has SEO' };
   },
+  async aiSourcing() {
+    const { aiReady } = await import('./ai');
+    if (!(await aiReady())) return { status: 'skipped', summary: 'No AI connected' };
+    const src = await import('./sourcing');
+    const s = await src.getSourcing();
+    if (s.auto.lastRun && Date.now() - new Date(s.auto.lastRun).getTime() < 6.5 * 864e5) return { status: 'skipped', summary: 'Runs once a week' };
+    const log: string[] = [];
+    const step = async (label: string, f: () => Promise<string>) => { try { log.push(`${label}: ${await f()}`); } catch (e) { log.push(`${label}: failed (${(e as Error).message.slice(0, 120)})`); } };
+    if (s.auto.trend || !s.trend) await step('Best sellers', async () => { const r = await src.trendIdeas(s); if (r.items.length) s.trend = { at: new Date().toISOString(), ...r }; return `${r.items.length} products ranked${r.web ? ' from Google' : ''}`; });
+    const top = (s.trend?.items || []).slice(0, 5);
+    if (s.auto.suppliers) await step('Suppliers with websites', async () => { let n = 0; for (const i of top) for (const f of await src.findSuppliers(i.name, s).catch(() => [])) { await src.saveFound(f); n++; } return `${n} saved for ${top.map(i => i.name).join(', ') || 'nothing'}`; });
+    if (s.auto.shops) await step('Shops without a website', async () => { let n = 0; for (const i of top.slice(0, 3)) for (const sh of (await src.findLocalShops(i.name, s).catch(() => ({ shops: [] }))).shops) { await src.saveShop(sh, i.name); n++; } return `${n} saved with Google Maps links`; });
+    if (s.auto.importCj) await step('CJ drafts', async () => {
+      const { cjReady, search } = await import('./cj');
+      if (!(await cjReady())) return 'CJ not connected';
+      const { importOneCj } = await import('./sourcingImport');
+      const cat = (await db.category.findFirst({ orderBy: { sort: 'asc' } }))?.id;
+      if (!cat) return 'no collection to put them in';
+      let n = 0;
+      for (const i of top) {
+        const hit = (await search(i.name, 1).catch(() => []))[0];
+        if (!hit || (await db.product.count({ where: { supplierUrl: `cj:${hit.pid}` } }))) continue;
+        await importOneCj(hit.pid, cat, 0, { ...s, price: { ...s.price, live: false } }).then(() => n++, () => {});
+      }
+      return `${n} hidden drafts added to Products`;
+    });
+    s.auto = { ...s.auto, lastRun: new Date().toISOString(), log };
+    await src.saveSourcing(s);
+    return { status: 'ok', summary: log.join(' · ').slice(0, 300) };
+  },
   async aiWeekly() {
     if (new Date().getUTCDay() !== 1) return { status: 'skipped', summary: 'Runs on Mondays' };
     const [{ ask }, { snapshot }] = await Promise.all([import('./ai'), import('./cowork')]);

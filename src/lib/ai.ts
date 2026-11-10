@@ -30,10 +30,12 @@ export async function connectedProviders() {
   return [...on.filter(p => p.id === pick), ...on.filter(p => p.id !== pick)];
 }
 export const aiReady = async () => (await connectedProviders()).length > 0;
+// Live Google Search is on when Gemini is connected.
+export const webReady = async () => (await connectedProviders()).some(p => p.id === 'gemini');
 
 const OPENAI_BASE: Record<string, string> = { groq: 'https://api.groq.com/openai/v1', openrouter: 'https://openrouter.ai/api/v1' };
 
-async function call(p: Provider, system: string, messages: Turn[], maxTokens: number, json: boolean): Promise<string> {
+async function call(p: Provider, system: string, messages: Turn[], maxTokens: number, json: boolean, web = false): Promise<string> {
   const k = key(p.env), model = key(p.modelEnv) || p.model;
   if (p.id === 'claude') {
     const client = new Anthropic({ apiKey: k });
@@ -49,7 +51,9 @@ async function call(p: Provider, system: string, messages: Turn[], maxTokens: nu
       const r = await fetch(`${process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta'}/models/${m}:generateContent`, {
         method: 'POST', signal: ctl, headers: { 'Content-Type': 'application/json', 'x-goog-api-key': k },
         body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: messages.map(x => ({ role: x.role === 'assistant' ? 'model' : 'user', parts: [{ text: x.content }] })),
-          generationConfig: { maxOutputTokens: maxTokens, ...(json ? { responseMimeType: 'application/json' } : {}) } }),
+          // web: Gemini looks things up with Google Search first (free on the free plan). JSON mode cannot be combined with it.
+          ...(web ? { tools: [{ google_search: {} }] } : {}),
+          generationConfig: { maxOutputTokens: maxTokens, ...(json && !web ? { responseMimeType: 'application/json' } : {}) } }),
       });
       if (r.ok) {
         const d = await r.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
@@ -77,14 +81,17 @@ export class AiError extends Error {
 }
 
 // Asks the first connected AI; on a limit or outage, the next one. Throws when none is connected or all fail.
-export async function ask(system: string, messages: Turn[], opts: { maxTokens?: number; json?: boolean; only?: ProviderId } = {}) {
-  const list = (await connectedProviders()).filter(p => !opts.only || p.id === opts.only);
+// web: answer from a live Google Search when Gemini is connected (it is tried first); other AIs answer from what they know.
+export async function ask(system: string, messages: Turn[], opts: { maxTokens?: number; json?: boolean; only?: ProviderId; web?: boolean } = {}) {
+  const all = (await connectedProviders()).filter(p => !opts.only || p.id === opts.only);
+  const list = opts.web ? [...all.filter(p => p.id === 'gemini'), ...all.filter(p => p.id !== 'gemini')] : all;
   if (!list.length) throw new Error('No AI connected. Paste a free key in AI tools & chatbot.');
   let last: unknown;
   for (const p of list) {
     try {
-      const text = await call(p, system, messages, opts.maxTokens || 1200, !!opts.json);
-      if (text) return { text, provider: p.name };
+      const web = !!opts.web && p.id === 'gemini';
+      const text = await call(p, system, messages, opts.maxTokens || 1200, !!opts.json, web);
+      if (text) return { text, provider: p.name, web };
     } catch (e) { last = e; console.error('ai call failed', p.id, (e as Error).message); }
   }
   throw last instanceof Error ? last : new Error('The AI did not answer.');
