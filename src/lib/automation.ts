@@ -166,6 +166,13 @@ const WORK: Record<JobId, (mode: Mode) => Promise<Result>> = {
     const st = await syncDropStock().catch(() => ({ checked: 0, changed: 0 }));
     return { status: (r.failed && !r.placed ? 'failed' : 'ok') as Result['status'], summary: `${made} supplier orders made · ${r.placed} placed · ${queued} waiting for your OK · ${r.failed} failed · ${r.tracked} got tracking · ${st.changed}/${st.checked} CJ products updated` };
   },
+  // Linked marketplace shops: stock and prices out, new orders in.
+  async channels() {
+    const { syncChannels } = await import('./channelSync');
+    const r = await syncChannels();
+    if (!r.linked) return { status: 'skipped' as const, summary: 'No marketplace shop linked yet' };
+    return { status: (r.errors.length && !r.added && !r.synced ? 'failed' : 'ok') as Result['status'], summary: `${r.linked} shops · ${r.synced} listings updated · ${r.added} new orders${r.errors.length ? ` · ${r.errors.length} problems: ${r.errors[0]}` : ''}` };
+  },
   // Pulls courier status for open orders and moves them forward.
   async tracking() {
     const { syncTracking } = await import('./fulfil');

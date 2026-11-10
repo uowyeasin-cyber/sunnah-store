@@ -13,6 +13,7 @@ export const NAV: { title: string; items: Item[] }[] = [
     { area: 'orders', label: 'Orders', icon: 'receipt' },
     { area: 'returns', label: 'Returns', icon: 'undo' },
     { area: 'products', label: 'Products', icon: 'box' },
+    { area: 'channels', label: 'Sales channels', icon: 'globe' },
     { area: 'categories', label: 'Categories', icon: 'folder' },
     { area: 'offers', label: 'Offers & coupons', icon: 'tag' },
     { area: 'reviews', label: 'Reviews & loyalty', icon: 'star', also: [['loyalty', 'Loyalty points']] },

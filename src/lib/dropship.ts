@@ -21,7 +21,7 @@ const poNo = () => { const n = new Date(); return `DS-${String(n.getFullYear()).
 // Makes the supplier orders for a paid (or cash-on-delivery) customer order. Safe to call twice: one set per order.
 export async function makeDropOrders(orderId: string) {
   const o = await db.order.findUnique({ where: { id: orderId }, include: { lines: true } });
-  if (!o || (o.payStatus !== 'paid' && o.payStatus !== 'cod')) return [];
+  if (!o || (o.payStatus !== 'paid' && o.payStatus !== 'cod') || o.payMethod.startsWith('ch:')) return [];
   if (await db.purchaseOrder.count({ where: { saleId: o.id } })) return [];
   const products = await db.product.findMany({ where: { id: { in: o.lines.flatMap(l => (l.productId ? [l.productId] : [])) }, dropship: true, supplierId: { not: '' } } });
   if (!products.length) return [];
