@@ -3,8 +3,8 @@ import { adminOrNull } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { aiReady } from '@/lib/ai';
 import { cjReady, search as cjSearch, type CjHit } from '@/lib/cj';
-import { getSourcing, IDEAS, PLATFORMS, searchUrl, TOP_COUNTRIES, type Idea } from '@/lib/sourcing';
-import { aiSuppliers, bulkImport, importCj, clearHistory, favIdea, importIdea, refreshTrend, savePlatforms, searchSourcing, setBuyFrom } from '../sourcingActions';
+import { applyRule, getSourcing, IDEAS, PRICE_MODES, PLATFORMS, searchUrl, TOP_COUNTRIES, type Idea } from '@/lib/sourcing';
+import { aiSuppliers, bulkImport, importCj, savePriceRule, clearHistory, favIdea, importIdea, refreshTrend, savePlatforms, searchSourcing, setBuyFrom } from '../sourcingActions';
 
 export const metadata = { title: 'Global sourcing' };
 const TABS: [string, string, string][] = [['search', 'Search & import', '🔎'], ['cj', 'Dropship (CJ)', '📦'], ['platforms', 'Platforms', '🌐'], ['bulk', 'Bulk import links', '⇪'], ['favs', 'Favourites', '☆'], ['history', 'History', '🕘']];
@@ -87,26 +87,52 @@ export default async function Sourcing({ searchParams }: PageProps<'/admin/sourc
     </>}
 
     {tab === 'cj' && await (async () => {
-      const ready = await cjReady(), cq = String(sp.cq || '').slice(0, 100);
+      const ready = await cjReady(), cq = String(sp.cq || '').slice(0, 100), page = Math.min(50, Math.max(1, Number(sp.cpage) || 1));
       let hits: CjHit[] = [], err = '';
-      if (ready && cq) hits = await cjSearch(cq).catch(e => { err = (e as Error).message; return []; });
+      if (ready && cq) hits = await cjSearch(cq, page).catch(e => { err = (e as Error).message; return []; });
+      const have = hits.length ? new Map((await db.product.findMany({ where: { supplierUrl: { in: hits.map(h => `cj:${h.pid}`) } }, select: { id: true, supplierUrl: true } })).map(p => [p.supplierUrl.slice(3), p.id])) : new Map<string, string>();
+      const r = s.price, pageLink = (n: number) => `/admin/sourcing?tab=cj&cq=${encodeURIComponent(cq)}&cpage=${n}`;
       return <section className="panel">
         <h3>Dropship from CJ (auto sourcing)</h3>
-        <p className="muted sm">Like AutoDS or DSers on Shopify. Search CJ’s catalog and import a product as a hidden draft, already linked to CJ. When a customer pays, the order goes to CJ by itself (Automation → Dropship orders) and ships straight to the customer with no invoice or prices. Tracking comes back to the order, and cost and stock stay current.</p>
+        <p className="muted sm">Like AutoDS or DSers on Shopify. Search CJ’s catalog, tick products and import them, already linked to CJ and priced by your rule. When a customer pays, the order goes to CJ by itself (Automation → Dropship orders) and ships straight to the customer with no invoice or prices. Tracking comes back to the order, and cost, stock and price stay current.</p>
         {!ready ? <p className="ord-note">Connect CJ Dropshipping in <Link className="link" href="/admin/connections">Connections → Suppliers</Link> first. It is free: make an account on cjdropshipping.com, then My CJ → Authorization → API → Generate key.</p> : <>
+          <form action={savePriceRule} className="panel" style={{ background: 'var(--cloth)', display: 'grid', gap: 10 }}>
+            <b>💲 Import settings</b>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'end' }}>
+              <div className="field" style={{ margin: 0 }}><label htmlFor="pr-mode">Price =</label><select id="pr-mode" name="mode" defaultValue={r.mode}>{PRICE_MODES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
+              <div className="field" style={{ margin: 0 }}><label htmlFor="pr-val">Value</label><input id="pr-val" name="value" type="number" step="0.01" min="0" defaultValue={r.value} style={{ width: 100 }} /></div>
+              <div className="field" style={{ margin: 0 }}><label htmlFor="pr-ship">Add CJ shipping to</label><select id="pr-ship" name="ship" defaultValue={r.ship}><option value="">Don’t add shipping</option>{[['US', 'USA'], ['MY', 'Malaysia'], ['BD', 'Bangladesh'], ['GB', 'UK'], ['SA', 'Saudi Arabia'], ['AE', 'UAE'], ['CA', 'Canada'], ['AU', 'Australia']].map(([c, n]) => <option key={c} value={c}>{n}</option>)}</select></div>
+            </div>
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+              <label className="sm" style={{ display: 'flex', gap: 6, alignItems: 'center' }}><input type="checkbox" name="round" defaultChecked={r.round} /> End prices in .99</label>
+              <label className="sm" style={{ display: 'flex', gap: 6, alignItems: 'center' }}><input type="checkbox" name="ai" defaultChecked={r.ai} disabled={!ai} /> ✨ AI rewrites name and description{!ai && ' (connect an AI first)'}</label>
+              <label className="sm" style={{ display: 'flex', gap: 6, alignItems: 'center' }}><input type="checkbox" name="live" defaultChecked={r.live} /> Show in the shop at once (off: hidden drafts)</label>
+              <label className="sm" style={{ display: 'flex', gap: 6, alignItems: 'center' }}><input type="checkbox" name="reprice" defaultChecked={r.reprice} /> When CJ’s cost changes, update my price by this rule</label>
+            </div>
+            <input type="hidden" name="cq" value={cq} /><div><button className="btn sm">Save settings</button></div>
+            <p className="muted sm" style={{ margin: 0 }}>Cost = CJ price{r.ship ? ' + cheapest CJ shipping' : ''}. For a $5 cost: ×2.5 → {$(applyRule(5, { ...r, mode: 'x', value: 2.5 }))} · 80% → {$(applyRule(5, { ...r, mode: 'pct', value: 80 }))} · +$6 → {$(applyRule(5, { ...r, mode: 'add', value: 6 }))}. You can also type your own price on any product.</p>
+          </form>
           <form className="src-search" method="get"><input type="hidden" name="tab" value="cj" /><input name="cq" required defaultValue={cq} placeholder="Search CJ, e.g. miswak, attar bottle, travel perfume" /><button className="btn orange">Search CJ</button></form>
           {err && <p className="err sm">{err}</p>}
-          {cq && !err && !hits.length && <p className="muted">Nothing found for “{cq}”.</p>}
-          {hits.length > 0 && <div className="src-grid">{hits.map(h => <div key={h.pid} className="src-card">
-            {h.image && <img src={h.image} alt="" loading="lazy" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 8 }} />}
-            <b className="sm">{h.name}</b>
-            <div className="src-money"><span>CJ cost {$(h.price)}</span><span className="muted">+ shipping</span></div>
-            <form action={importCj} className="src-import"><input type="hidden" name="pid" value={h.pid} />
-              <select name="category" aria-label="Category">{cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
-              <input name="markup" type="number" step="0.1" min="1" defaultValue={2.5} aria-label="Markup times cost" title="Price = cost × this" style={{ width: 70 }} />
-              <button className="btn sm orange">+ Import</button></form>
-          </div>)}</div>}
-          <p className="muted sm">Imported products start hidden. Open one, check the photos and price, use ✨ Write with AI for the description, then turn on Show in the store.</p>
+          {cq && !err && !hits.length && <p className="muted">Nothing {page > 1 ? 'more ' : ''}found for “{cq}”.</p>}
+          {hits.length > 0 && <form action={importCj} style={{ display: 'grid', gap: 12 }}>
+            <input type="hidden" name="cq" value={cq} /><input type="hidden" name="cpage" value={page} />
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', position: 'sticky', top: 0, zIndex: 2, background: 'var(--bg, #fff)', padding: '8px 0' }}>
+              <select name="category" aria-label="Collection for imports">{cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+              <button className="btn orange sm">⇩ Import ticked (up to 10)</button>
+              <span className="muted sm">Page {page} · {have.size ? `${have.size} already in your store` : 'tick the ones you want'}</span>
+            </div>
+            <div className="src-grid">{hits.map(h => { const mine = have.get(h.pid); return <div key={h.pid} className="src-card" style={mine ? { opacity: .75 } : undefined}>
+              {h.image && <img src={h.image} alt="" loading="lazy" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 8 }} />}
+              <label className="sm" style={{ display: 'flex', gap: 6, alignItems: 'start' }}>{!mine && <input type="checkbox" name="pids" value={h.pid} />}<b>{h.name}</b></label>
+              <div className="src-money"><span>CJ cost {$(h.price)}</span><span>Sells ~{$(applyRule(h.price, r))}{r.ship ? ' + ship' : ''}</span></div>
+              {mine ? <Link className="btn sm ghost" href={`/admin/products/${mine}`}>✓ In your store · Open</Link>
+                : <div className="src-import"><input name={`price-${h.pid}`} type="number" step="0.01" min="0" placeholder="Own $" aria-label="Your own price in USD (optional)" title="Leave empty to use the price rule" style={{ width: 80 }} />
+                  <button className="btn sm orange" name="one" value={h.pid}>+ Import</button></div>}
+            </div>; })}</div>
+            <div className="row2" style={{ gap: 8 }}>{page > 1 && <Link className="btn ghost sm" href={pageLink(page - 1)}>← Previous</Link>}{hits.length >= 20 && <Link className="btn ghost sm" href={pageLink(page + 1)}>Next page →</Link>}</div>
+          </form>}
+          <p className="muted sm">Open an imported product to check photos and price. ✨ Write with AI on the product page rewrites the text any time.</p>
         </>}
       </section>;
     })()}

@@ -55,6 +55,8 @@ model Product {
   // The supplier's variant ID or SKU (CJ "vid" or SKU); for email suppliers, their product code.
   supplierSku String       @default("")
   supplierUrl String       @default("")
+  // The supplier's own price for one unit, US cents, before shipping. Lets the CJ sync move cost (and price) by the real change.
+  supplierCost Int         @default(0)
   category   Category      @relation(fields: [categoryId], references: [id])
   categoryId String
   offer      Offer?
