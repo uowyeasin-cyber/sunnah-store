@@ -1370,3 +1370,9 @@ html,body{overflow-x:clip}
 .showcase.short .s-copy{padding-block:24px 72px;height:100%}
 .showcase.short .s-copy h1{font-size:clamp(1.8rem,4.5vw,3.2rem)}
 .showcase.sized .s-copy{height:100%}
+/* Long headlines on short desktop screens: size by screen height too, and never push text up under the menu */
+@media (min-width:901px){
+  .showcase .s-copy{justify-content:safe flex-end;padding-top:56px}
+  .showcase .s-copy h1{font-size:clamp(2.2rem,min(5.4vw,8.2vh),5.6rem);line-height:1.04}
+  .showcase .s-copy .lead{margin-top:16px}
+}
