@@ -3,8 +3,9 @@ import { redirect } from 'next/navigation';
 import { revalidateTag } from 'next/cache';
 import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
-import { applyRule, findIdeas, findSuppliers, getSourcing, PLATFORMS, saveFound, savePlatformSuppliers, saveSourcing, trendIdeas, type Idea } from '@/lib/sourcing';
+import { applyRule, COUNTRIES, findIdeas, findLocalShops, findSuppliers, getSourcing, PLATFORMS, saveFound, savePlatformSuppliers, saveShop, saveSourcing, TOP_COUNTRIES, trendIdeas, type Idea } from '@/lib/sourcing';
 import { getSettings } from '@/lib/catalog';
+import { draft, importOneCj } from '@/lib/sourcingImport';
 
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim();
 const go = (tab: string, extra = ''): never => redirect(`/admin/sourcing?tab=${tab}${extra}`);
@@ -15,11 +16,11 @@ export async function searchSourcing(fd: FormData) {
   const q = str(fd, 'q').slice(0, 120), max = Math.max(0, Number(str(fd, 'max')) || 0);
   if (!q) go('search');
   const s = await getSourcing();
-  const sellIn = Object.keys((await getSettings()).regions || {});
+  const sellIn = s.sellIn.length ? s.sellIn : Object.keys((await getSettings()).regions || {});
   const id = Date.now().toString(36);
-  let items: Idea[] = [], msg = '';
-  try { items = await findIdeas(q, max, s, sellIn); } catch (e) { msg = e instanceof Error ? e.message : 'AI search failed'; }
-  s.runs.unshift({ id, q, at: new Date().toISOString(), max, items, note: msg });
+  let items: Idea[] = [], msg = '', web = false;
+  try { ({ items, web } = await findIdeas(q, max, s, sellIn)); } catch (e) { msg = e instanceof Error ? e.message : 'AI search failed'; }
+  s.runs.unshift({ id, q, at: new Date().toISOString(), max, items, note: msg, web });
   await saveSourcing(s);
   go('search', `&run=${id}`);
 }
@@ -33,14 +34,46 @@ export async function savePlatforms(fd: FormData) {
   go('platforms', note(`${on.size} of ${PLATFORMS.length} platforms are searched.`));
 }
 
+// Buy from (supplier countries) and Sell in (customer countries): add, remove, clear, or pick all the suggested ones.
 export async function setBuyFrom(fd: FormData) {
-  await requireAdmin('sourcing', 'buy-from');
-  const s = await getSourcing(), c = str(fd, 'country'), what = str(fd, 'what');
-  if (what === 'clear') s.buyFrom = [];
-  else if (c && what === 'add' && !s.buyFrom.includes(c)) s.buyFrom.push(c);
-  else if (what === 'remove') s.buyFrom = s.buyFrom.filter(x => x !== c);
+  await requireAdmin('sourcing', 'countries');
+  const s = await getSourcing(), what = str(fd, 'what'), list = str(fd, 'list') === 'sellIn' ? 'sellIn' : 'buyFrom';
+  const typed = str(fd, 'country').toLowerCase(), c = COUNTRIES.find(x => x.name.toLowerCase() === typed)?.name || (TOP_COUNTRIES.find(x => x.toLowerCase() === typed) ?? '');
+  let v = s[list];
+  if (what === 'clear') v = [];
+  else if (what === 'all') v = [...new Set([...v, ...TOP_COUNTRIES])];
+  else if (what === 'remove') v = v.filter(x => x.toLowerCase() !== typed);
+  else if (c && !v.includes(c)) v = [...v, c];
+  s[list] = v.slice(0, 60);
   await saveSourcing(s);
-  go('search');
+  const run = str(fd, 'run');
+  go('search', `${run ? `&run=${run}` : ''}${typed && !c && what === 'add' ? note(`“${str(fd, 'country')}” is not a country name I know. Pick one from the list.`) : ''}`);
+}
+
+// Wholesalers and market shops without a website for a product: AI with Google Search, saved to Suppliers with a Google Maps link.
+export async function findShops(fd: FormData) {
+  const name = str(fd, 'name').slice(0, 120), run = str(fd, 'run');
+  await requireAdmin('sourcing', 'find-shops', name);
+  const s = await getSourcing();
+  let msg = '', n = 0;
+  try {
+    const r = await findLocalShops(name, s);
+    for (const sh of r.shops) { await saveShop(sh, name); n++; }
+    const at = s.runs.find(x => x.id === run);
+    if (at) at.shops = r.shops; else s.runs.unshift({ id: Date.now().toString(36), q: name, at: new Date().toISOString(), max: 0, items: [], note: '', web: r.web, shops: r.shops });
+    await saveSourcing(s);
+    msg = n ? `${n} shops for “${name}” saved in Suppliers with their Google Maps link${r.web ? '' : '. Connect Gemini for live Google results'}. Call before you order.` : 'No shops found that the AI was sure of. Try a simpler product name or pick a country.';
+  } catch (e) { msg = e instanceof Error ? e.message : 'AI failed'; }
+  go('search', `&run=${run || s.runs[0]?.id || ''}${note(msg)}`);
+}
+
+// What the weekly AI sourcing job may do by itself.
+export async function saveAutoSourcing(fd: FormData) {
+  await requireAdmin('sourcing', 'auto');
+  const s = await getSourcing();
+  s.auto = { ...s.auto, trend: fd.get('trend') === 'on', suppliers: fd.get('suppliers') === 'on', shops: fd.get('shops') === 'on', importCj: fd.get('importCj') === 'on' };
+  await saveSourcing(s);
+  go('search', note('Saved. The AI sourcing job runs once a week (Automation → AI sourcing).'));
 }
 
 const ideaFrom = (fd: FormData): Idea => JSON.parse(str(fd, 'idea') || '{}');
@@ -55,13 +88,6 @@ export async function favIdea(fd: FormData) {
   redirect(`/admin/sourcing?tab=${back}${run ? `&run=${run}` : ''}${note(has ? 'Removed from favourites.' : 'Saved to favourites.')}`);
 }
 
-async function draft(name: string, cost: number, price: number, details: string, categoryId: string) {
-  const base = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'product';
-  let slug = base, n = 1;
-  while (await db.product.findUnique({ where: { slug }, select: { id: true } })) slug = `${base}-${++n}`;
-  // Imported as hidden drafts: the owner adds photos and stock, then makes them live.
-  return db.product.create({ data: { slug, name, details, priceCents: Math.round(price * 100), costCents: Math.round(cost * 100), kind: 'gift', active: false, categoryId, sort: 999 } });
-}
 
 async function categoryId(fd: FormData) {
   const id = str(fd, 'category');
@@ -110,7 +136,7 @@ export async function bulkImport(fd: FormData) {
 export async function refreshTrend() {
   await requireAdmin('sourcing', 'trend');
   const s = await getSourcing();
-  try { s.trend = { at: new Date().toISOString(), items: await trendIdeas(s) }; } catch (e) { go('search', note(e instanceof Error ? e.message : 'AI failed')); }
+  try { const r = await trendIdeas(s); s.trend = { at: new Date().toISOString(), ...r }; } catch (e) { go('search', note(e instanceof Error ? e.message : 'AI failed')); }
   await saveSourcing(s);
   go('search');
 }
@@ -130,33 +156,6 @@ export async function aiSuppliers(fd: FormData) {
   redirect(`/admin/sourcing?tab=${back}${run ? `&run=${run}` : ''}${note(msg || (n ? `${n} suppliers for “${name}” saved in Suppliers with website, address, phone and email where found. Check them before you order.` : 'The AI found no suppliers it was sure of. Try a more specific product name.'))}`);
 }
 
-// Dropship tab: a CJ product becomes a product linked to CJ (first in-stock variant), with CJ photos, cost and stock,
-// priced by the rule (or the owner's own price). When a customer pays, Automation → Dropship orders sends the order to CJ.
-async function importOneCj(pid: string, categoryId: string, own: number, s: Awaited<ReturnType<typeof getSourcing>>) {
-  const { product, cheapestShipping } = await import('@/lib/cj');
-  const d = await product(pid);
-  const v = d.variants.find(x => x.stock > 0) || d.variants[0];
-  if (!v) throw new Error('This CJ product has no variants to sell');
-  const rule = s.price, base = v.price || d.price;
-  // Shipping is part of the cost, so the profit is real: CJ's cheapest line to the chosen country.
-  const ship = rule.ship ? (await cheapestShipping(rule.ship, [{ vid: v.vid, quantity: 1 }]).catch(() => null))?.logisticPrice || 0 : 0;
-  const cost = Math.round((base + ship) * 100) / 100;
-  const price = own > 0 ? Math.round(own * 100) / 100 : applyRule(cost, rule);
-  let supplier = await db.supplier.findFirst({ where: { api: 'cj' } });
-  if (!supplier) supplier = await db.supplier.create({ data: { name: 'CJ Dropshipping', api: 'cj', website: 'https://cjdropshipping.com', country: 'China', currency: 'USD', leadDays: 12, source: 'CJ API', notes: 'Dropship supplier. Orders are placed through the API and paid from the CJ balance.' } });
-  let text = { name: d.name.slice(0, 120), sub: v.name !== d.name ? v.name.slice(0, 80) : '', details: d.description };
-  if (rule.ai) {
-    const { aiWriteProduct } = await import('./aiWriteActions');
-    const r = await aiWriteProduct({ ...text, instruction: 'Rewrite this supplier listing for our shop: a short, clear product name without supplier words or keyword lists, a short line, and an honest premium description with 3 to 5 key points.', lang: 'English', keep: false }).catch(() => null);
-    if (r && !('error' in r)) text = r;
-  }
-  const p = await draft(text.name, cost, price, text.details, categoryId);
-  const n = Math.max(0, Math.min(999, v.stock));
-  const images = [...new Set([v.image, ...d.images].filter(u => /^https:\/\//.test(u)))].slice(0, 10);
-  await db.product.update({ where: { id: p.id }, data: { images, sub: text.sub, active: rule.live && images.length > 0, dropship: true, supplierId: supplier.id, supplierSku: v.vid, supplierUrl: `cj:${d.pid}`, supplierCost: Math.round(base * 100), stock: { BD: n, MY: n, US: n } } });
-  s.imported++;
-  return p.id;
-}
 
 // One product (its own Import button), or every ticked one (Import ticked). At most 10 at a time.
 export async function importCj(fd: FormData) {

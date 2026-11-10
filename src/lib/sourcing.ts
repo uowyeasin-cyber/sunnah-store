@@ -102,6 +102,14 @@ export const PLATFORMS: Platform[] = [
   { id: 'epb', name: 'Bangladesh EPB exporters', where: 'Bangladesh', domain: 'epb.gov.bd' },
 ];
 
+// Every country, with its flag, for the Buy from / Sell in pickers.
+const ISO2 = 'AF AL DZ AD AO AR AM AU AT AZ BH BD BY BE BJ BT BO BA BW BR BN BG BF BI KH CM CA CL CN CO CR HR CU CY CZ DK DJ DO EC EG SV EE ET FJ FI FR GA GM GE DE GH GR GT GN HT HN HK HU IS IN ID IR IQ IE IL IT CI JM JP JO KZ KE KW KG LA LV LB LY LT LU MO MG MW MY MV ML MT MR MU MX MD MC MN ME MA MZ MM NA NP NL NZ NI NE NG MK NO OM PK PS PA PG PY PE PH PL PT QA RO RU RW SA SN RS SG SK SI SO ZA KR ES LK SD SE CH SY TW TJ TZ TH TG TT TN TR TM UG UA AE GB US UY UZ VE VN YE ZM ZW'.split(' ');
+const names = (() => { try { return new Intl.DisplayNames(['en'], { type: 'region' }); } catch { return null; } })();
+const ALIAS: Record<string, string> = { Turkey: 'Türkiye', 'Hong Kong SAR China': 'Hong Kong', 'Macao SAR China': 'Macau', 'Myanmar (Burma)': 'Myanmar', 'Côte d’Ivoire': 'Ivory Coast', 'Palestinian Territories': 'Palestine' };
+export const COUNTRIES = ISO2.map(code => { const n = names?.of(code) || code; return { code, name: ALIAS[n] || n }; }).sort((a, b) => a.name.localeCompare(b.name));
+const flagOf = (code: string) => String.fromCodePoint(...[...code].map(c => 0x1f1e6 + c.charCodeAt(0) - 65));
+export const flag = (country: string) => { const c = COUNTRIES.find(x => x.name === country); return c ? flagOf(c.code) : '🌐'; };
+
 export const TOP_COUNTRIES = ['China', 'India', 'Vietnam', 'Bangladesh', 'Türkiye', 'Pakistan', 'Indonesia', 'Thailand', 'Malaysia', 'South Korea', 'Japan', 'Taiwan', 'Germany', 'Italy', 'United States', 'Mexico', 'United Arab Emirates', 'Poland'];
 
 export function searchUrl(p: Platform, q: string) {
@@ -110,7 +118,7 @@ export function searchUrl(p: Platform, q: string) {
 }
 
 export type Idea = { name: string; cat: string; cost: number; price: number; why: string; platforms: string[]; from: string };
-export type Run = { id: string; q: string; at: string; max: number; items: Idea[]; note: string };
+export type Run = { id: string; q: string; at: string; max: number; items: Idea[]; note: string; web?: boolean; shops?: Shop[] };
 // How imported dropship products are priced. cost = supplier price + (optional) cheapest shipping to `ship`.
 // ai: the AI rewrites the description on import. live: imports go straight into the shop. reprice: when CJ's cost changes, the price follows the rule.
 export type PriceRule = { mode: 'x' | 'pct' | 'add'; value: number; ship: string; round: boolean; ai: boolean; live: boolean; reprice: boolean };
@@ -123,12 +131,15 @@ export function applyRule(cost: number, r: PriceRule) {
   if (r.round) p = Math.ceil(p + 0.01) - 0.01;
   return Math.round(p * 100) / 100;
 }
-export type Sourcing = { off: string[]; buyFrom: string[]; favs: Idea[]; runs: Run[]; trend: { at: string; items: Idea[] } | null; imported: number; price: PriceRule };
+export type Sourcing = { off: string[]; buyFrom: string[]; sellIn: string[]; favs: Idea[]; runs: Run[]; trend: { at: string; items: Idea[]; web?: boolean } | null; imported: number; price: PriceRule;
+  // AI automation: what the weekly sourcing job may do by itself.
+  auto: { trend: boolean; suppliers: boolean; shops: boolean; importCj: boolean; lastRun: string; log: string[] } };
+export const defaultAuto = (): Sourcing['auto'] => ({ trend: true, suppliers: true, shops: true, importCj: false, lastRun: '', log: [] });
 
 export async function getSourcing(): Promise<Sourcing> {
   const r = await db.setting.findUnique({ where: { key: 'sourcing' } });
   const v = (r?.value as Partial<Sourcing>) || {};
-  return { off: v.off || [], buyFrom: v.buyFrom || [], favs: v.favs || [], runs: v.runs || [], trend: v.trend || null, imported: v.imported || 0, price: { ...defaultRule(), ...(v.price || {}) } };
+  return { off: v.off || [], buyFrom: v.buyFrom || [], sellIn: v.sellIn || [], favs: v.favs || [], runs: v.runs || [], trend: v.trend || null, imported: v.imported || 0, price: { ...defaultRule(), ...(v.price || {}) }, auto: { ...defaultAuto(), ...(v.auto || {}) } };
 }
 export async function saveSourcing(s: Sourcing) {
   const value = { ...s, runs: s.runs.slice(0, 20), favs: s.favs.slice(0, 60) } as object;
@@ -144,24 +155,26 @@ const clean = (x: Record<string, unknown>, live: Set<string>): Idea => ({
 
 // The AI suggests concrete products with a typical supplier cost and a selling price.
 // Prices are estimates; the platform buttons open real searches so the owner checks the live price.
-export async function findIdeas(q: string, max: number, s: Sourcing, sellIn: string[]): Promise<Idea[]> {
+export async function findIdeas(q: string, max: number, s: Sourcing, sellIn: string[]): Promise<{ items: Idea[]; web: boolean }> {
   const live = PLATFORMS.filter(p => !s.off.includes(p.id));
   const sys = `You are a sourcing buyer for a small online store selling worldwide (${sellIn.join(', ') || 'USA, Malaysia, Bangladesh'}). Suggest real, specific products that are easy to ship.
 Answer only JSON: {"items":[{"name":"...","cat":"category","cost_usd":0,"price_usd":0,"why":"one short line: why it sells","from":"where it is usually made, e.g. Yiwu, China","platforms":["platform ids"]}]}
 Give 12 items. cost_usd is a typical wholesale unit cost, price_usd a good retail price. Platform ids to choose from: ${live.map(p => `${p.id} (${p.where})`).join(', ')}.`;
   const user = `Products for: ${q}${max ? `. Max unit cost $${max}` : ''}${s.buyFrom.length ? `. Buy only from: ${s.buyFrom.join(', ')}` : ''}.`;
-  const out = await ask(sys, [{ role: 'user', content: user }], { maxTokens: 2500, json: true });
+  const out = await ask(sys + WEB, [{ role: 'user', content: user }], { maxTokens: 3000, json: true, web: true });
   const ids = new Set(live.map(p => p.id));
   const items = (parseJson<{ items: Record<string, unknown>[] }>(out.text)?.items || []).map(x => clean(x, ids)).filter(x => x.name);
-  return max ? items.filter(x => !x.cost || x.cost <= max) : items;
+  return { items: max ? items.filter(x => !x.cost || x.cost <= max) : items, web: !!out.web };
 }
 
-export async function trendIdeas(s: Sourcing): Promise<Idea[]> {
+// The world's best sellers right now, ranked: #1 sells the most. With Gemini it reads this week's best-seller lists first.
+export async function trendIdeas(s: Sourcing): Promise<{ items: Idea[]; web: boolean }> {
   const ids = new Set(PLATFORMS.filter(p => !s.off.includes(p.id)).map(p => p.id));
-  const out = await ask(`You track e-commerce trends worldwide. Answer only JSON: {"items":[{"name":"...","cat":"...","cost_usd":0,"price_usd":0,"why":"...","from":"main sourcing hub","platforms":["ids"]}]}. Platform ids: ${[...ids].join(', ')}.`,
-    [{ role: 'user', content: 'List the 20 product types selling best online worldwide right now, varied across categories, each easy to source and ship.' }], { maxTokens: 3000, json: true });
-  return (parseJson<{ items: Record<string, unknown>[] }>(out.text)?.items || []).map(x => clean(x, ids)).filter(x => x.name).slice(0, 20);
+  const out = await ask(`You track e-commerce sales worldwide (Amazon, TikTok Shop, Temu, AliExpress, Shopee best-seller lists and Google Trends). Answer only JSON: {"items":[{"name":"...","cat":"...","cost_usd":0,"price_usd":0,"why":"why it sells now, one line","from":"main sourcing hub, e.g. Yiwu, China","platforms":["ids"]}]}. Platform ids: ${[...ids].join(', ')}.${WEB}`,
+    [{ role: 'user', content: `List the 30 products selling the most online worldwide right now, ranked: the first sells the most. Varied across categories, each easy to source and ship.${s.sellIn.length ? ` We sell in: ${s.sellIn.join(', ')}.` : ''}` }], { maxTokens: 4000, json: true, web: true });
+  return { items: (parseJson<{ items: Record<string, unknown>[] }>(out.text)?.items || []).map(x => clean(x, ids)).filter(x => x.name).slice(0, 30), web: !!out.web };
 }
+const WEB = '\nIf you can search the web, use this week\'s real best-seller lists and supplier pages. Reply with the JSON only.';
 
 export const IDEAS: Record<string, string[]> = {
   'Islamic & gifts': ['Miswak sticks', 'Attar perfume oil', 'Prayer mat', 'Tasbih beads', 'Quran stand', 'Eid gift box'],
@@ -201,7 +214,7 @@ export async function savePlatformSuppliers(i: Idea) {
 export async function findSuppliers(product: string, s: Sourcing): Promise<FoundSupplier[]> {
   const out = await ask(`You are a sourcing agent. List real, well-known manufacturers, wholesalers or trading companies for the product. Only include companies you are confident exist. Use "" for any detail you are not sure of; never invent phone numbers or emails.
 Answer only JSON: {"suppliers":[{"name":"","country":"","city":"","address":"","website":"https://...","email":"","phone":"","contact":"","product_link":"https://..."}]}`,
-    [{ role: 'user', content: `Product: ${product}.${s.buyFrom.length ? ` Countries: ${s.buyFrom.join(', ')}.` : ''} Give up to 8 suppliers.` }], { maxTokens: 2500, json: true });
+    [{ role: 'user', content: `Product: ${product}.${s.buyFrom.length ? ` Countries: ${s.buyFrom.join(', ')}.` : ''} Give up to 8 suppliers.${WEB}` }], { maxTokens: 2500, json: true, web: true });
   const list = parseJson<{ suppliers: Record<string, string>[] }>(out.text)?.suppliers || [];
   const url = (u: string) => /^https?:\/\/[^\s]+\.[a-z]{2,}/i.test(u || '') ? u : '';
   return list.filter(x => x.name).slice(0, 8).map(x => ({
@@ -210,3 +223,83 @@ Answer only JSON: {"suppliers":[{"name":"","country":"","city":"","address":"","
     source: 'Global sourcing (AI)', notes: `Found by AI for “${product}”. Check the details on their website before you order.`,
   }));
 }
+
+// ── Suppliers without a website: wholesale markets and shops, found on Google Maps ──
+export const mapsSearch = (q: string) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+export type Market = { name: string; city: string; country: string; kind: string; good: string };
+// The world's big wholesale markets and fairs. Each opens Google Maps at the shops selling the product there.
+export const MARKETS: Market[] = [
+  { name: 'Yiwu International Trade City (Futian Market)', city: 'Yiwu', country: 'China', kind: 'Wholesale market', good: 'small goods, gifts, toys, jewellery, home, Islamic items, packaging, perfume bottles' },
+  { name: 'Canton Fair (China Import and Export Fair)', city: 'Guangzhou', country: 'China', kind: 'Trade fair', good: 'factories of every kind, twice a year' },
+  { name: 'Baima Clothing Market', city: 'Guangzhou', country: 'China', kind: 'Wholesale market', good: 'clothing, fashion, modest wear' },
+  { name: 'Shahe Clothing Wholesale Market', city: 'Guangzhou', country: 'China', kind: 'Wholesale market', good: 'cheap clothing in bulk' },
+  { name: 'Baiyun World Leather Trading Center', city: 'Guangzhou', country: 'China', kind: 'Wholesale market', good: 'bags, wallets, leather, belts' },
+  { name: 'Huaqiangbei Electronics Market', city: 'Shenzhen', country: 'China', kind: 'Wholesale market', good: 'electronics, gadgets, phone accessories, power banks' },
+  { name: 'China Textile City (Keqiao)', city: 'Shaoxing', country: 'China', kind: 'Wholesale market', good: 'fabric, textiles, hijab fabric' },
+  { name: 'Jinjiang shoe factories', city: 'Jinjiang', country: 'China', kind: 'Factory town', good: 'shoes, sports shoes, slippers' },
+  { name: 'Hong Kong trade fairs (HKTDC)', city: 'Hong Kong', country: 'Hong Kong', kind: 'Trade fair', good: 'electronics, gifts, jewellery, watches' },
+  { name: 'Dongdaemun Market', city: 'Seoul', country: 'South Korea', kind: 'Wholesale market', good: 'Korean fashion, accessories' },
+  { name: 'Namdaemun Market', city: 'Seoul', country: 'South Korea', kind: 'Wholesale market', good: 'accessories, kitchenware, Korean beauty' },
+  { name: 'Pratunam Market', city: 'Bangkok', country: 'Thailand', kind: 'Wholesale market', good: 'clothing, fashion' },
+  { name: 'Chatuchak Weekend Market', city: 'Bangkok', country: 'Thailand', kind: 'Market', good: 'handicrafts, home decor, clothing' },
+  { name: 'Tanah Abang Market', city: 'Jakarta', country: 'Indonesia', kind: 'Wholesale market', good: 'Muslim fashion, hijab, textiles' },
+  { name: 'Binh Tay Market', city: 'Ho Chi Minh City', country: 'Vietnam', kind: 'Wholesale market', good: 'household goods, food, clothing' },
+  { name: 'Dong Xuan Market', city: 'Hanoi', country: 'Vietnam', kind: 'Wholesale market', good: 'clothing, household goods' },
+  { name: 'Divisoria Market', city: 'Manila', country: 'Philippines', kind: 'Wholesale market', good: 'cheap goods, toys, fabric' },
+  { name: 'Kenanga Wholesale City', city: 'Kuala Lumpur', country: 'Malaysia', kind: 'Wholesale mall', good: 'fashion, baju kurung, hijab' },
+  { name: 'Jalan Masjid India', city: 'Kuala Lumpur', country: 'Malaysia', kind: 'Market street', good: 'Islamic items, attar, prayer mats, textiles' },
+  { name: 'Chawkbazar', city: 'Dhaka', country: 'Bangladesh', kind: 'Wholesale market', good: 'cosmetics, attar, plastic goods, toys, packaging, everything small' },
+  { name: 'Islampur Cloth Market', city: 'Dhaka', country: 'Bangladesh', kind: 'Wholesale market', good: 'fabric, sarees, three-piece, textiles' },
+  { name: 'Bangabazar and Gulistan', city: 'Dhaka', country: 'Bangladesh', kind: 'Wholesale market', good: 'clothing, export surplus garments' },
+  { name: 'Nawabpur Road', city: 'Dhaka', country: 'Bangladesh', kind: 'Wholesale market', good: 'electrical, hardware, machinery parts' },
+  { name: 'Baitul Mukarram Market', city: 'Dhaka', country: 'Bangladesh', kind: 'Market', good: 'Islamic items, attar, tasbih, electronics' },
+  { name: 'Sadar Bazaar', city: 'Delhi', country: 'India', kind: 'Wholesale market', good: 'toys, household, stationery, gifts' },
+  { name: 'Gandhi Nagar Market', city: 'Delhi', country: 'India', kind: 'Wholesale market', good: 'readymade garments' },
+  { name: 'Chandni Chowk', city: 'Delhi', country: 'India', kind: 'Wholesale market', good: 'textiles, attar (Dariba), spices, jewellery' },
+  { name: 'Crawford Market', city: 'Mumbai', country: 'India', kind: 'Wholesale market', good: 'imported goods, home, perfumes' },
+  { name: 'Surat Textile Market', city: 'Surat', country: 'India', kind: 'Wholesale market', good: 'sarees, dress material, synthetic fabric' },
+  { name: 'Kannauj attar makers', city: 'Kannauj', country: 'India', kind: 'Factory town', good: 'attar and natural perfume oils' },
+  { name: 'Moradabad brass market', city: 'Moradabad', country: 'India', kind: 'Factory town', good: 'brass, metal handicrafts, home decor' },
+  { name: 'Shah Alam Market', city: 'Lahore', country: 'Pakistan', kind: 'Wholesale market', good: 'cosmetics, toys, household, everything small' },
+  { name: 'Bolton Market', city: 'Karachi', country: 'Pakistan', kind: 'Wholesale market', good: 'fabric, household goods' },
+  { name: 'Sialkot manufacturers', city: 'Sialkot', country: 'Pakistan', kind: 'Factory town', good: 'sports goods, leather, surgical tools' },
+  { name: 'Dragon Mart', city: 'Dubai', country: 'United Arab Emirates', kind: 'Wholesale mall', good: 'Chinese goods for the Gulf, home, electronics' },
+  { name: 'Murshid Bazaar (Deira)', city: 'Dubai', country: 'United Arab Emirates', kind: 'Wholesale market', good: 'perfume, oud, abaya, textiles' },
+  { name: 'Grand Bazaar', city: 'Istanbul', country: 'Türkiye', kind: 'Market', good: 'lamps, ceramics, carpets, jewellery' },
+  { name: 'Laleli wholesale district', city: 'Istanbul', country: 'Türkiye', kind: 'Wholesale market', good: 'fashion, modest wear, textiles' },
+  { name: 'Merter textile district', city: 'Istanbul', country: 'Türkiye', kind: 'Wholesale market', good: 'clothing manufacturers' },
+  { name: 'Los Angeles Fashion District (Santee Alley)', city: 'Los Angeles', country: 'United States', kind: 'Wholesale market', good: 'fashion, accessories' },
+  { name: 'Broadway wholesale district', city: 'New York', country: 'United States', kind: 'Wholesale market', good: 'accessories, perfume, general merchandise' },
+  { name: 'Tepito Market', city: 'Mexico City', country: 'Mexico', kind: 'Market', good: 'clothing, electronics, general goods' },
+  { name: 'Rua 25 de Março', city: 'São Paulo', country: 'Brazil', kind: 'Wholesale market', good: 'small goods, toys, accessories' },
+  { name: 'Balogun Market', city: 'Lagos', country: 'Nigeria', kind: 'Wholesale market', good: 'fabric, clothing, shoes' },
+  { name: 'Merkato', city: 'Addis Ababa', country: 'Ethiopia', kind: 'Wholesale market', good: 'everything, coffee, spices' },
+  { name: 'Gikomba Market', city: 'Nairobi', country: 'Kenya', kind: 'Market', good: 'second-hand clothes, furniture' },
+];
+// Markets for a product: the ones whose speciality matches the words first, then the chosen countries.
+export function marketsFor(q: string, countries: string[]) {
+  const words = q.toLowerCase().split(/\W+/).filter(w => w.length > 2);
+  const score = (m: Market) => words.filter(w => m.good.includes(w) || m.name.toLowerCase().includes(w)).length * 10 + (countries.includes(m.country) ? 5 : 0) + (/everything|small goods/.test(m.good) ? 1 : 0);
+  return MARKETS.filter(m => !countries.length || countries.includes(m.country)).map(m => [m, score(m)] as const).sort((a, b) => b[1] - a[1]).map(([m]) => m);
+}
+
+export type Shop = { name: string; market: string; address: string; city: string; country: string; phone: string; email: string; whatsapp: string; good: string; maps: string };
+// AI looks up real wholesalers and factory shops, mostly ones without a website (Google Maps listings, market shops).
+export async function findLocalShops(product: string, s: Sourcing): Promise<{ shops: Shop[]; web: boolean }> {
+  const where = s.buyFrom.length ? s.buyFrom.join(', ') : 'the best sourcing countries for it';
+  const out = await ask(`You are a sourcing agent who finds offline suppliers: wholesale shops, market stalls and small factories, mostly without a website, the kind found on Google Maps.
+Only list businesses you found or are confident exist. Use "" for any detail you are not sure of; never invent phone numbers, emails or addresses.
+Answer only JSON: {"shops":[{"name":"","market":"market or area","address":"street address","city":"","country":"","phone":"with country code","email":"","whatsapp":"","good_for":"what they are best for, one line"}]}${WEB}`,
+    [{ role: 'user', content: `Product: ${product}. Where: ${where}. Give up to 12 wholesalers or shops.` }], { maxTokens: 3000, json: true, web: true });
+  const list = parseJson<{ shops: Record<string, string>[] }>(out.text)?.shops || [];
+  const tel = (v: string) => String(v || '').replace(/[^\d+()\- ]/g, '').trim().slice(0, 30);
+  const shops = list.filter(x => x.name).slice(0, 12).map(x => {
+    const sh = { name: String(x.name).slice(0, 120), market: String(x.market || ''), address: String(x.address || ''), city: String(x.city || ''), country: String(x.country || ''), phone: tel(x.phone), whatsapp: tel(x.whatsapp),
+      email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x.email || '') ? x.email : '', good: String(x.good_for || x.good || '').slice(0, 160), maps: '' };
+    sh.maps = mapsSearch([sh.name, sh.market, sh.address, sh.city, sh.country].filter(Boolean).join(', '));
+    return sh;
+  });
+  return { shops, web: !!out.web };
+}
+// A shop found on Google Maps becomes a supplier (with its Maps link), or adds to the one already saved.
+export const saveShop = (sh: Shop, product: string) => saveFound({ name: sh.name, country: sh.country, address: [sh.address, sh.market, sh.city].filter(Boolean).join(', '), website: '', email: sh.email, phone: sh.phone || sh.whatsapp, contact: sh.whatsapp ? `WhatsApp ${sh.whatsapp}` : '', links: [sh.maps], source: 'Market shop (AI, Google Maps)', notes: `Good for: ${sh.good || product}. Found for “${product}”. No website: check on Google Maps and call before you order.` });

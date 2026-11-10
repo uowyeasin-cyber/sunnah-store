@@ -12,6 +12,7 @@ export const JOBS = [
   { id: 'reviews', name: 'AI review check', does: 'New customer reviews are read by the AI: real ones go live by themselves, spam and abuse are hidden. Off: they wait for you in Reviews.', modes: ['off', 'auto'] as Mode[], def: 'off' as Mode },
   { id: 'aiDaily', name: 'AI co-worker daily check', does: 'Every day the AI looks at sales, stock and offers and fixes what it can: a flash sale on slow products, a coupon, hiding sold-out items, better product text. Ask me first shows its plan in AI co-worker.', modes: ['off', 'approve', 'auto'] as Mode[], def: 'off' as Mode },
   { id: 'aiSeo', name: 'AI SEO', does: 'Writes Google titles and descriptions for new products that have none yet.', modes: ['off', 'auto'] as Mode[], def: 'off' as Mode },
+  { id: 'aiSourcing', name: 'AI sourcing', does: 'Once a week the AI updates the world best-sellers list in Sourcing, finds suppliers with websites and market shops without one (Google Maps, phone, email) for the top products and saves them in Suppliers, and can import the closest CJ products as hidden drafts. It never buys anything. Choose what it does in Sourcing → AI sourcing on autopilot.', modes: ['off', 'auto'] as Mode[], def: 'auto' as Mode },
   { id: 'aiWeekly', name: 'Weekly AI business report', does: 'Every Monday the AI emails the owners what went well, what did not, and the 5 best next steps.', modes: ['off', 'auto'] as Mode[], def: 'off' as Mode },
 ] as const;
 export type JobId = (typeof JOBS)[number]['id'];
