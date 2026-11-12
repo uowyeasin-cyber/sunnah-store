@@ -37,6 +37,7 @@ export type Settings = {
   rates: Rates; // 1 USD in each currency
   admins: string[]; // up to ten emails that open the admin panel
   roles: Record<string, string>; // admin email → role (lib/roles); missing means owner
+  alertsOff: string[]; // admin emails whose store alert emails are switched off (lib/roles alertEmails)
   holdReviews: boolean;
   allowVideoReviews: boolean;
   manualPay: ManualPay[];
@@ -73,6 +74,7 @@ export const DEFAULT_SETTINGS: Settings = {
   rates: { USD: 1, MYR: 4.7, BDT: 120 },
   admins: ['', '', '', '', ''],
   roles: {},
+  alertsOff: [],
   holdReviews: true,
   allowVideoReviews: true,
   preorder: { on: true, ships: 'Ships in 4–6 weeks' },

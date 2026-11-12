@@ -34,6 +34,11 @@ body:has(.adm)::before{display:none}
 .adm-me .acts{display:flex;gap:14px;margin-top:7px;padding-left:2px}
 .adm-me .acts a,.adm-me .acts button{background:none;border:0;padding:0;color:#94a3b8;font-size:.76rem;text-decoration:none;cursor:pointer}
 .adm-me .acts a:hover,.adm-me .acts button:hover{color:#fff}
+.adm-me .alerts button{display:flex;align-items:center;gap:8px;margin-top:8px;background:none;border:0;padding:0 2px;color:#94a3b8;font-size:.76rem;cursor:pointer}
+.adm-me .alerts button:hover{color:#fff}
+.adm-me .sw{width:26px;height:15px;border-radius:9px;background:#334155;position:relative;flex:none;transition:background .2s}
+.adm-me .sw::after{content:'';position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:#fff;transition:transform .2s}
+.adm-me .sw.on{background:#16a34a}.adm-me .sw.on::after{transform:translateX(11px)}
 .adm-top{display:none}
 
 /* main canvas */

@@ -15,3 +15,10 @@ export const isRole = (r: unknown): r is Role => typeof r === 'string' && r in R
 // Admins saved before roles existed have no role yet and stay owners.
 export const roleOf = (email: string, roles: Record<string, string> | undefined): Role => { const r = roles?.[email.toLowerCase()]; return isRole(r) ? r : 'owner'; };
 export const canUse = (role: Role, area: Area) => (ROLES[role].areas as readonly Area[]).includes(area);
+
+// The main owner is the first email in the admin list. Only they can switch other admins' alert emails.
+export const mainOwner = (admins: string[]) => (admins.find(Boolean) || '').toLowerCase();
+export const alertsOn = (email: string, off: string[] | undefined) => !(off || []).includes(email.toLowerCase());
+// Who gets store alert emails (seller wanted, reminders, daily summary, stock): owners whose switch is on.
+export const alertEmails = (s: { admins: string[]; roles: Record<string, string>; alertsOff?: string[] }) =>
+  s.admins.filter(e => e && roleOf(e, s.roles) === 'owner' && alertsOn(e, s.alertsOff));
