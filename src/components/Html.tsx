@@ -9,6 +9,7 @@ const SCRIPT: Partial<Record<Lang, [string, string]>> = { bn: ['Noto Serif Benga
 const FACE: Record<string, string> = {
   'Cormorant Garamond': 'Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400', 'Bodoni Moda': 'Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400',
   Marcellus: 'Marcellus', Jost: 'Jost:wght@300;400;500', Manrope: 'Manrope:wght@300;400;500',
+  'Playfair Display': 'Playfair+Display:ital,wght@0,400;0,500;1,400', Poppins: 'Poppins:wght@300;400;500;600', Inter: 'Inter:wght@300;400;500',
 };
 
 export default async function Html({ lang, children }: { lang: Lang; children: React.ReactNode }) {

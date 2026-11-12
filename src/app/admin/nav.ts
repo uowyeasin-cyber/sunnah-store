@@ -34,7 +34,7 @@ export const NAV: { title: string; items: Item[] }[] = [
     { area: 'earn', label: 'Earn money (ads)', icon: 'coins' },
   ] },
   { title: 'Settings', items: [
-    { area: 'settings', label: 'Store & theme', icon: 'palette', also: [['homepage', 'Home page'], ['menu', 'Menu bar']] },
+    { area: 'settings', label: 'Store & theme', icon: 'palette', also: [['templates', 'Site templates'], ['homepage', 'Home page'], ['menu', 'Menu bar']] },
     { area: 'payments', label: 'Payments & languages', icon: 'map', also: [['languages', 'Languages'], ['connections', 'Connections (keys)']] },
     { area: 'team', label: 'Admins', icon: 'key' },
     { area: 'licenses', label: 'App licenses', icon: 'coins' },

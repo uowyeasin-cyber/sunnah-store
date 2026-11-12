@@ -14,7 +14,7 @@ mkdir -p "$DEST" "$OUT"
 git archive HEAD | tar -x -C "$DEST"
 
 # 1. Drop files that belong to this repo only.
-rm -rf "$DEST/sale" "$DEST/AGENTS.md" "$DEST/README.md"
+rm -rf "$DEST/sale" "$DEST/dist-sale" "$DEST/AGENTS.md" "$DEST/README.md"
 # The license server, its admin page and the download page stay on the seller's site only.
 rm -rf "$DEST/src/lib/licenses.ts" "$DEST/src/app/api/license" "$DEST/src/app/admin/licenses" "$DEST/src/app/[lang]/get-app" "$DEST/public/download"
 perl -ni -e "print unless /area: 'licenses'/" "$DEST/src/app/admin/nav.ts"
@@ -34,6 +34,7 @@ perl -0pi -e 's/\n  if \(!\(await db\.review\.count\(\)\)\) \{.*?\n  \}\n/\n/s' 
 
 # 4. Add the buyer docs (README, INSTALL, .env.example, LICENSE, CHANGELOG).
 cp -r sale/package/. "$DEST/"
+mv "$DEST/env.example" "$DEST/.env.example"
 rm -f "$DEST/version.json"
 
 # 5. Safety check: nothing personal or secret left behind.
@@ -53,3 +54,5 @@ grep -q "await licenseGate" "$DEST/src/proxy.ts" && grep -q "api|go/" "$DEST/src
 mv "$WORK/$NAME.zip" "$OUT/"
 rm -rf "$WORK"
 echo "Made $OUT/$NAME.zip"
+# Same file for the public download page (/get-app) when asked: bash sale/make-package.sh dist-sale --public
+if [ "${2:-}" = "--public" ]; then cp "$OUT/$NAME.zip" public/download/storefront-pro.zip; echo "Copied to public/download/storefront-pro.zip"; fi
