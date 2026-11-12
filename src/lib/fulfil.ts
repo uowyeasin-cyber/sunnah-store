@@ -1,7 +1,7 @@
 import 'server-only';
 import { db } from './db';
 import { sendMail } from './mail';
-import { payReward } from './credit';
+import { payReward, payShareReward } from './credit';
 import { bookerFor, loadKeys, track } from './couriers';
 import { getSettings } from './catalog';
 import { DELIVERED, STEPS } from './tracking';
@@ -17,7 +17,7 @@ export async function advance(id: string, step: number, data: Record<string, unk
   if (moved) events.push({ at: new Date().toISOString(), step, note: STEPS[step] });
   await db.$transaction(async tx => {
     await tx.order.update({ where: { id }, data: { ...data, status: step, events } });
-    if (step === DELIVERED) await payReward(tx, o);
+    if (step === DELIVERED) { await payReward(tx, o); await payShareReward(tx, o); }
   });
   if (moved && !quiet && step >= 3) await sendMail(o.email, `Order ${o.no}: ${STEPS[step]}`, `${STEPS[step]}.\n\nTrack it here: ${site()}/order/${o.id}`).catch(e => console.error('status mail failed', e));
 }

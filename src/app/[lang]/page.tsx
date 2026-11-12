@@ -11,6 +11,7 @@ import Art from '@/components/Art';
 import Reviews from '@/components/Reviews';
 import AdSeen from '@/components/AdSeen';
 import { adLive, AdSlot } from '@/components/Ads';
+import { SaleBanner } from '@/components/Sale';
 import NetAds from '@/components/NetAds';
 import Trust from '@/components/Trust';
 import ForYou from '@/components/ForYou';
@@ -53,6 +54,7 @@ export default async function Home({ params }: PageProps<'/[lang]'>) {
             </Link>))}
         </div></div>
       </section>}
+      <SaleBanner place="home" />
       <AdSlot ads={ads} place="home-top" products={products} brand={brand} />
       <NetAds place="home-top" />
       <section className="wrap" id="allgrid">

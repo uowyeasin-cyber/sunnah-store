@@ -16,6 +16,8 @@ export const NAV: { title: string; items: Item[] }[] = [
     { area: 'channels', label: 'Sales channels', icon: 'globe' },
     { area: 'categories', label: 'Categories', icon: 'folder' },
     { area: 'offers', label: 'Offers & coupons', icon: 'tag' },
+    { area: 'sales', label: 'Sale campaigns (11.11)', icon: 'flame' },
+    { area: 'share', label: 'Share & earn', icon: 'share' },
     { area: 'reviews', label: 'Reviews & loyalty', icon: 'star', also: [['loyalty', 'Loyalty points']] },
   ] },
   { title: 'Source', items: [
@@ -70,5 +72,7 @@ export const ICONS: Record<string, string> = {
   bot: 'M5 9h14v10H5zM12 5v4M9 13h.01M15 13h.01M3 13v3M21 13v3',
   store: 'M4 9l1-5h14l1 5M4 9v11h16V9M4 9h16M9 20v-6h6v6',
   clock: 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 2',
+  flame: 'M12 3c1 3 4 5 4 9a4 4 0 01-8 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 0-8zM6 14a6 6 0 0012 0',
+  share: 'M18 8a3 3 0 100-6 3 3 0 000 6zM6 15a3 3 0 100-6 3 3 0 000 6zM18 22a3 3 0 100-6 3 3 0 000 6zM8.6 13.5l6.8 4M15.4 6.5l-6.8 4',
   coins: 'M12 8c4.4 0 8-1.3 8-3s-3.6-3-8-3-8 1.3-8 3 3.6 3 8 3zM4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3',
 };

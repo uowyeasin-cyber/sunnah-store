@@ -9,19 +9,19 @@ type Sort = 'featured' | 'low' | 'high' | 'new';
 
 // Filters and sorting over a product list, all in the browser so it is instant.
 export default function ShopBrowser({ products, cats, brand, empty }: { products: CardProduct[]; cats?: { slug: string; name: string }[]; brand?: string; empty: string }) {
-  const { t } = useStore();
+  const { t, pctFor } = useStore();
   const [cat, setCat] = useState('');
   const [sort, setSort] = useState<Sort>('featured');
   const [offer, setOffer] = useState(false);
   const hasOffers = products.some(p => p.offer);
   const list = useMemo(() => {
-    const price = (p: CardProduct) => unitCents(p.priceCents, p.offer?.pct || 0);
+    const price = (p: CardProduct) => unitCents(p.priceCents, pctFor(p));
     const l = products.filter(p => (!cat || p.cats.includes(cat)) && (!offer || p.offer));
     if (sort === 'low') return [...l].sort((a, b) => price(a) - price(b));
     if (sort === 'high') return [...l].sort((a, b) => price(b) - price(a));
     if (sort === 'new') return [...l].reverse();
     return l;
-  }, [products, cat, sort, offer]);
+  }, [products, cat, sort, offer, pctFor]);
   const usedCats = cats?.filter(c => products.some(p => p.cats.includes(c.slug))) || [];
   return <>
     {(usedCats.length > 1 || products.length > 1) && <div className="shop-filters">

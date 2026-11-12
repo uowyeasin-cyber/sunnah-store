@@ -17,6 +17,8 @@ import Pixels from '@/components/Pixels';
 import NetAds, { NetHead } from '@/components/NetAds';
 import { getEarn } from '@/lib/earn';
 import Share from '@/components/Share';
+import { SaleBar, SalePopup } from '@/components/Sale';
+import { shareCfg } from '@/lib/promo';
 import { getSeo } from '@/lib/seo';
 import { ldJson, OG_LOCALE, siteUrl } from '@/lib/seoUrls';
 import '../globals.css';
@@ -55,7 +57,7 @@ export default async function StoreLayout({ children, params }: LayoutProps<'/[l
   const pop = live.find(a => a.place === 'popup');
   return (
     <Html lang={lang}>
-      <StoreProvider products={products} rates={s.rates} lang={lang} dict={dict} pre={s.preorder?.on ? s.preorder.ships || 'Pre-order' : ''}>
+      <StoreProvider products={products} rates={s.rates} lang={lang} dict={dict} pre={s.preorder?.on ? s.preorder.ships || 'Pre-order' : ''} sales={(s.sales || []).filter(e => e.on)} share={shareCfg(s.share)}>
         <a className="skip" href="#main">{t('Skip to content')}</a>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson({ '@context': 'https://schema.org', '@graph': [
           { '@type': 'Organization', '@id': `${siteUrl()}/#org`, name: s.store.name, url: siteUrl(), ...(seo.ogImage ? { logo: seo.ogImage } : {}) },
@@ -63,6 +65,7 @@ export default async function StoreLayout({ children, params }: LayoutProps<'/[l
             potentialAction: { '@type': 'SearchAction', target: { '@type': 'EntryPoint', urlTemplate: `${siteUrl()}/shop?q={search_term_string}` }, 'query-input': 'required name=search_term_string' } },
         ] }) }} />
         {s.store.announce && <div className="announce">{s.store.announce}</div>}
+        <SaleBar />
         <Header name={s.store.name} nav={s.nav} ticker={ticker} />
         <main id="main">{children}</main>
         <NetAds place="footer" />
@@ -87,6 +90,7 @@ export default async function StoreLayout({ children, params }: LayoutProps<'/[l
           <div className="pop-copy">{pop.kicker && <div className="kicker">{pop.kicker}</div>}<h2>{pop.title}</h2>{pop.text && <p>{pop.text}</p>}
             <AdCta ad={pop} className={`btn ${pop.style === 'light' ? '' : 'brass'}`} /><button className="link-arrow" data-close style={{ border: 0, background: 'none' }}>{t('No thanks')}</button></div>
         </AdPopup>}
+        <SalePopup />
         <Motion />
       </StoreProvider>
     </Html>

@@ -27,7 +27,7 @@ export default function BuyBox({ p, finishes, soldOut = false }: { p: CardProduc
   }, []);
   const addNow = (el: Element | null) => { flyToBag(el); add(p.slug, qty); toast(t('{x} added to your bag', { x: p.name })); open('bag'); };
   return <>
-    <div className="big-price"><Price cents={p.priceCents} pct={o?.pct} /></div>
+    <div className="big-price"><Price cents={p.priceCents} p={p} /></div>
     {o && <div className="offer-box">{o.label}. {t('Applied at checkout automatically.')}</div>}
     {finishes.length > 1 && <div><div className="label">{t('Finish')} · {p.sub}</div><div className="swatches">{finishes.map(x => <Link key={x.slug} className={`sw ${x.slug === p.slug ? 'on' : ''}`} href={`/p/${x.slug}`} style={{ background: x.swatch || 'var(--cloth)' }} aria-label={x.sub} />)}</div></div>}
     {p.kind === 'pen' && <div className="fit"><div><div className="label">{t('Fit check')}</div><div className="serif" style={{ fontSize: '1.35rem', marginTop: 4 }}>{t('Will your stick fit?')}</div></div>
@@ -43,7 +43,7 @@ export default function BuyBox({ p, finishes, soldOut = false }: { p: CardProduc
       <button className="btn ghost" onClick={() => { add(p.slug, qty); router.push('/checkout'); }}>{t(pre ? 'Pre-order now' : 'Buy now')}</button>
     </div>}
     {!soldOut && <div className={`buybar ${bar ? 'show' : ''}`} aria-hidden={!bar}>
-      <div className="bb-name"><b>{p.name}</b><span><Price cents={p.priceCents} pct={o?.pct} /></span></div>
+      <div className="bb-name"><b>{p.name}</b><span><Price cents={p.priceCents} p={p} /></span></div>
       <button className="btn sm" tabIndex={bar ? 0 : -1} onClick={() => addNow(document.querySelector('.pdp .stage'))}>{t(pre ? 'Pre-order' : 'Add to bag')}</button>
     </div>}
   </>;

@@ -9,6 +9,9 @@ export function proxy(req: NextRequest) {
   const cc = req.headers.get('x-vercel-ip-country');
   if (cc && /^[A-Z]{2}$/.test(cc) && req.cookies.get('pm-cc')?.value !== cc) res.cookies.set('pm-cc', cc, { path: '/', maxAge: 2592000, sameSite: 'lax' });
   if (!req.cookies.get('pm-src')) res.cookies.set('pm-src', sourceOf(req), { path: '/', maxAge: 2592000, sameSite: 'lax' });
+  // Share & earn: a friend's shared link (?r=code). The newest link wins; kept 30 days.
+  const ref = req.nextUrl.searchParams.get('r');
+  if (ref && /^[A-Za-z0-9]{4,16}$/.test(ref)) res.cookies.set('pm-ref', ref, { path: '/', maxAge: 2592000, sameSite: 'lax', httpOnly: true });
   return res;
 }
 

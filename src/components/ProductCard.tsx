@@ -60,7 +60,7 @@ export default function ProductCard({ p, brand }: { p: CardProduct; brand?: stri
       </div>
       <Link className="row" href={`/p/${p.slug}`}>
         <div><h3>{p.name}</h3><div className="sub">{p.sub}</div></div>
-        <div className="price"><Price cents={p.priceCents} pct={p.offer?.pct} /></div>
+        <div className="price"><Price cents={p.priceCents} p={p} /></div>
       </Link>
     </article>
   );

@@ -4,7 +4,9 @@ import { db } from '@/lib/db';
 import { currentCustomer } from '@/lib/auth';
 import { formatAmount, type Currency } from '@/lib/money';
 import { STEPS } from '@/lib/tracking';
-import { getDict } from '@/lib/catalog';
+import { getDict, getSettings } from '@/lib/catalog';
+import { shareCfg } from '@/lib/promo';
+import ShareEarn from '@/components/ShareEarn';
 import { isLang, makeT, type Lang } from '@/lib/i18n';
 import Reorder from '@/components/Reorder';
 import ProfileForm from '@/components/ProfileForm';
@@ -45,6 +47,13 @@ async function Body({ lang }: { lang: Lang }) {
     <section className="panel"><div className="kicker">{t('Store credit')}</div><h3 style={{ margin: 0 }}>{formatAmount(Number(c.credit), cur)}</h3>
       {ledger.length ? ledger.map(e => <div className="sum-row" key={e.id}><span>{t(e.note)}<br /><small className="muted">{day(e.createdAt)}</small></span><span>{Number(e.amount) > 0 ? '+' : '−'}{formatAmount(Math.abs(Number(e.amount)), cur)}</span></div>) : <p className="muted">{t('Credit from rewards and refunds shows here.')}</p>}
     </section>
+    {shareCfg((await getSettings()).share).on && <section className="panel"><div className="kicker">{t('Share and earn')}</div>
+      {await (async () => { const r = await db.order.groupBy({ by: ['status'], where: { referrer: c.id, payStatus: { notIn: ['failed', 'refunded', 'cancelled'] } }, _count: true, _sum: { refReward: true } });
+        const done = r.filter(x => x.status === 6), wait = r.filter(x => x.status !== 6);
+        const n = (rows: typeof r) => rows.reduce((a, x) => a + x._count, 0);
+        return <p className="muted" style={{ margin: 0 }}>{t('Friends who bought with your link: {n}', { n: n(r) })}{n(wait) > 0 && <> · {t('{n} waiting for delivery', { n: n(wait) })}</>}{n(done) > 0 && <> · {t('{n} paid as store credit', { n: n(done) })}</>}</p>; })()}
+      <ShareEarn title={t('Have a look at this shop')} path="/" />
+    </section>}
     <section className="panel"><div className="kicker">{t('Saved address')}</div><p className="muted" style={{ margin: 0, fontSize: '.88rem' }}>{t('Checkout fills this in for you.')}</p>
       <ProfileForm p={{ name: c.name, country: c.country, address: a.address || '', city: a.city || '', zip: a.zip || '', state: a.state || '' }} />
     </section>

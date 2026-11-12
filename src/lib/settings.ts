@@ -1,4 +1,5 @@
 import type { Rates } from './money';
+import { SHARE_DEFAULT, type SaleEvent, type ShareCfg } from './promo';
 
 // Everything an admin can change without touching code. Stored in the Setting table, one row per key.
 export type NavItem = { label: string; to: string; show: boolean }; // to: "all", "cat:<slug>", "track" or a path
@@ -47,6 +48,8 @@ export type Settings = {
   preorder: { on: boolean; ships: string }; // everything sells as pre-order, with when it ships
   film: { on: boolean; wide: string; tall: string; poster: string; cta: string }; // launch film at the top of the home page; tall is for phones
   translations: Partial<Record<'en' | 'bn' | 'ar' | 'hi', Record<string, string>>>; // admin's own, see lib/i18n
+  sales: SaleEvent[]; // sale campaigns like 11.11, see lib/promo
+  share: ShareCfg; // Share & earn, see lib/promo
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -80,6 +83,8 @@ export const DEFAULT_SETTINGS: Settings = {
   preorder: { on: true, ships: 'Ships in 4–6 weeks' },
   film: { on: true, wide: '/media/film/launch-16x9.mp4', tall: '/media/film/launch-4x5.mp4', poster: '/media/film/launch-16x9.jpg', cta: 'Pre-order now' },
   translations: {},
+  sales: [],
+  share: SHARE_DEFAULT,
   warehouses: { BD: { name: '', phone: '', email: '', street: '', city: '', state: '', zip: '' }, MY: { name: '', phone: '', email: '', street: '', city: '', state: '', zip: '' }, US: { name: '', phone: '', email: '', street: '', city: '', state: '', zip: '' } },
   parcel: { kgPerItem: 0.2, cm: [20, 12, 6] },
   regions: { BD: { courier: 'Steadfast Courier', cod: true }, MY: { courier: 'J&T Express', cod: true }, US: { courier: 'USPS', cod: true }, INTL: { courier: 'DHL Express', cod: true } },

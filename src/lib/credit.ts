@@ -22,3 +22,10 @@ export async function payReward(tx: Prisma.TransactionClient, o: { no: string; c
   if (await tx.creditEntry.findFirst({ where: { orderNo: o.no, note: { startsWith: 'Reward' } } })) return;
   await addCredit(tx, o.customerId, Number(o.rewardEarned), o.currency, `Reward for order ${o.no}`, o.no);
 }
+
+// Share & earn: the customer whose link brought the order gets their credit once, when it is first delivered.
+export async function payShareReward(tx: Prisma.TransactionClient, o: { no: string; referrer: string; refReward: Prisma.Decimal; currency: string }) {
+  if (!o.referrer || Number(o.refReward) <= 0) return;
+  if (await tx.creditEntry.findFirst({ where: { orderNo: o.no, note: { startsWith: 'Share reward' } } })) return;
+  await addCredit(tx, o.referrer, Number(o.refReward), o.currency, `Share reward: a friend bought with your link (${o.no})`, o.no);
+}
