@@ -14,6 +14,8 @@ import Motion from '@/components/Motion';
 import AdPopup from '@/components/AdPopup';
 import { AdCta, adHref, adLive, AdVisual } from '@/components/Ads';
 import Pixels from '@/components/Pixels';
+import NetAds, { NetHead } from '@/components/NetAds';
+import { getEarn } from '@/lib/earn';
 import Share from '@/components/Share';
 import { SaleBar, SalePopup } from '@/components/Sale';
 import { shareCfg } from '@/lib/promo';
@@ -48,7 +50,7 @@ export default async function StoreLayout({ children, params }: LayoutProps<'/[l
   const { lang: l } = await params;
   if (!isLang(l)) notFound();
   const lang: Lang = l;
-  const [s, products, ads, cats, dict, seo] = await Promise.all([getSettings(lang), getProducts(lang), getAds(lang), getCategories(lang), getDict(lang), getSeo()]);
+  const [s, products, ads, cats, dict, seo, earn] = await Promise.all([getSettings(lang), getProducts(lang), getAds(lang), getCategories(lang), getDict(lang), getSeo(), getEarn()]);
   const t = makeT(dict);
   const live = ads.filter(a => adLive(a));
   const ticker = live.filter(a => a.place === 'ticker').map(a => ({ id: a.id, title: a.title, href: adHref(a.link) }));
@@ -66,21 +68,23 @@ export default async function StoreLayout({ children, params }: LayoutProps<'/[l
         <SaleBar />
         <Header name={s.store.name} nav={s.nav} ticker={ticker} />
         <main id="main">{children}</main>
+        <NetAds place="footer" />
         <footer><div className="wrap">
           <div className="foot-top">
             <div className="foot-brand"><div className="logo"><span>{s.store.name}</span></div><p>{s.store.tagline}</p><div className="label" style={{ marginTop: 18 }}>{t('News and offers')}</div><NewsletterForm /><Share title={`${s.store.name}: ${s.store.tagline}`} path="/" label={t('Share the shop')} /></div>
             <div className="foot-cols">
               <div><div className="label">{t('Shop')}</div>{cats.map(c => <Link key={c.id} href={`/c/${c.slug}`}>{c.name}</Link>)}</div>
               <div><div className="label">{t('Help')}</div><Link href="/track">{t('Track order')}</Link><Link href="/help#shipping">{t('Shipping')}</Link><Link href="/help#returns">{t('Returns')}</Link><Link href="/account">{t('Store credit')}</Link><Link href="/help">{t('Help')}</Link></div>
-              <div><div className="label">{t('About')}</div><Link href="/privacy">{t('Privacy')}</Link><Link href="/terms">{t('Terms of sale')}</Link><Link href="/help#contact">{t('Contact')}</Link></div>
+              <div><div className="label">{t('About')}</div><Link href="/privacy">{t('Privacy')}</Link><Link href="/terms">{t('Terms of sale')}</Link><Link href="/help#contact">{t('Contact')}</Link>{earn.advertise.on && <Link href="/advertise">{t('Advertise with us')}</Link>}</div>
             </div>
           </div>
           <div className="foot-bottom"><div className="paylogos">{['Visa', 'Mastercard', 'Amex', 'Apple Pay', 'Google Pay', 'PayPal', 'bKash', 'Nagad', "Touch 'n Go", t('Cash on delivery')].map(x => <span key={x}>{x}</span>)}</div><p>© {s.store.name}</p></div>
         </div></footer>
         <Drawer />
-        <CookieNote />
+        <CookieNote ads={earn.net.on} />
         <ChatWidget />
         <Pixels p={seo.pixels} />
+        <NetHead />
         {pop && <AdPopup id={pop.id} delay={s.popupDelay} style={pop.style}>
           <div className="pop-art"><div className="ad-float"><AdVisual ad={pop} products={products} brand={s.store.name} /></div></div>
           <div className="pop-copy">{pop.kicker && <div className="kicker">{pop.kicker}</div>}<h2>{pop.title}</h2>{pop.text && <p>{pop.text}</p>}

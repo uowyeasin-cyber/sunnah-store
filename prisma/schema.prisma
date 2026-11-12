@@ -546,3 +546,17 @@ model Scheduled {
 
   @@index([status, at])
 }
+
+// A short link that shows a short ad page before it opens the target (Admin → Earn money).
+model ShortLink {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  target    String
+  title     String   @default("")
+  on        Boolean  @default(true)
+  // Seconds to wait; -1 uses the default from Earn money settings.
+  wait      Int      @default(-1)
+  views     Int      @default(0)
+  clicks    Int      @default(0)
+  createdAt DateTime @default(now())
+}

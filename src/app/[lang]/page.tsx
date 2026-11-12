@@ -12,6 +12,7 @@ import Reviews from '@/components/Reviews';
 import AdSeen from '@/components/AdSeen';
 import { adLive, AdSlot } from '@/components/Ads';
 import { SaleBanner } from '@/components/Sale';
+import NetAds from '@/components/NetAds';
 import Trust from '@/components/Trust';
 import ForYou from '@/components/ForYou';
 import ProductChips from '@/components/ProductChips';
@@ -55,6 +56,7 @@ export default async function Home({ params }: PageProps<'/[lang]'>) {
       </section>}
       <SaleBanner place="home" />
       <AdSlot ads={ads} place="home-top" products={products} brand={brand} />
+      <NetAds place="home-top" />
       <section className="wrap" id="allgrid">
         <div className="sec-head"><div><div className="kicker">{t('The collection')}</div><h2>{t('Our')} <em>{t('products')}</em></h2></div><Link className="link-arrow" href="/shop">{t('Shop all {n}', { n: products.length })} <span aria-hidden="true">→</span></Link></div>
         <ProductChips target="allgrid" cats={tiles.map(({ c, items }) => ({ slug: c.slug, name: c.name, n: items.length }))} />
@@ -64,6 +66,7 @@ export default async function Home({ params }: PageProps<'/[lang]'>) {
       <ForYou brand={brand} />
       <Trust s={s} t={t} />
       <AdSlot ads={ads} place="home-mid" products={products} brand={brand} />
+      <NetAds place="home-mid" />
       {sellers.length >= 2 && <Rail kicker={t('Most loved')} title={t('Best')} italic={t('sellers')}>{sellers.map(p => <ProductCard key={p.id} p={p} brand={brand} />)}</Rail>}
       <div className="wrap"><Reviews reviews={reviews} t={t} /></div>
       <section className="wrap"><div className="news-band"><div><div className="kicker">{t('News and offers')}</div><h2>{t('Hear about new')} <em>{t('pieces first')}</em></h2><p className="muted">{t('A few emails a year. Unsubscribe with one tap.')}</p></div><NewsletterForm /></div></section>

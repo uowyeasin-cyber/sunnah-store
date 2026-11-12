@@ -1423,3 +1423,11 @@ html,body{overflow-x:clip}
 .share-earn .se-line{margin:0;font-size:.88rem}
 .share-earn .se-in{border:0;background:none;padding:0;cursor:pointer}
 @media (max-width:720px){.sale-banner:has(.sale-img){grid-template-columns:1fr}.sale-cd div{min-width:54px}.sale-bar .sale-bar-t{display:none}}
+/* Ad network units and the short link wait page (Admin → Earn money) */
+.net-slot{margin-top:48px;display:grid;gap:16px;justify-items:center}
+.net-ad{width:100%;max-width:100%;overflow:hidden;text-align:center}
+.sl-page{max-width:720px;margin:48px auto;padding:0 16px;text-align:center;display:grid;gap:20px}
+.sl-count{font-size:3rem;font-family:var(--serif, serif);line-height:1}
+.sl-page .btn[aria-disabled=true]{opacity:.45;pointer-events:none}
+.adv-prices{display:grid;gap:8px;margin:20px 0}
+.adv-prices div{display:flex;justify-content:space-between;gap:16px;padding:12px 16px;border:1px solid var(--line, #ddd);border-radius:var(--r, 8px)}
