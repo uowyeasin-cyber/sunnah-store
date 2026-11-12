@@ -14,6 +14,7 @@ import ProductCard, { Heart, OfferBadge } from '@/components/ProductCard';
 import Reviews from '@/components/Reviews';
 import ReviewForm from '@/components/ReviewForm';
 import { AdSlot } from '@/components/Ads';
+import NetAds from '@/components/NetAds';
 import ProductSeen from '@/components/ProductSeen';
 import Delivery from '@/components/Delivery';
 import Faq from '@/components/Faq';
@@ -94,6 +95,7 @@ export default async function ProductPage({ params }: PageProps<'/[lang]/p/[slug
         </div>
       </div>
       <AdSlot ads={ads.filter(a => a.link !== p.slug)} place="product" products={all} brand={s.store.name} wrap={false} />
+      <NetAds place="product" wrap={false} />
       {sugg.length > 0 && <section><div className="sec-head"><div><div className="kicker">{t('Complete the kit')}</div><h2>{t(bought.length ? 'Frequently bought together' : 'Goes well with')}</h2></div></div><div className="grid" data-n={Math.min(sugg.length, 8)}>{sugg.map(x => <ProductCard key={x.id} p={x} brand={s.store.name} />)}</div></section>}
       <Reviews reviews={reviews} t={t}><ReviewForm productId={p.id} /></Reviews>
       <Faq title={t('Questions')} items={[

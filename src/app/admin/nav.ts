@@ -31,6 +31,7 @@ export const NAV: { title: string; items: Item[] }[] = [
     { area: 'social', label: 'Marketing & SEO', icon: 'megaphone', also: [['seo', 'SEO & ads'], ['marketing', 'Email marketing'], ['ads', 'Advertisements']] },
     { area: 'aitools', label: 'AI tools & chatbot', icon: 'bot' },
     { area: 'automation', label: 'Automation', icon: 'bolt' },
+    { area: 'earn', label: 'Earn money (ads)', icon: 'coins' },
   ] },
   { title: 'Settings', items: [
     { area: 'settings', label: 'Store & theme', icon: 'palette', also: [['templates', 'Site templates'], ['homepage', 'Home page'], ['menu', 'Menu bar']] },
