@@ -7,7 +7,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 const SERVER = '__LICENSE_SERVER__';
 type Answer = { status: 'active' | 'trial' | 'locked'; message: string; left?: { opens: number; days: number } };
 let cache: { at: number; host: string; a: Answer } | null = null;
-const TTL = 5 * 60e3;
+// A paid copy asks again every 6 hours, a demo or locked one every 5 minutes (so a renewal opens it quickly).
+const TTL = 5 * 60e3, TTL_ACTIVE = 6 * 3600e3;
 
 async function ask(host: string): Promise<Answer | null> {
   try {
@@ -21,7 +22,7 @@ async function ask(host: string): Promise<Answer | null> {
 
 export async function licenseGate(req: NextRequest): Promise<NextResponse | null> {
   const host = (req.headers.get('x-forwarded-host') || req.headers.get('host') || req.nextUrl.hostname).split(',')[0].trim();
-  if (!cache || cache.host !== host || Date.now() - cache.at > TTL) {
+  if (!cache || cache.host !== host || Date.now() - cache.at > (cache.a.status === 'active' ? TTL_ACTIVE : TTL)) {
     const a = await ask(host);
     // If the license server cannot be reached, keep the last answer (a short outage must not take a paid shop down).
     if (a) cache = { at: Date.now(), host, a };
@@ -34,5 +35,5 @@ export async function licenseGate(req: NextRequest): Promise<NextResponse | null
 <div style="max-width:440px;padding:32px;background:#fff;border-radius:14px;box-shadow:0 6px 30px #0001;text-align:center">
 <h1 style="font-size:1.4rem">License needed</h1><p>${msg}</p>
 <p style="color:#666;font-size:.9rem">Already have a key? Add it in Vercel → Settings → Environment Variables as <b>LICENSE_KEY</b>, then redeploy.</p>
-<p><a href="${SERVER}/get-app" style="color:#0a6">Contact the seller</a></p></div></body>`, { status: 402, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
+<p><a href="${SERVER}/get-app/" style="color:#0a6">Contact the seller</a></p></div></body>`, { status: 402, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
 }

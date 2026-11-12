@@ -13,4 +13,4 @@ This store is also sold as a zip (`sale/`). After any feature is merged to main:
 1. If it adds an env var, add it to `sale/package/env.example`; if it adds a customer-visible or admin feature, add one line to `sale/package/README.md` and `CHANGELOG.md` (bump `version.json`).
 2. If it names the original brand, URL or a personal email, make `sale/make-package.sh` swap or strip it (the script stops if any are left).
 3. Rebuild: `bash sale/make-package.sh dist-sale --public` (also refreshes `public/download/storefront-pro.zip` for /get-app) and copy `dist-sale/<name>-all-in-one.zip` (one file: app zip + all guides) to the project files `sale/` folder. The user wants it always as this one zip.
-Seller-only parts (license server, App licenses admin, /get-app) are stripped by the script.
+Also put the buyer zip at `downloads/storefront-pro.zip` in the `uowyeasin-cyber/protpolio-2` repo: the license server, owner panel (/store-licences.html) and sales page (/storefront-pro/) live on yeasinarafatbd.vercel.app, not on sunnahstore. Seller-only parts in this repo (licenses admin, /get-app) are stripped by the script.

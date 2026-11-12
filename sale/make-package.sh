@@ -44,7 +44,7 @@ if grep -rniE "sunnahstore|yeasin|johirul|uowyeasin|yeasinarafat|uowyeasin@|sk_l
 fi
 
 # 6. License lock: every page and the admin ask the seller's license server (demo limit, then key).
-LICENSE_SERVER="${LICENSE_SERVER:-https://sunnahstore.vercel.app}"
+LICENSE_SERVER="${LICENSE_SERVER:-https://yeasinarafatbd.vercel.app}"
 cp -r sale/overlay/. "$DEST/"
 perl -pi -e "s#__LICENSE_SERVER__#$LICENSE_SERVER#" "$DEST/src/lib/licenseGate.ts"
 perl -0pi -e "s/^/import { licenseGate } from '\@\/lib\/licenseGate';\n/; s/export function proxy\(req: NextRequest\) \{\n  const res = route\(req\);/export async function proxy(req: NextRequest) {\n  const locked = await licenseGate(req);\n  if (locked) return locked;\n  if (req.nextUrl.pathname.startsWith('\/admin')) return NextResponse.next();\n  const res = route(req);/; s/api\|admin\|go\//api|go\//" "$DEST/src/proxy.ts"
