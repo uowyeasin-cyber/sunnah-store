@@ -30,6 +30,18 @@ export const newSale = (): SaleEvent => {
     cta: 'Shop the sale', link: '/shop', image: '', look: 'red', places: ['bar', 'home', 'product'], share: true, shareText: '', join: [] };
 };
 
+// Ready-made starts for "New campaign". Every field stays editable, and "Blank" takes any name.
+export const SALE_TEMPLATES: { key: string; label: string; kicker: string; title: string; text: string; look: SaleLook; month: number; day: number; days: number }[] = [
+  { key: 'blank', label: 'Blank (your own name)', kicker: 'Special offer', title: 'Our sale is on', text: '', look: 'dark', month: -1, day: 0, days: 3 },
+  { key: '1111', label: '11.11 Mega Sale', kicker: '11.11 Mega Sale', title: 'Up to 20% off everything', text: 'One day only. Share with friends and family.', look: 'red', month: 10, day: 11, days: 1 },
+  { key: '1212', label: '12.12 Year-end Sale', kicker: '12.12 Sale', title: 'Year-end deals', text: 'The last big sale of the year.', look: 'red', month: 11, day: 12, days: 1 },
+  { key: 'bf', label: 'Black Friday', kicker: 'Black Friday', title: 'Our biggest prices drop', text: 'This weekend only.', look: 'dark', month: 10, day: 27, days: 4 },
+  { key: 'ramadan', label: 'Ramadan offer', kicker: 'Ramadan Kareem', title: 'Ramadan gifts and offers', text: 'Miswak and attar for the blessed month.', look: 'green', month: -1, day: 0, days: 30 },
+  { key: 'eid', label: 'Eid sale', kicker: 'Eid Mubarak', title: 'Eid gifts, special prices', text: 'Order early for Eid delivery.', look: 'gold', month: -1, day: 0, days: 7 },
+  { key: 'newyear', label: 'New Year sale', kicker: 'New Year', title: 'Start the year fresh', text: '', look: 'purple', month: 0, day: 1, days: 3 },
+  { key: 'flash', label: 'Flash sale (24 hours)', kicker: 'Flash sale', title: '24 hours only', text: 'Hurry, it ends soon.', look: 'red', month: -1, day: 0, days: 1 },
+];
+
 const ms = (s: string) => { const t = Date.parse(s); return Number.isFinite(t) ? t : NaN; };
 // The campaign showing now: a live one first, else (when teased) the next one about to start.
 export function currentSale(list: SaleEvent[] | undefined, now: number): { ev: SaleEvent; phase: 'live' | 'soon'; until: number } | null {

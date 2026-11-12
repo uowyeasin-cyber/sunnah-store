@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { adminOrNull } from '@/lib/auth';
 import { getCategories, getSettings } from '@/lib/catalog';
-import { currentSale, SALE_LOOKS, SALE_PLACES, type SaleEvent } from '@/lib/promo';
+import { currentSale, SALE_TEMPLATES, SALE_LOOKS, SALE_PLACES, type SaleEvent } from '@/lib/promo';
 import { addSale, copySale, deleteSale, saleSwitch, saveSale } from '../promoActions';
 import { LocalInput, LocalTime, TzField } from '../LocalTime';
 
@@ -19,14 +19,17 @@ export default async function Sales({ searchParams }: PageProps<'/admin/sales'>)
   const state = (e: SaleEvent) => !e.on ? ['Off', ''] : Date.parse(e.endsAt) <= now ? ['Ended', ''] : Date.parse(e.startsAt) > now ? [e.teaser ? 'Coming soon (countdown showing)' : 'Waiting to start', 'warn'] : ['Live now', 'ok'];
   return <>
     <div className="page-head"><div><h2>Sale campaigns</h2><p>Run sales like 11.11, Eid or Black Friday. A campaign shows a countdown in the places you tick, can take a percent off by itself, and has share and WhatsApp / Messenger buttons that bring people to you. Switch each one on or off at any time.</p></div>
-      <form action={addSale}><button className="btn orange">+ New campaign</button></form></div>
+      <form action={addSale} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <input name="name" placeholder="Name, e.g. Eid ul-Adha sale" style={{ minWidth: 200 }} />
+        <select name="template" defaultValue="blank">{SALE_TEMPLATES.map(x => <option key={x.key} value={x.key}>{x.label}</option>)}</select>
+        <button className="btn orange">+ New campaign</button></form></div>
     {sp.note && <p className="ord-note">{sp.note}</p>}
     {sp.saved && <p className="ord-note">Saved.</p>}
     <div className="stats">
       <div className="stat"><small>Showing now</small><b className={cur ? 'ok' : ''}>{cur ? cur.ev.name : 'Nothing'}</b><span>{cur ? (cur.phase === 'live' ? 'Live' : 'Countdown to start') : 'No campaign is on right now'}</span></div>
       <div className="stat"><small>Campaigns</small><b>{list.length}</b><span>{list.filter(e => e.on).length} switched on</span></div>
     </div>
-    {!list.length && <div className="panel"><p className="muted" style={{ margin: 0 }}>No campaigns yet. Tap “New campaign”: it starts as an 11.11 sale you can change.</p></div>}
+    {!list.length && <div className="panel"><p className="muted" style={{ margin: 0 }}>No campaigns yet. Type any name (Eid, Black Friday, your shop's birthday…), pick a ready-made start if you like, and tap “New campaign”. Everything can be changed after.</p></div>}
     {list.map(e => { const [label, cls] = state(e); const open = sp.open === e.id || sp.saved === e.id; return <div className="panel" id={`s-${e.id}`} key={e.id}>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         <h3 style={{ margin: 0, flex: '1 1 200px' }}>{e.name}</h3>
