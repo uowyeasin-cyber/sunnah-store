@@ -14,7 +14,7 @@ mkdir -p "$DEST" "$OUT"
 git archive HEAD | tar -x -C "$DEST"
 
 # 1. Drop files that belong to this repo only.
-rm -rf "$DEST/sale" "$DEST/AGENTS.md" "$DEST/README.md"
+rm -rf "$DEST/sale" "$DEST/dist-sale" "$DEST/AGENTS.md" "$DEST/README.md"
 # The license server, its admin page and the download page stay on the seller's site only.
 rm -rf "$DEST/src/lib/licenses.ts" "$DEST/src/app/api/license" "$DEST/src/app/admin/licenses" "$DEST/src/app/[lang]/get-app" "$DEST/public/download"
 perl -ni -e "print unless /area: 'licenses'/" "$DEST/src/app/admin/nav.ts"
