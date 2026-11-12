@@ -25,7 +25,10 @@ export default function AdminShell({ areas, store, email, alerts, badges, childr
       </div>)}</nav>
       <div className="adm-me"><div className="who"><span className="av">{email.slice(0, 1).toUpperCase()}</span><span>{email}</span></div>
         <div className="acts"><a href="/" target="_blank">↗ View store</a><form action={adminSignOut}><button>⎋ Sign out</button></form></div>
-        <form action={setAlerts} className="alerts"><input type="hidden" name="on" value={alerts ? '0' : '1'} /><button title="Store alert emails to you: seller wanted, daily summary, low stock, reminders" aria-pressed={alerts}><span className={`sw${alerts ? ' on' : ''}`} />Email alerts: {alerts ? 'On' : 'Off'}</button></form></div>
+        <form action={setAlerts} className="alerts"><input type="hidden" name="on" value={alerts ? '0' : '1'} /><button role="switch" aria-checked={alerts} aria-label="Email alerts" className={alerts ? 'on' : ''}>
+          <span className="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{alerts ? <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0" /> : <path d="M8.7 3A6 6 0 0 1 18 8a21 21 0 0 0 .6 5M17 17H3s3-2 3-9a4.67 4.67 0 0 1 .3-1.7M10.3 21a1.94 1.94 0 0 0 3.4 0M2 2l20 20" />}</svg></span>
+          <span className="tx"><b>Email alerts</b><small>{alerts ? 'On · emails to you' : 'Off · no store emails'}</small></span>
+          <span className="sw" aria-hidden="true" /></button></form></div>
     </aside>
     <main className="adm-main"><div className="adm-body">
       {tabs.length > 1 && <nav className="adm-sub">{tabs.map(([a, l]) => <Link key={a} href={`/admin/${a}`} className={a === here ? 'on' : ''}>{l}</Link>)}</nav>}
