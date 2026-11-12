@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 import { getSettings } from '@/lib/catalog';
-import { newSale, SALE_LOOKS, SALE_PLACES, shareCfg, type SaleEvent, type SaleLook, type SalePlace, type ShareCfg } from '@/lib/promo';
+import { newSale, SALE_TEMPLATES, SALE_LOOKS, SALE_PLACES, shareCfg, type SaleEvent, type SaleLook, type SalePlace, type ShareCfg } from '@/lib/promo';
 
 const str = (fd: FormData, k: string, n = 200) => String(fd.get(k) ?? '').trim().slice(0, n);
 const num = (fd: FormData, k: string, lo: number, hi: number) => Math.min(hi, Math.max(lo, Number(fd.get(k)) || 0));
@@ -13,12 +13,16 @@ const sales = async () => ((await getSettings()).sales || []) as SaleEvent[];
 // A typed time is the admin's own clock; tz is the browser's offset from UTC in minutes.
 const utc = (v: string, tz: number) => { const t = Date.parse(v + ':00Z'); return Number.isFinite(t) ? new Date(t + tz * 60e3).toISOString() : ''; };
 
-export async function addSale() {
-  await requireAdmin('sales', 'addSale');
-  const ev = newSale();
-  const y = new Date().getUTCFullYear();
-  // 11 Nov in Bangladesh time by default; the admin changes it on the form.
-  ev.startsAt = new Date(Date.UTC(y, 10, 10, 18, 0)).toISOString(); ev.endsAt = new Date(Date.UTC(y, 10, 11, 17, 59)).toISOString();
+export async function addSale(fd: FormData) {
+  const tp = SALE_TEMPLATES.find(x => x.key === fd.get('template')) || SALE_TEMPLATES[0];
+  const name = str(fd, 'name', 80) || tp.label;
+  await requireAdmin('sales', 'addSale', name);
+  const ev = { ...newSale(), name, kicker: tp.key === 'blank' ? name : tp.kicker, title: tp.title, text: tp.text, look: tp.look };
+  // Dates: the template's day in Bangladesh time (next one coming), else starting tomorrow. The admin changes them on the form.
+  const now = new Date(), y = now.getUTCFullYear();
+  let start = tp.month >= 0 ? Date.UTC(y, tp.month, tp.day) - 6 * 3600e3 : Date.UTC(y, now.getUTCMonth(), now.getUTCDate() + 1) - 6 * 3600e3;
+  if (tp.month >= 0 && start + tp.days * 864e5 < now.getTime()) start = Date.UTC(y + 1, tp.month, tp.day) - 6 * 3600e3;
+  ev.startsAt = new Date(start).toISOString(); ev.endsAt = new Date(start + tp.days * 864e5 - 60e3).toISOString();
   await save('sales', [...(await sales()), ev]);
   redirect(`/admin/sales?open=${ev.id}#s-${ev.id}`);
 }
