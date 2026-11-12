@@ -5,6 +5,7 @@ import { isLang, makeT, type Lang } from '@/lib/i18n';
 
 import ShopBrowser from '@/components/ShopBrowser';
 import { AdSlot } from '@/components/Ads';
+import NetAds from '@/components/NetAds';
 
 // New products and categories added in admin render on first visit, then stay cached.
 export const instant = false;
@@ -36,6 +37,7 @@ export default async function CategoryPage({ params }: PageProps<'/[lang]/c/[slu
     <div className="view"><section className="wrap">
       <div className="sec-head"><div><div className="kicker">{t('Collection')}</div><h2>{cat.name}</h2></div></div>
       <AdSlot ads={ads} place="category" products={products} brand={s.store.name} wrap={false} />
+      <NetAds place="category" wrap={false} />
       <ShopBrowser products={list} brand={s.store.name} empty="New pieces are coming to this collection soon." />
     </section></div>
   );
