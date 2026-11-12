@@ -1383,3 +1383,43 @@ html,body{overflow-x:clip}
 }
 .slide:not(.full) .s-art video{width:100%;height:100%;object-fit:cover;display:block}
 .showcase .slide:not(.full).fit-contain .s-art img,.showcase .slide:not(.full).fit-contain .s-art video{object-fit:contain;background:transparent}
+
+/* Sale campaigns (11.11) and Share & earn, 2026-11-12 */
+.sale-bar,.sale-banner,.sale-pop{--s-bg:#c8102e;--s-ink:#fff;--s-hi:#ffd84d;--s-box:rgba(255,255,255,.16)}
+.look-gold{--s-bg:linear-gradient(120deg,var(--gold-a),var(--gold-b));--s-ink:#1b1408;--s-hi:#1b1408;--s-box:rgba(0,0,0,.1)}
+.look-dark{--s-bg:var(--night);--s-ink:var(--night-ink);--s-hi:var(--gold-b);--s-box:rgba(255,255,255,.08)}
+.look-green{--s-bg:#0f6b46;--s-ink:#fff;--s-hi:#ffe08a;--s-box:rgba(255,255,255,.14)}
+.look-purple{--s-bg:#5b21b6;--s-ink:#fff;--s-hi:#fcd34d;--s-box:rgba(255,255,255,.14)}
+.sale-bar{background:var(--s-bg);color:var(--s-ink);font-size:.8rem}
+.sale-bar .wrap{display:flex;align-items:center;justify-content:center;gap:6px 14px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px;text-align:center}
+.sale-bar b{letter-spacing:.12em;text-transform:uppercase;color:var(--s-hi)}
+.sale-bar-cta{color:inherit;font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.sale-clock{font-weight:700;letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.sale-slot{margin-top:28px;margin-bottom:28px}
+.sale-banner{background:var(--s-bg);color:var(--s-ink);border-radius:calc(var(--radius)*4 + 8px);padding:clamp(22px,4vw,44px);display:grid;gap:24px;align-items:center;overflow:hidden;position:relative}
+.sale-banner:has(.sale-img){grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}
+.sale-banner .kicker{color:var(--s-hi)}
+.sale-banner h2,.sale-pop h2{color:inherit;margin:6px 0 8px;font-size:clamp(1.7rem,4.4vw,3rem);line-height:1.05}
+.sale-banner p,.sale-pop p{margin:0 0 10px;opacity:.92}
+.sale-banner.strip h2{font-size:clamp(1.3rem,3vw,1.9rem)}
+.sale-img img{width:100%;max-height:340px;object-fit:cover;border-radius:12px;display:block}
+.sale-when{font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;opacity:.85;margin-top:6px}
+.sale-cd{display:flex;gap:10px;margin:8px 0 14px}
+.sale-cd div{background:var(--s-box);border-radius:10px;min-width:64px;padding:10px 8px;text-align:center}
+.sale-cd b{display:block;font-size:clamp(1.5rem,4vw,2.2rem);line-height:1;font-variant-numeric:tabular-nums;color:var(--s-hi)}
+.sale-cd small{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;opacity:.85}
+.sale-banner .sale-clock,.sale-pop .sale-clock{display:inline-block;font-size:1.3rem;color:var(--s-hi);margin:4px 0 10px}
+.sale-code{font-size:.95rem}.sale-code b{background:var(--s-box);padding:3px 10px;border-radius:6px;letter-spacing:.1em;color:var(--s-hi)}
+.sale-act{margin:6px 0 12px}
+.sale-banner .share,.sale-pop .share{border-color:var(--s-box);color:inherit}
+.sale-banner .share-ic,.sale-banner .share-main,.sale-pop .share-ic,.sale-pop .share-main{color:inherit;border-color:var(--s-box);background:var(--s-box)}
+.sale-join{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 10px}
+.join-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:999px;font-size:.85rem;font-weight:600;text-decoration:none;color:#fff;background:#334155}
+.join-btn.whatsapp{background:#25d366;color:#06301a}.join-btn.messenger{background:#0084ff}.join-btn.facebook{background:#1877f2}.join-btn.telegram{background:#229ed9}
+.join-btn.instagram{background:linear-gradient(45deg,#f09433,#dc2743,#bc1888)}.join-btn.youtube{background:#ff0000}.join-btn.tiktok{background:#111}.join-btn.imo{background:#0a7cff}
+.sale-pop{background:var(--s-bg);color:var(--s-ink);padding:26px;border-radius:12px;grid-column:1/-1}
+.pop-card:has(.sale-pop){padding:0;overflow:hidden}
+.share-earn{display:grid;gap:6px}
+.share-earn .se-line{margin:0;font-size:.88rem}
+.share-earn .se-in{border:0;background:none;padding:0;cursor:pointer}
+@media (max-width:720px){.sale-banner:has(.sale-img){grid-template-columns:1fr}.sale-cd div{min-width:54px}.sale-bar .sale-bar-t{display:none}}

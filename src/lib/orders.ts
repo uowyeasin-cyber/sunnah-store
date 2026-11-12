@@ -14,6 +14,7 @@ import { record } from './ledger';
 import { currentCustomer } from './auth';
 import { OutOfStock, takeStock } from './stock';
 import { checkCoupon } from './coupons';
+import { salePct, shareCfg } from './promo';
 
 export type CheckoutInput = {
   lines: { slug: string; qty: number }[];
@@ -25,17 +26,27 @@ const D = (n: number) => new Prisma.Decimal(n.toFixed(2));
 const round = (n: number, cur: Currency) => (cur === 'BDT' ? Math.round(n) : Math.round(n * 100) / 100);
 
 // Prices are re-read from the database; the browser only sends product slugs and quantities.
-export async function quote(input: Pick<CheckoutInput, 'lines' | 'country'> & { coupon?: string; email?: string }, customerCredit = 0, useCredit = false) {
+// Share & earn: who shared the link this shopper came from (never the shopper themselves).
+async function sharer(ref: string | undefined, email: string) {
+  const sh = shareCfg((await getSettings()).share);
+  if (!sh.on || !ref) return null;
+  const c = await db.customer.findUnique({ where: { refCode: ref.slice(0, 16) }, select: { id: true, email: true } });
+  return c && c.email !== email.trim().toLowerCase() ? c : null;
+}
+
+export async function quote(input: Pick<CheckoutInput, 'lines' | 'country'> & { coupon?: string; email?: string; ref?: string; unlocked?: boolean }, customerCredit = 0, useCredit = false) {
   const s = await getSettings();
+  const now = Date.now();
   const slugs = input.lines.map(l => l.slug);
-  const products = await db.product.findMany({ where: { slug: { in: slugs }, active: true }, include: { offer: true } });
+  const products = await db.product.findMany({ where: { slug: { in: slugs }, active: true }, include: { offer: true, category: { select: { slug: true } } } });
   const lines = input.lines.flatMap(l => {
     const p = products.find(x => x.slug === l.slug); const qty = Math.min(99, Math.max(1, Math.floor(l.qty)));
     if (!p) return [];
     const o = p.offer && p.offer.on && (!p.offer.endsAt || p.offer.endsAt > new Date()) ? p.offer : null;
     // Buy X get Y free: the free units are spread over the line, so the unit price is the average paid.
     const free = o && o.buy > 0 && o.get > 0 ? Math.floor(qty / (o.buy + o.get)) * o.get : 0;
-    const unit = unitCents(p.priceCents, o?.pct || 0);
+    // A live sale campaign (like 11.11) and the product's own offer do not add up: the bigger one counts.
+    const unit = unitCents(p.priceCents, Math.max(o?.pct || 0, salePct(s.sales, [p.category?.slug || '', ...p.alsoIn], now)));
     return [{ p, qty, unitUsd: free ? Math.round((unit * (qty - free)) / qty) : unit, fullUsd: p.priceCents }];
   });
   const subUsd = lines.reduce((a, l) => a + l.unitUsd * l.qty, 0);
@@ -47,15 +58,24 @@ export async function quote(input: Pick<CheckoutInput, 'lines' | 'country'> & { 
   const full = round(priced.reduce((a, l) => a + l.full * l.qty, 0), cur);
   const shipping = c(ship.costCents);
   const cp = input.coupon ? await checkCoupon(input.coupon, input.email || '', subUsd) : null;
-  const discount = cp && 'off' in cp ? Math.min(subtotal, round(c(cp.off ?? 0), cur)) : 0;
+  // Without a code, a friend's shared link or a share-to-unlock gives its discount instead (the bigger one).
+  const sh = shareCfg(s.share);
+  const referrer = await sharer(input.ref, input.email || '');
+  const friend = input.coupon ? null : referrer;
+  const sharePct = input.coupon ? 0 : Math.max(friend ? sh.friendPct : 0, sh.unlock && input.unlocked ? sh.unlockPct : 0);
+  const shareCode = !sharePct ? '' : friend && sh.friendPct >= (sh.unlock && input.unlocked ? sh.unlockPct : 0) ? 'FRIEND' : 'SHARED';
+  const discount = cp && 'off' in cp ? Math.min(subtotal, round(c(cp.off ?? 0), cur)) : sharePct ? round((subtotal * Math.min(50, sharePct)) / 100, cur) : 0;
   const credit = useCredit ? Math.min(customerCredit, subtotal - discount + shipping) : 0;
   const total = round(subtotal - discount + shipping - credit, cur);
   const reward = round(((subtotal - discount - credit > 0 ? subtotal - discount - credit : 0) * s.rewardRate) / 100, cur);
-  return { lines: priced, cur, ship, subtotal, saved: round(full - subtotal + discount, cur), shipping, credit, total, reward, discount,
+  // The sharer's credit: a share of what the friend paid for the items, in the order's currency.
+  const cap = sh.maxReward > 0 ? c(sh.maxReward * 100) : Infinity;
+  const refReward = referrer ? round(Math.min(cap, ((subtotal - discount) * Math.min(30, Math.max(0, sh.rewardPct))) / 100), cur) : 0;
+  return { lines: priced, cur, ship, subtotal, saved: round(full - subtotal + discount, cur), shipping, credit, total, reward, discount, shareCode, referrer, refReward,
     coupon: cp && 'coupon' in cp ? cp.coupon ?? null : null, couponError: cp && 'error' in cp ? cp.error ?? '' : '' };
 }
 
-export async function placeOrder(input: CheckoutInput, source = '', campaign = '') {
+export async function placeOrder(input: CheckoutInput, source = '', campaign = '', share: { ref?: string; unlocked?: boolean } = {}) {
   const email = input.email.trim().toLowerCase();
   if (!input.lines.length) return { error: 'Your bag is empty.' };
   if (!input.name.trim()) return { error: 'Enter your full name.' };
@@ -76,7 +96,7 @@ export async function placeOrder(input: CheckoutInput, source = '', campaign = '
   // Credit is held in one currency; a customer's first order sets it.
   if (Number(customer.credit) === 0 && customer.currency !== q0.cur) customer.currency = (await db.customer.update({ where: { id: customer.id }, data: { currency: q0.cur } })).currency;
   const sameCur = customer.currency === q0.cur;
-  const q = await quote({ ...input, email }, sameCur && owner ? Number(customer.credit) : 0, input.useCredit && sameCur && owner);
+  const q = await quote({ ...input, email, ...share }, sameCur && owner ? Number(customer.credit) : 0, input.useCredit && sameCur && owner);
   if (!q.lines.length) return { error: 'These items are no longer available.' };
   if (input.coupon && q.couponError) return { error: q.couponError };
   const now = new Date();
@@ -88,7 +108,7 @@ export async function placeOrder(input: CheckoutInput, source = '', campaign = '
       no, customerId: customer.id, name: input.name.trim(), email, phone: input.phone.trim(), country: input.country,
       address: { address: input.address.trim(), city: input.city.trim(), zip: input.zip.trim(), state: (input.state || '').trim().slice(0, 40) }, currency: q.cur,
       subtotal: D(q.subtotal), saved: D(q.saved), shipping: D(q.shipping), creditUsed: D(q.credit), total: D(q.total), rewardEarned: D(q.reward),
-      payMethod: input.pay, source, campaign, preorder, coupon: q.coupon?.code || '', discount: D(q.discount), stockHeld: !preorder, payStatus: input.pay === 'cod' || q.total === 0 ? 'cod' : 'pending', payRef: manual ? trx : '', warehouse: q.ship.warehouse, courier: q.ship.courier,
+      payMethod: input.pay, source, campaign, preorder, coupon: q.coupon?.code || q.shareCode, referrer: q.referrer?.id || '', refReward: D(q.refReward), discount: D(q.discount), stockHeld: !preorder, payStatus: input.pay === 'cod' || q.total === 0 ? 'cod' : 'pending', payRef: manual ? trx : '', warehouse: q.ship.warehouse, courier: q.ship.courier,
       etaFrom: day(q.ship.days[0]), etaTo: day(q.ship.days[1]), events: [{ at: now.toISOString(), step: 0, note: STEPS[0] }, ...(preorder ? [{ at: now.toISOString(), step: -1, note: `Pre-order: ${preorder}` }] : [])],
       lines: { create: q.lines.map(l => ({ productId: l.p.id, name: `${l.p.name}${l.p.kind === 'pen' ? ' · ' + l.p.sub : ''}`, qty: l.qty, unit: D(l.unit), full: D(l.full), cost: D(l.cost) })) },
     } });

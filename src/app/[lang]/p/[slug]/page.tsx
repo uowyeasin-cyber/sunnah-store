@@ -1,7 +1,6 @@
 import { alternates, langPath, ldJson, siteUrl } from '@/lib/seoUrls';
 import { getSeo } from '@/lib/seo';
 import Link from 'next/link';
-import Share from '@/components/Share';
 import { notFound } from 'next/navigation';
 import { getAds, getBoughtTogether, getDict, getLiveReviews, getProduct, getProducts, getSettings } from '@/lib/catalog';
 import { isLang, makeT, type Lang } from '@/lib/i18n';
@@ -14,6 +13,8 @@ import ProductCard, { Heart, OfferBadge } from '@/components/ProductCard';
 import Reviews from '@/components/Reviews';
 import ReviewForm from '@/components/ReviewForm';
 import { AdSlot } from '@/components/Ads';
+import { SaleBanner } from '@/components/Sale';
+import ShareEarn from '@/components/ShareEarn';
 import ProductSeen from '@/components/ProductSeen';
 import Delivery from '@/components/Delivery';
 import Faq from '@/components/Faq';
@@ -88,11 +89,12 @@ export default async function ProductPage({ params }: PageProps<'/[lang]/p/[slug
           <div><div className="kicker"><Link href={`/c/${p.category.slug}`} style={{ textDecoration: 'none' }}>{p.category.name}</Link></div><h1 style={{ marginTop: 8 }}>{p.name}</h1><p className="muted" style={{ marginTop: 6 }}>{p.sub}</p></div>
           <BuyBox p={p} finishes={finishes} soldOut={!s.preorder?.on && !inStock} />
           <p className={`avail ${s.preorder?.on ? 'pre' : inStock ? 'in' : 'out'}`}><i aria-hidden="true" />{s.preorder?.on ? t('Available to pre-order') : inStock ? t('In stock, ready to ship') : t('Sold out for now')}</p>
-          <Share title={`${p.name}${p.sub ? ' · ' + p.sub : ''} | ${s.store.name}`} />
+          <ShareEarn title={`${p.name}${p.sub ? ' · ' + p.sub : ''} | ${s.store.name}`} path={`/p/${p.slug}`} />
           {p.details && <p className="muted">{p.details}</p>}
           <Delivery rows={deliveryRows(s).map(r => ({ label: r.label, days: r.days }))} pre={s.preorder?.on ? s.preorder.ships : ''} />
         </div>
       </div>
+      <SaleBanner place="product" />
       <AdSlot ads={ads.filter(a => a.link !== p.slug)} place="product" products={all} brand={s.store.name} wrap={false} />
       {sugg.length > 0 && <section><div className="sec-head"><div><div className="kicker">{t('Complete the kit')}</div><h2>{t(bought.length ? 'Frequently bought together' : 'Goes well with')}</h2></div></div><div className="grid" data-n={Math.min(sugg.length, 8)}>{sugg.map(x => <ProductCard key={x.id} p={x} brand={s.store.name} />)}</div></section>}
       <Reviews reviews={reviews} t={t}><ReviewForm productId={p.id} /></Reviews>

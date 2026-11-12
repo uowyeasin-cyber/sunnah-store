@@ -14,7 +14,7 @@ export default function Drawer() {
   const close = () => s.open(null);
   const lines = s.bag.map(l => ({ ...l, p: s.products[l.slug] }));
   const chosen = lines.filter(l => !l.off);
-  const total = chosen.reduce((a, l) => a + unitCents(l.p.priceCents, l.p.offer?.pct || 0) * l.qty, 0);
+  const total = chosen.reduce((a, l) => a + unitCents(l.p.priceCents, s.pctFor(l.p)) * l.qty, 0);
   return (
     <>
       <div className={`scrim ${s.drawer ? 'open' : ''}`} onClick={close} />
@@ -28,7 +28,7 @@ export default function Drawer() {
               <div className="thumb"><Art p={l.p} /></div>
               <div style={{ flex: 1, minWidth: 0 }}><div>{l.p.name}</div><div className="muted" style={{ fontSize: '.82rem' }}>{l.p.sub}</div>
                 <div className="qty" style={{ marginTop: 6 }}><button onClick={() => s.setQty(l.slug, l.qty - 1)} aria-label={s.t('One less')}>−</button><span>{l.qty}</span><button onClick={() => s.setQty(l.slug, l.qty + 1)} aria-label={s.t('One more')}>+</button></div></div>
-              <div className="num" style={{ textAlign: 'right' }}><Price cents={l.p.priceCents * l.qty} pct={l.p.offer?.pct} />
+              <div className="num" style={{ textAlign: 'right' }}><Price cents={l.p.priceCents * l.qty} p={l.p} />
                 <button className="link-btn later" onClick={() => { if (!s.wish.includes(l.slug)) s.toggleWish(l.slug); s.setQty(l.slug, 0); s.toast(s.t('Saved for later in your wishlist')); }}>{s.t('Save for later')}</button></div>
             </div>))}
           </div>

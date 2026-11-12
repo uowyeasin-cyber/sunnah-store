@@ -131,6 +131,8 @@ model Customer {
   // Store credit, held in the customer's own currency (1 unit = 1 credit).
   currency  String        @default("USD")
   credit    Decimal       @default(0) @db.Decimal(12, 2)
+  // Share & earn: the code in this customer's shared links (?r=…), made the first time they ask for a link.
+  refCode   String?       @unique
   ledger    CreditEntry[]
   orders    Order[]
   sessions  Session[]
@@ -189,6 +191,9 @@ model Order {
   source       String          @default("")
   // Social media post or ad the buyer came through (Campaign.code), from a /go link.
   campaign     String          @default("")
+  // Share & earn: the customer whose shared link brought this order, and the credit they get when it is delivered.
+  referrer     String          @default("")
+  refReward    Decimal         @default(0) @db.Decimal(12, 2)
   // Coupon code used and the discount it gave, in the order's currency.
   coupon       String          @default("")
   discount     Decimal         @default(0) @db.Decimal(12, 2)

@@ -11,6 +11,7 @@ import Art from '@/components/Art';
 import Reviews from '@/components/Reviews';
 import AdSeen from '@/components/AdSeen';
 import { adLive, AdSlot } from '@/components/Ads';
+import { SaleBanner } from '@/components/Sale';
 import Trust from '@/components/Trust';
 import ForYou from '@/components/ForYou';
 import ProductChips from '@/components/ProductChips';
@@ -52,6 +53,7 @@ export default async function Home({ params }: PageProps<'/[lang]'>) {
             </Link>))}
         </div></div>
       </section>}
+      <SaleBanner place="home" />
       <AdSlot ads={ads} place="home-top" products={products} brand={brand} />
       <section className="wrap" id="allgrid">
         <div className="sec-head"><div><div className="kicker">{t('The collection')}</div><h2>{t('Our')} <em>{t('products')}</em></h2></div><Link className="link-arrow" href="/shop">{t('Shop all {n}', { n: products.length })} <span aria-hidden="true">→</span></Link></div>

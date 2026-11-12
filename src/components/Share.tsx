@@ -11,18 +11,18 @@ const NETS: [string, string, (u: string, t: string) => string, string][] = [
   ['email', 'Email', (u, t) => `mailto:?subject=${encodeURIComponent(t)}&body=${encodeURIComponent(t + '\n' + u)}`, 'M3 6h18v12H3zM3 6l9 7 9-7'],
 ];
 
-export default function Share({ title, path = '', label }: { title: string; path?: string; label?: string }) {
+export default function Share({ title, path = '', label, onShare }: { title: string; path?: string; label?: string; onShare?: () => void }) {
   const { t, toast } = useStore();
   const url = () => (typeof location === 'undefined' ? '' : location.origin + (path || location.pathname));
-  const copy = async () => { try { await navigator.clipboard.writeText(url()); toast(t('Link copied')); } catch { toast(url()); } };
+  const copy = async () => { onShare?.(); try { await navigator.clipboard.writeText(url()); toast(t('Link copied')); } catch { toast(url()); } };
   // Phones open their own share sheet (Messenger, Instagram, SMS…); computers copy the link.
-  const native = async () => { if (navigator.share) { try { await navigator.share({ title, text: title, url: url() }); } catch {} } else copy(); };
+  const native = async () => { if (navigator.share) { try { await navigator.share({ title, text: title, url: url() }); onShare?.(); } catch {} } else copy(); };
   return <div className="share">
     <button type="button" className="share-main" onClick={native}>
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 13v7h14v-7" /></svg>{label || t('Share')}
     </button>
     <div className="share-row" role="group" aria-label={t('Share')}>
-      {NETS.map(([k, name, href, d]) => <a key={k} className={`share-ic ${k}`} href="#" onClick={e => { e.preventDefault(); window.open(href(url(), title), '_blank', 'noopener,width=620,height=560'); }} aria-label={`${t('Share on')} ${name}`} title={name}>
+      {NETS.map(([k, name, href, d]) => <a key={k} className={`share-ic ${k}`} href="#" onClick={e => { e.preventDefault(); onShare?.(); window.open(href(url(), title), '_blank', 'noopener,width=620,height=560'); }} aria-label={`${t('Share on')} ${name}`} title={name}>
         <svg viewBox="0 0 24 24" width="17" height="17" fill={k === 'email' || k === 'telegram' ? 'none' : 'currentColor'} stroke={k === 'email' || k === 'telegram' ? 'currentColor' : 'none'} strokeWidth="1.5" aria-hidden="true"><path d={d} /></svg></a>)}
       <button type="button" className="share-ic copy" onClick={copy} aria-label={t('Copy link')} title={t('Copy link')}>
         <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1" /></svg></button>

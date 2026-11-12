@@ -31,14 +31,15 @@ export async function checkoutQuote(input: { lines: { slug: string; qty: number 
   const { currentCustomer } = await import('@/lib/auth');
   const { readyMethods, soonMethods } = await import('@/lib/pay');
   const me = await currentCustomer();
-  const q0 = await quote({ ...input, email: (input.email ?? me?.email ?? '').trim().toLowerCase() });
+  const share = await shareCookies();
+  const q0 = await quote({ ...input, ...share, email: (input.email ?? me?.email ?? '').trim().toLowerCase() });
   // Same rule as placeOrder: credit only counts when the checkout email is the signed-in one.
   const email = (input.email ?? me?.email ?? '').trim().toLowerCase();
   const credit = me && me.email === email && me.currency === q0.cur ? Number(me.credit) : 0;
-  const q = await quote({ ...input, email }, credit, input.useCredit);
+  const q = await quote({ ...input, ...share, email }, credit, input.useCredit);
   if (input.email) await import('@/lib/newsletter').then(n => n.rememberBag(email, input.lines)).catch(e => console.error('remember bag failed', e));
   return {
-    cur: q.cur, subtotal: q.subtotal, saved: q.saved, discount: q.discount, coupon: q.coupon?.code || '', couponError: q.couponError, shipping: q.shipping, credit: q.credit, total: q.total, reward: q.reward, available: credit,
+    cur: q.cur, subtotal: q.subtotal, saved: q.saved, discount: q.discount, coupon: q.coupon?.code || '', shareCode: q.shareCode, couponError: q.couponError, shipping: q.shipping, credit: q.credit, total: q.total, reward: q.reward, available: credit,
     courier: q.ship.courier, days: q.ship.days, pay: await readyMethods(input.country), soon: await soonMethods(input.country),
     me: me ? { email: me.email, name: me.name, phone: me.phone, country: me.country, address: me.address } : null,
   };
@@ -48,7 +49,41 @@ export async function checkout(input: import('@/lib/orders').CheckoutInput) {
   const { placeOrder } = await import('@/lib/orders');
   const { cookies } = await import('next/headers');
   const jar = await cookies();
-  return placeOrder(input, decodeURIComponent(jar.get('pm-src')?.value || 'Direct').slice(0, 40), (jar.get('pm-cmp')?.value || '').slice(0, 12));
+  return placeOrder(input, decodeURIComponent(jar.get('pm-src')?.value || 'Direct').slice(0, 40), (jar.get('pm-cmp')?.value || '').slice(0, 12), await shareCookies());
+}
+
+// Share & earn: the shared link this shopper came from (?r=, kept by the proxy) and whether they unlocked the share discount.
+async function shareCookies() {
+  const { cookies } = await import('next/headers');
+  const jar = await cookies();
+  return { ref: (jar.get('pm-ref')?.value || '').slice(0, 16), unlocked: jar.get('pm-unlock')?.value === '1' };
+}
+
+// Called when a shopper taps a share button: unlocks the share discount on this device, if it is on.
+export async function unlockShare() {
+  const { getSettings } = await import('@/lib/catalog');
+  const { shareCfg } = await import('@/lib/promo');
+  const sh = shareCfg((await getSettings()).share);
+  if (!sh.unlock || !sh.unlockPct) return 0;
+  const { cookies } = await import('next/headers');
+  (await cookies()).set('pm-unlock', '1', { path: '/', maxAge: 2592000, sameSite: 'lax', httpOnly: true });
+  return sh.unlockPct;
+}
+
+// The signed-in shopper's own share code, made the first time they ask.
+export async function myShareCode() {
+  const { currentCustomer } = await import('@/lib/auth');
+  const me = await currentCustomer();
+  if (!me) return '';
+  if (me.refCode) return me.refCode;
+  const { db } = await import('@/lib/db');
+  const { randomBytes } = await import('node:crypto');
+  for (let i = 0; i < 5; i++) {
+    const code = randomBytes(5).toString('base64url').replace(/[-_]/g, 'x').slice(0, 7);
+    const ok = await db.customer.updateMany({ where: { id: me.id, refCode: null }, data: { refCode: code } }).catch(() => null);
+    if (ok) return (await db.customer.findUnique({ where: { id: me.id }, select: { refCode: true } }))?.refCode || '';
+  }
+  return '';
 }
 
 export async function findOrder(fd: FormData) {

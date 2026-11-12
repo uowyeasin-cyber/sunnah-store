@@ -108,7 +108,7 @@ export default function Checkout() {
           <div className="coupon-row"><input aria-label={s.t('Discount code')} placeholder={s.t('Discount code')} value={codeIn} onChange={e => setCodeIn(e.target.value.toUpperCase())} />
             {code ? <button type="button" className="btn ghost sm" onClick={() => { setCode(''); setCodeIn(''); }}>{s.t('Remove')}</button> : <button type="button" className="btn ghost sm" disabled={!codeIn.trim()} onClick={() => setCode(codeIn.trim())}>{s.t('Apply')}</button>}</div>
           {code && fresh && q.couponError && <p className="err" style={{ margin: 0 }}>{s.t(q.couponError)}</p>}
-          {q.discount > 0 && <div className="sum-row"><span>{s.t('Code')} {q.coupon}</span><span>−{money(q.discount)}</span></div>}
+          {q.discount > 0 && <div className="sum-row"><span>{q.coupon ? <>{s.t('Code')} {q.coupon}</> : s.t(q.shareCode === 'FRIEND' ? 'Friend’s link discount' : 'Share discount')}</span><span>−{money(q.discount)}</span></div>}
           {q.available > 0 && <label className="toggle"><span>{s.t('Use store credit ({x} available)', { x: money(q.available) })}</span><input type="checkbox" checked={useCredit} onChange={e => setUseCredit(e.target.checked)} /></label>}
           {q.credit > 0 && <div className="sum-row"><span>{s.t('Store credit')}</span><span>−{money(q.credit)}</span></div>}
           <div className="sum-row total"><span>{s.t('Total')}</span><span>{money(q.total)}</span></div>

@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { formatPrice, isCurrency, type Currency, type Rates } from '@/lib/money';
 import type { CardProduct } from '@/lib/catalog';
 import { makeT, type Dict, type Lang, type T } from '@/lib/i18n';
+import { salePct, type SaleEvent, type ShareCfg } from '@/lib/promo';
 
 type Line = { slug: string; qty: number; off?: boolean }; // off: left in the bag but not in this checkout
 type Drawer = null | 'bag' | 'wish' | 'account';
@@ -16,6 +17,8 @@ type Store = {
   price: (usdCents: number) => string; toast: (msg: string) => void; message: string;
   lang: Lang; t: T;
   pre: string; // pre-order shipping note, empty when selling from stock
+  sales: SaleEvent[]; share: ShareCfg; now: number; // sale campaigns and Share & earn; now is 0 until the page is running
+  pctFor: (p: Pick<CardProduct, 'offer' | 'cats'>) => number; // percent off now: the product's offer or a live campaign, the bigger
 };
 const Ctx = createContext<Store | null>(null);
 export const useStore = () => useContext(Ctx) as Store;
@@ -23,7 +26,11 @@ export const useStore = () => useContext(Ctx) as Store;
 const read = <T,>(k: string, fallback: T): T => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch { return fallback; } };
 const write = (k: string, v: unknown) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 
-export default function StoreProvider({ products, rates, lang, dict, pre = '', children }: { products: CardProduct[]; rates: Rates; lang: Lang; dict: Dict; pre?: string; children: React.ReactNode }) {
+export default function StoreProvider({ products, rates, lang, dict, pre = '', sales = [], share, children }: { products: CardProduct[]; rates: Rates; lang: Lang; dict: Dict; pre?: string; sales?: SaleEvent[]; share: ShareCfg; children: React.ReactNode }) {
+  // Campaign prices start and stop by the clock, so they are worked out in the browser once it runs (pages are cached).
+  const [now, setNow] = useState(0);
+  useEffect(() => { const tick = () => setNow(Date.now()); const h = setTimeout(tick, 0); const i = setInterval(tick, 30000); return () => { clearTimeout(h); clearInterval(i); }; }, []);
+  const pctFor = useCallback((p: Pick<CardProduct, 'offer' | 'cats'>) => Math.max(p.offer?.pct || 0, now ? salePct(sales, p.cats, now) : 0), [sales, now]);
   const t = useMemo(() => makeT(dict), [dict]);
   const [bag, setBag] = useState<Line[]>([]);
   const [wish, setWish] = useState<string[]>([]);
@@ -51,6 +58,6 @@ export default function StoreProvider({ products, rates, lang, dict, pre = '', c
   const setCur = useCallback((c: Currency) => { setCurState(c); write('pm-cur', c); }, []);
   const price = useCallback((c: number) => formatPrice(c, cur, rates), [cur, rates]);
 
-  const value = { me, refreshMe, products: byslug, bag: bag.filter(l => byslug[l.slug]), wish: wish.filter(s => byslug[s]), cur, rates, drawer, add, setQty, toggleWish, pick, setCur, open: setDrawer, price, toast, message, lang, t, pre };
+  const value = { me, refreshMe, products: byslug, bag: bag.filter(l => byslug[l.slug]), wish: wish.filter(s => byslug[s]), cur, rates, drawer, add, setQty, toggleWish, pick, setCur, open: setDrawer, price, toast, message, lang, t, pre, sales, share, now, pctFor };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
