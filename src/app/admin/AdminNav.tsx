@@ -3,13 +3,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { FIRST, ICONS, NAV } from './nav';
-import { adminSignOut } from './shellActions';
+import { adminSignOut, setAlerts } from './shellActions';
 
 export const Icon = ({ name }: { name: string }) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={ICONS[name] || ICONS.grid} /></svg>;
 
-type Props = { areas: string[]; store: { name: string; mono: string; logo: string }; email: string; badges: Record<string, number>; children: React.ReactNode };
+type Props = { areas: string[]; store: { name: string; mono: string; logo: string }; email: string; alerts: boolean; badges: Record<string, number>; children: React.ReactNode };
 
-export default function AdminShell({ areas, store, email, badges, children }: Props) {
+export default function AdminShell({ areas, store, email, alerts, badges, children }: Props) {
   const path = usePathname(), here = path.split('/')[2] || '';
   const [open, setOpen] = useState(false);
   const items = NAV.map(g => ({ ...g, items: g.items.filter(i => areas.includes(i.area)) })).filter(g => g.items.length);
@@ -24,7 +24,8 @@ export default function AdminShell({ areas, store, email, badges, children }: Pr
         {g.items.map(i => { const on = i.area === here || !!i.also?.some(([a]) => a === here); return <Link key={i.area} href={`/admin/${i.area}`} className={on ? 'on' : ''} aria-current={on ? 'page' : undefined}><Icon name={i.icon} />{i.label}{badges[i.area] ? <span className="n">{badges[i.area]}</span> : null}</Link>; })}
       </div>)}</nav>
       <div className="adm-me"><div className="who"><span className="av">{email.slice(0, 1).toUpperCase()}</span><span>{email}</span></div>
-        <div className="acts"><a href="/" target="_blank">↗ View store</a><form action={adminSignOut}><button>⎋ Sign out</button></form></div></div>
+        <div className="acts"><a href="/" target="_blank">↗ View store</a><form action={adminSignOut}><button>⎋ Sign out</button></form></div>
+        <form action={setAlerts} className="alerts"><input type="hidden" name="on" value={alerts ? '0' : '1'} /><button title="Store alert emails to you: seller wanted, daily summary, low stock, reminders" aria-pressed={alerts}><span className={`sw${alerts ? ' on' : ''}`} />Email alerts: {alerts ? 'On' : 'Off'}</button></form></div>
     </aside>
     <main className="adm-main"><div className="adm-body">
       {tabs.length > 1 && <nav className="adm-sub">{tabs.map(([a, l]) => <Link key={a} href={`/admin/${a}`} className={a === here ? 'on' : ''}>{l}</Link>)}</nav>}

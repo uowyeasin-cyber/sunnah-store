@@ -7,7 +7,7 @@ import { COUNTRIES, payMethodsFor, shippingFor } from './shipping';
 import { DELIVERED, STEPS } from './tracking';
 import { RETURN_DAYS, RETURN_REASONS } from './returns';
 import { sendMail } from './mail';
-import { roleOf } from './roles';
+import { alertEmails } from './roles';
 import { aiReady, ask, type Turn } from './ai';
 
 // The shop's chat assistant. It works with any connected AI (free Gemini, Groq or OpenRouter, or Claude).
@@ -56,7 +56,7 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: Ctx): 
   if (name === 'contact_human') {
     const email = str('email');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Ask the customer for a valid email so the team can reply.';
-    const owners = s.admins.filter(e => e && roleOf(e, s.roles) === 'owner');
+    const owners = alertEmails(s);
     for (const to of owners) await sendMail(to, `Customer needs help: ${str('name') || email}`, `${str('summary')}\n\nReply to: ${email}\n\n--- Conversation ---\n${ctx.transcript}`.slice(0, 8000)).catch(e => console.error('handoff mail failed', e));
     return owners.length ? 'Sent to the team. They will reply by email.' : 'The team inbox is not set up; tell the customer to try again later.';
   }
@@ -121,7 +121,7 @@ export async function notifySeller(threadId: string, why: string) {
   if (!t || t.needsHuman) return;
   await db.chatThread.update({ where: { id: threadId }, data: { needsHuman: true, unread: { increment: 1 } } });
   const s = await getSettings();
-  const owners = s.admins.filter(e => e && roleOf(e, s.roles) === 'owner');
+  const owners = alertEmails(s);
   const log = t.messages.map(m => `${m.role === 'user' ? 'Customer' : m.role === 'admin' ? 'You' : 'Bot'}: ${m.text}`).join('\n');
   for (const to of owners) await sendMail(to, `Customer wants the seller${t.email ? ': ' + t.email : ''}`, `${why}\n\nReply in Admin → Customer chats: ${site()}/admin/chats?id=${t.id}\n\n${log}`.slice(0, 8000)).catch(e => console.error('seller mail failed', e));
 }

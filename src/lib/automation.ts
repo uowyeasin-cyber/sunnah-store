@@ -2,7 +2,7 @@ import 'server-only';
 import { db } from './db';
 import { sendMail } from './mail';
 import { getSettings } from './catalog';
-import { roleOf } from './roles';
+import { alertEmails } from './roles';
 import { DELIVERED } from './tracking';
 import { JOBS, defaultAutomation, type Automation, type JobId, type Mode } from './automationJobs';
 
@@ -31,7 +31,7 @@ export async function modeOf(job: JobId): Promise<Mode> {
 
 async function ownerEmails() {
   const s = await getSettings();
-  return s.admins.filter(e => e && roleOf(e, s.roles) === 'owner');
+  return alertEmails(s);
 }
 async function tellOwners(subject: string, text: string) {
   for (const to of await ownerEmails()) await sendMail(to, subject, text).catch(e => console.error('owner mail failed', e));

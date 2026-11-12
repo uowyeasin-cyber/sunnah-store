@@ -3,7 +3,7 @@ import { after } from 'next/server';
 import { db } from './db';
 import { sendMail } from './mail';
 import { getSettings } from './catalog';
-import { roleOf } from './roles';
+import { alertEmails } from './roles';
 
 // Reminders and jobs set for a time. They run from the daily cron, from /api/cron/due (any outside
 // cron, e.g. every 5 minutes), and quietly while people use the shop, so a 1 PM job runs close to 1 PM.
@@ -11,7 +11,7 @@ const site = () => process.env.SITE_URL || 'https://sunnahstore.vercel.app';
 
 async function owners() {
   const s = await getSettings();
-  return s.admins.filter(e => e && roleOf(e, s.roles) === 'owner');
+  return alertEmails(s);
 }
 
 async function runOne(t: { id: string; kind: string; title: string; note: string; data: unknown; by: string }) {

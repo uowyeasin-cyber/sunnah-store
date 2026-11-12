@@ -4,6 +4,7 @@ const db = new PrismaClient();
 // Sample catalogue so a fresh database looks like the approved prototype. Safe to re-run.
 async function main() {
   await addAdmins();
+  await alertsOff();
   // Runs on every deploy; only fills an empty database.
   if (await db.category.count()) return;
   const cats = [['miswak-pens', 'Miswak pens'], ['miswak-sticks', 'Miswak sticks'], ['attar-oils', 'Attar & oils'], ['gift-sets', 'Gift sets'], ['accessories', 'Accessories']];
@@ -53,5 +54,11 @@ async function addAdmins() {
   for (const e of add) if (!list.some(a => a.toLowerCase() === e.toLowerCase())) list.push(e);
   const value = [...list, '', '', '', '', ''].slice(0, 5);
   await db.setting.upsert({ where: { key: 'admins' }, update: { value }, create: { key: 'admins', value } });
+}
+// SEED_ALERTS_OFF (comma separated) sets whose alert emails start switched off, only until the
+// admin panel saves its own list (Admin team → Email alerts, or the sidebar switch).
+async function alertsOff() {
+  const off = (process.env.SEED_ALERTS_OFF || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+  if (off.length) await db.setting.upsert({ where: { key: 'alertsOff' }, update: {}, create: { key: 'alertsOff', value: off } });
 }
 main().finally(() => db.$disconnect());
