@@ -34,6 +34,7 @@ perl -0pi -e 's/\n  if \(!\(await db\.review\.count\(\)\)\) \{.*?\n  \}\n/\n/s' 
 
 # 4. Add the buyer docs (README, INSTALL, .env.example, LICENSE, CHANGELOG).
 cp -r sale/package/. "$DEST/"
+mv "$DEST/env.example" "$DEST/.env.example"
 rm -f "$DEST/version.json"
 
 # 5. Safety check: nothing personal or secret left behind.
@@ -53,3 +54,5 @@ grep -q "await licenseGate" "$DEST/src/proxy.ts" && grep -q "api|go/" "$DEST/src
 mv "$WORK/$NAME.zip" "$OUT/"
 rm -rf "$WORK"
 echo "Made $OUT/$NAME.zip"
+# Same file for the public download page (/get-app) when asked: bash sale/make-package.sh dist-sale --public
+if [ "${2:-}" = "--public" ]; then cp "$OUT/$NAME.zip" public/download/storefront-pro.zip; echo "Copied to public/download/storefront-pro.zip"; fi

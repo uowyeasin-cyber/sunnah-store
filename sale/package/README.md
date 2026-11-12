@@ -6,7 +6,9 @@ stock, payments, couriers, marketing, sourcing, money and an AI co-worker. Every
 customer sees (name, logo, colours, menu, slides, products, offers) is changed from the admin,
 with no code.
 
-**Setup takes about 30 minutes. Follow [INSTALL.md](INSTALL.md) (English) or [SETUP-CHECKLIST-BANGLA.md](SETUP-CHECKLIST-BANGLA.md) (step-by-step checklist in romanized Bangla).**
+**Setup takes about 40 minutes. Open [START-HERE.md](START-HERE.md) (Bangla, every link in order) or [INSTALL.md](INSTALL.md) (English).**
+
+**12 one-click site templates** (Admin → Store & theme → Site templates): online shop, fashion, beauty, doctor & clinic, pharmacy, grocery, restaurant, gadgets, sale campaign, Islamic lifestyle, books & courses, home & decor. One click sets the colours, fonts, texts, menu, home page and sample products.
 
 ## What's inside
 
@@ -40,7 +42,7 @@ Runs on Vercel's free plan to start.
 
 ## Files
 - `INSTALL.md`: step-by-step setup for a new store
-- `SETUP-CHECKLIST-BANGLA.md`: setup and handover checklist in romanized Bangla
+- `START-HERE.md`: step-by-step setup, domain and handover guide in Bangla with every link
 - `.env.example`: every setting the server reads
 - `src/app/[lang]`: storefront pages; `src/app/admin`: admin panel; `src/lib`: business logic
 - `prisma/schema.prisma`: database; `prisma/seed.ts`: demo catalogue for a fresh store

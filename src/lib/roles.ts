@@ -1,5 +1,5 @@
 // Admin roles. Each role opens some admin areas (the part after /admin/). Owners open everything.
-export const AREAS = ['dashboard', 'decisions', 'reports', 'orders', 'returns', 'products', 'categories', 'homepage', 'menu', 'social', 'ads', 'payments', 'connections', 'expenses', 'reviews', 'languages', 'settings', 'team', 'activity', 'automation', 'ledger', 'suppliers', 'marketing', 'customers', 'loyalty', 'offers', 'chats', 'aitools', 'ai', 'seo', 'reminders', 'sourcing', 'licenses', 'channels'] as const;
+export const AREAS = ['dashboard', 'decisions', 'reports', 'orders', 'returns', 'products', 'categories', 'homepage', 'menu', 'social', 'ads', 'payments', 'connections', 'expenses', 'reviews', 'languages', 'settings', 'team', 'activity', 'automation', 'ledger', 'suppliers', 'marketing', 'customers', 'loyalty', 'offers', 'chats', 'aitools', 'ai', 'seo', 'reminders', 'sourcing', 'licenses', 'channels', 'templates'] as const;
 export type Area = (typeof AREAS)[number];
 
 export const ROLES = {
