@@ -32,6 +32,7 @@ with no code.
 - Couriers: Steadfast, Pathao, RedX (auto booking), EasyParcel (Malaysia), Shippo (USA), Ship24 tracking for 1,500+ couriers
 - Money ledger, suppliers and purchase orders, global sourcing helper (50+ platforms)
 - AI tools: co-worker, "today's decisions", automation with one master on/off switch, reminders and schedule
+- Earn money: ad network slots (on/off, choose where), ad short links, an "Advertise with us" page
 - SEO and ads, social media posts with click and sales tracking, email marketing and abandoned-bag emails
 - Staff roles, admin team, activity history
 - Service keys are saved encrypted in the database
