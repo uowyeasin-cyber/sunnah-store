@@ -54,5 +54,22 @@ grep -q "await licenseGate" "$DEST/src/proxy.ts" && grep -q "api|go/" "$DEST/src
 mv "$WORK/$NAME.zip" "$OUT/"
 rm -rf "$WORK"
 echo "Made $OUT/$NAME.zip"
+
+# 7. All-in-one kit for the seller: the buyer zip plus every guide, in one file.
+KIT="$(mktemp -d)/$NAME-all-in-one"
+mkdir -p "$KIT"
+cp "$OUT/$NAME.zip" "$KIT/"
+cp sale/package/START-HERE.md sale/package/INSTALL.md sale/SELLER-GUIDE.md "$KIT/"
+cat > "$KIT/README-FIRST.md" <<TXT
+# $NAME: all in one
+1. $NAME.zip: the store app. Give this file to a buyer, or unzip it to start your own new business.
+2. START-HERE.md: step-by-step setup in Bangla with every link (also inside the app zip).
+3. INSTALL.md: the same in English.
+4. SELLER-GUIDE.md: only for you: licenses, plans, renew, selling. Do not give it to buyers.
+TXT
+( cd "$(dirname "$KIT")" && zip -qr "$NAME-all-in-one.zip" "$NAME-all-in-one" )
+mv "$(dirname "$KIT")/$NAME-all-in-one.zip" "$OUT/"
+rm -rf "$(dirname "$KIT")"
+echo "Made $OUT/$NAME-all-in-one.zip"
 # Same file for the public download page (/get-app) when asked: bash sale/make-package.sh dist-sale --public
 if [ "${2:-}" = "--public" ]; then cp "$OUT/$NAME.zip" public/download/storefront-pro.zip; echo "Copied to public/download/storefront-pro.zip"; fi
