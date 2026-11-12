@@ -34,11 +34,21 @@ body:has(.adm)::before{display:none}
 .adm-me .acts{display:flex;gap:14px;margin-top:7px;padding-left:2px}
 .adm-me .acts a,.adm-me .acts button{background:none;border:0;padding:0;color:#94a3b8;font-size:.76rem;text-decoration:none;cursor:pointer}
 .adm-me .acts a:hover,.adm-me .acts button:hover{color:#fff}
-.adm-me .alerts button{display:flex;align-items:center;gap:8px;margin-top:8px;background:none;border:0;padding:0 2px;color:#94a3b8;font-size:.76rem;cursor:pointer}
-.adm-me .alerts button:hover{color:#fff}
-.adm-me .sw{width:26px;height:15px;border-radius:9px;background:#334155;position:relative;flex:none;transition:background .2s}
-.adm-me .sw::after{content:'';position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:#fff;transition:transform .2s}
-.adm-me .sw.on{background:#16a34a}.adm-me .sw.on::after{transform:translateX(11px)}
+/* sidebar email alerts switch */
+.adm-me .alerts{margin-top:10px}
+.adm-me .alerts button{all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);cursor:pointer;transition:background .2s,border-color .2s}
+.adm-me .alerts button:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.12)}
+.adm-me .alerts button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.adm-me .alerts .ic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex:none;background:rgba(255,255,255,.06);color:#94a3b8;transition:background .2s,color .2s}
+.adm-me .alerts .ic svg{width:15px;height:15px}
+.adm-me .alerts button.on .ic{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+.adm-me .alerts .tx{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.25}
+.adm-me .alerts .tx b{color:#e2e8f0;font-size:.78rem;font-weight:600}
+.adm-me .alerts .tx small{color:#64748b;font-size:.68rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm-me .alerts .sw{width:30px;height:17px;border-radius:999px;background:#334155;position:relative;flex:none;box-shadow:inset 0 1px 2px rgba(0,0,0,.35);transition:background .25s}
+.adm-me .alerts .sw::after{content:'';position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#cbd5e1;box-shadow:0 1px 3px rgba(0,0,0,.4);transition:transform .25s cubic-bezier(.3,1.4,.5,1),background .25s}
+.adm-me .alerts button.on .sw{background:var(--accent)}
+.adm-me .alerts button.on .sw::after{transform:translateX(13px);background:#fff}
 .adm-top{display:none}
 
 /* main canvas */
